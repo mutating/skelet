@@ -99,3 +99,6 @@ def test_try_to_set_new_value_to_read_only_attribute():
         object.field = 43
 
     assert object.field == 42
+
+
+# TODO: test thread safety
