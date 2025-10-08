@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools==68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skelet"
+version = "0.0.1"
+authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
+description = 'Collect all the settings in one place'
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ['printo==0.0.7']
+
+classifiers = [
+    "Operating System :: OS Independent",
+    'Operating System :: MacOS :: MacOS X',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX',
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'License :: OSI Approved :: MIT License',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Libraries',
+]
+keywords = ['settings', 'configs']
+
+[tool.setuptools.package-data]
+"skelet" = ["py.typed"]
+
+[tool.mutmut]
+paths_to_mutate = "skelet"
+runner = "pytest"
+
+[tool.pytest.ini_options]
+markers = ["mypy_testing"]
+
+[project.urls]
+'Source' = 'https://github.com/pomponchik/skelet'
+'Tracker' = 'https://github.com/pomponchik/skelet/issues'
