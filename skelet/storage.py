@@ -5,6 +5,6 @@ from threading import Lock
 class Storage:
     __fields__: Dict[str, Any]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__fields__: Dict[str, Any] = {}
         self.lock = Lock()
