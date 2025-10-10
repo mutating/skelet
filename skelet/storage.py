@@ -3,7 +3,7 @@ from threading import Lock
 
 
 class Storage:
-    __fields__: Dict[str, Any]
+    __fields__: Dict[str, Any]  # pragma: no cover
 
     def __init__(self) -> None:
         self.__fields__: Dict[str, Any] = {}
