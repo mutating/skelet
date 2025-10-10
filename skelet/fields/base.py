@@ -1,5 +1,7 @@
-from typing import TypeVar, Type, Any
+from typing import TypeVar, Type, Any, Optional, cast
 from threading import Lock
+
+from locklib import ContextLockProtocol
 
 from skelet.storage import Storage
 
@@ -12,10 +14,10 @@ class Field:
         self.default = default
         self.read_only = read_only
 
-        self.name = None
-        self.base_class = None
+        self.name: Optional[str] = None
+        self.base_class: Optional[Type[Storage]] = None
 
-        self.lock = Lock()
+        self.lock: ContextLockProtocol = Lock()
 
     def __set_name__(self, owner: Type[Storage], name: str) -> None:
         with self.lock:
@@ -32,14 +34,14 @@ class Field:
             raise TypeError(f"Field \"{self.name}\" can only be used in Storage instances.")
 
         with instance.lock:
-            return instance.__fields__.get(self.name, self.default)
+            return instance.__fields__.get(cast(str, self.name), self.default)
 
     def __set__(self, instance: Storage, value: ValueType) -> None:
         if self.read_only:
             raise AttributeError(f'Field "{self.name}" is read-only.')
 
         with instance.lock:
-            instance.__fields__[self.name] = value
+            instance.__fields__[cast(str, self.name)] = value
 
     def __delete__(self, instance: Any) -> None:
         raise AttributeError(f"You can't delete the \"{self.name}\" attribute.")

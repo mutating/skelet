@@ -9,7 +9,7 @@ authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = ['printo==0.0.7']
+dependencies = ['printo==0.0.7', 'locklib==0.0.18']
 
 classifiers = [
     "Operating System :: OS Independent",
