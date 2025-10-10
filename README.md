@@ -9,6 +9,7 @@ One object with a configuration for your project. This can take settings away fr
 - [x] Default values specified in the class
 - [x] Values that are set during operation for class attributes
 - [ ] Read only fields
+- [ ] Typing support
 
 Additional features:
 
@@ -16,7 +17,6 @@ Additional features:
 - [ ] The ability to set a callback to change any of the fields + a mutex to a mutable field to ensure thread safety)
 - [ ] A separate mutex for each field
 - [ ] The ability to share a single mutex into several fields
-- [ ] Typing support
 - [ ] Checking fields for conflicts
 - [ ] Converting types from one to another
 - [ ] Subtraction of environment variables
