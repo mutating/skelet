@@ -8,7 +8,7 @@ One object with a configuration for your project. This can take settings away fr
 - [ ] One or more separate `toml` files
 - [x] Default values specified in the class
 - [x] Values that are set during operation for class attributes
-- [ ] Read only fields
+- [x] Read only fields
 - [ ] Typing support
 
 Additional features:
