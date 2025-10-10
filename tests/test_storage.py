@@ -323,3 +323,25 @@ def test_get_from_inner_dict_is_thread_safe_and_use_per_instance_locks():
     assert storage._lock.was_event_locked('get')
 
     assert not field.lock.was_event_locked('get') and field.lock.trace
+
+
+def test_that_set_is_thread_safe_and_use_per_instance_locks():
+    class SomeClass(Storage):
+        field = Field(42)
+
+    storage = SomeClass()
+    field = SomeClass.field
+
+    field.lock = LockTraceWrapper(field.lock)
+    storage._lock = LockTraceWrapper(storage._lock)
+    class PseudoDict:
+        def __setitem__(self, key, default):
+            storage._lock.notify('get')
+            field.lock.notify('get')
+    storage.__fields__ = PseudoDict()
+
+    storage.field = 44
+
+    assert storage._lock.was_event_locked('get')
+
+    assert not field.lock.was_event_locked('get') and field.lock.trace
