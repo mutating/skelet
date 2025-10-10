@@ -27,3 +27,6 @@ Additional features:
 - [ ] 'yaml' format support
 - [ ] 'json' format support
 - [ ] Turn-off thread safety
+
+
+https://www.reddit.com/r/Python/comments/10zdidm/why_type_hinting_sucks/
