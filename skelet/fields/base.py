@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, Any, Optional, cast
+from typing import TypeVar, Type, Any, Optional, Generic, cast
 from threading import Lock
 
 from locklib import ContextLockProtocol
@@ -9,7 +9,7 @@ from skelet.storage import Storage
 ValueType = TypeVar('ValueType')
 
 # TODO: use per-field locks to improve thread safety
-class Field:
+class Field(Generic[ValueType]):
     def __init__(self, default: ValueType, read_only: bool = False) -> None:
         self.default = default
         self.read_only = read_only
