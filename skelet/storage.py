@@ -10,3 +10,6 @@ class Storage:
     def __init__(self) -> None:
         self.__fields__: Dict[str, Any] = {}
         self._lock = Lock()
+
+    def __repr__(self) -> str:
+        return descript_data_object(type(self).__name__)

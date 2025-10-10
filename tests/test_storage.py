@@ -123,7 +123,6 @@ def test_get_from_inner_dict_is_thread_safe_and_use_per_instance_locks():
     field = SomeClass.field
 
     field.lock = LockTraceWrapper(field.lock)
-    print(dir(storage))
     storage._lock = LockTraceWrapper(storage._lock)
     class PseudoDict:
         def get(self, key, default):
