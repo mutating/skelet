@@ -348,12 +348,11 @@ def test_set_name_uses_per_field_lock():
     class SomeClass(Storage):
         ...
 
-    storage = SomeClass()
     field = Field(42)
     field.lock = LockTraceWrapper(field.lock)
 
     field.set_field_names = lambda x, y: field.lock.notify('get')
 
-    field.__set_name__(Storage, 'field')
+    field.__set_name__(SomeClass, 'field')
 
     assert field.lock.was_event_locked('get') and field.lock.trace
