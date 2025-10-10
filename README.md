@@ -4,12 +4,12 @@ Collect all the settings in one place
 
 One object with a configuration for your project. This can take settings away from:
 
-- [ ] The specified sections in the `pyproject.toml` file
-- [ ] One or more separate `toml` files
 - [x] Default values specified in the class
 - [x] Values that are set during operation for class attributes
 - [x] Read only fields
 - [ ] Typing support
+- [ ] The specified sections in the `pyproject.toml` file
+- [ ] One or more separate `toml` files
 
 Additional features:
 
