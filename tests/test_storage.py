@@ -111,31 +111,6 @@ def test_try_to_set_new_value_to_read_only_attribute():
     assert object.field == 42
 
 
-# TODO: test thread safety
-# TODO: use logging lock to sure that we use per-instance locks
-
-def test_get_from_inner_dict_is_thread_safe_and_use_per_instance_locks():
-    class SomeClass(Storage):
-        field = Field(42)
-
-    storage = SomeClass()
-    field = SomeClass.field
-
-    field.lock = LockTraceWrapper(field.lock)
-    storage._lock = LockTraceWrapper(storage._lock)
-    class PseudoDict:
-        def get(self, key, default):
-            storage._lock.notify('get')
-            field.lock.notify('get')
-            return 43
-    storage.__fields__ = PseudoDict()
-
-    assert storage.field == 43
-    assert storage._lock.was_event_locked('get')
-
-    assert not field.lock.was_event_locked('get') and field.lock.trace
-
-
 def test_all_storage_childs_have_their_own_lists_with_names():
     class FirstClass(Storage):
         field_1 = Field(42)
@@ -314,3 +289,28 @@ def test_set_some_values_in_init():
     assert storage.field_2 == 43
 
     assert repr(storage) == 'StorageChild(field_1=44, field_2=43)'
+
+
+# TODO: test thread safety
+# TODO: use logging lock to sure that we use per-instance locks
+
+def test_get_from_inner_dict_is_thread_safe_and_use_per_instance_locks():
+    class SomeClass(Storage):
+        field = Field(42)
+
+    storage = SomeClass()
+    field = SomeClass.field
+
+    field.lock = LockTraceWrapper(field.lock)
+    storage._lock = LockTraceWrapper(storage._lock)
+    class PseudoDict:
+        def get(self, key, default):
+            storage._lock.notify('get')
+            field.lock.notify('get')
+            return 43
+    storage.__fields__ = PseudoDict()
+
+    assert storage.field == 43
+    assert storage._lock.was_event_locked('get')
+
+    assert not field.lock.was_event_locked('get') and field.lock.trace
