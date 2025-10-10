@@ -291,6 +291,15 @@ def test_set_some_values_in_init():
     assert repr(storage) == 'StorageChild(field_1=44, field_2=43)'
 
 
+def test_try_to_set_not_defined_field_in_init():
+    class StorageChild(Storage):
+        field_1 = Field(42)
+        field_2 = Field(43)
+
+    with pytest.raises(KeyError, match=r'The "field_3" field is not defined.'):
+        storage = StorageChild(field_3=44)
+
+
 # TODO: test thread safety
 # TODO: use logging lock to sure that we use per-instance locks
 
