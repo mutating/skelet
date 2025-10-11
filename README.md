@@ -14,6 +14,7 @@ To do:
 
 - [ ] Typing support
 - [ ] Checking field names (prohibit underscores at the beginning)
+- [ ] Documenting fields
 - [ ] The specified sections in the `pyproject.toml` file
 - [ ] One or more separate `toml` files
 - [ ] The ability to validate any fields (+ a set of standard validators for basic field types)
