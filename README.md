@@ -32,4 +32,6 @@ To do:
 - [ ] The ability to disable type checking for a class through class arguments
 
 
-https://www.reddit.com/r/Python/comments/10zdidm/why_type_hinting_sucks/
+Links to add here:
+
+- https://www.reddit.com/r/Python/comments/10zdidm/why_type_hinting_sucks/
