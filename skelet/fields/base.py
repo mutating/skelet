@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, Any, Optional, Generic, cast
+from typing import TypeVar, Type, Any, Optional, Generic, get_type_hints, cast
 from threading import Lock
 
 from locklib import ContextLockProtocol
@@ -30,6 +30,7 @@ class Field(Generic[ValueType]):
             self.base_class = owner
 
             self.set_field_names(owner, name)
+            self.check_type_hints(owner, name, self.default)
 
     def __get__(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
         if instance is None:
@@ -67,3 +68,12 @@ class Field(Generic[ValueType]):
 
         if name not in known_names:  # pragma: no cover
             owner.__field_names__.append(name)
+
+    def check_type_hints(self, owner: Type[Storage], name: str, value: ValueType) -> None:
+        type_hint = get_type_hints(owner).get(name)
+
+        if type_hint is None:
+            return
+
+        if not isinstance(value, type_hint):
+            raise TypeError(f'The default value must be an instance of the "{type_hint.__name__}" type.')
