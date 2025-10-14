@@ -357,6 +357,17 @@ def test_set_name_uses_per_field_lock():
     assert field.lock.was_event_locked('get') and field.lock.trace
 
 
+def test_simple_type_check_failed_when_set_bool_if_expected_int():
+    class SomeClass(Storage):
+        field: int = Field(15)
+
+    instance = SomeClass()
+
+    instance.field = True
+
+    assert instance.field is True
+
+
 def test_simple_type_check_failed_when_set():
     class SomeClass(Storage):
         field: int = Field(15)
@@ -369,13 +380,28 @@ def test_simple_type_check_failed_when_set():
     with pytest.raises(TypeError, match=match('The value "15.0" (float) of the "field" field does not match the type int.')):
         instance.field = 15.0
 
+    assert instance.field == 15
+    assert type(instance.field) is int
 
-def test_simple_type_check_failed_when_set_bool_if_expected_int():
+
+def test_simple_type_check_not_failed_when_set():
     class SomeClass(Storage):
         field: int = Field(15)
 
     instance = SomeClass()
 
-    instance.field = True
+    instance.field = 16
 
-    assert instance.field is True
+    assert instance.field == 16
+    assert type(instance.field) is int
+
+
+def test_type_check_when_define_default_failed():
+    if sys.version_info < (3, 12):
+        with pytest.raises(RuntimeError):
+            class SomeClass(Storage):
+                field: int = Field('15')
+    else:
+        with pytest.raises(TypeError, match=match('The value "15" (str) of the "field" field does not match the type int.')):
+            class SomeClass(Storage):
+                field: int = Field('15')
