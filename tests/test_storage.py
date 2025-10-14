@@ -422,3 +422,13 @@ def test_type_check_when_redefine_defaults_initing_new_object_failed():
 
     with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type int.')):
         SomeClass(field='kek')
+
+
+def test_type_check_when_redefine_defaults_initing_new_object_not_failed():
+    class SomeClass(Storage):
+        field: int = Field(15)
+
+    instance = SomeClass(field=16)
+
+    assert instance.field == 16
+    assert type(instance.field) is int
