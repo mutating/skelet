@@ -11,9 +11,10 @@ ValueType = TypeVar('ValueType')
 
 # TODO: use per-field locks to improve thread safety
 class Field(Generic[ValueType]):
-    def __init__(self, default: ValueType, read_only: bool = False) -> None:
+    def __init__(self, default: ValueType, read_only: bool = False, doc: Optional[str] = None) -> None:
         self.default = default
         self.read_only = read_only
+        self.doc = doc
 
         self.name: Optional[str] = None
         self.base_class: Optional[Type[Storage]] = None
@@ -26,9 +27,9 @@ class Field(Generic[ValueType]):
 
         with self.lock:
             if self.base_class is not None:
-                raise TypeError(f'Field "{name}" cannot be used in {owner.__name__} because it is already used in {self.base_class.__name__}.')
+                raise TypeError(f'{self.get_field_name_representation()} cannot be used in {owner.__name__} because it is already used in {self.base_class.__name__}.')
             if not issubclass(owner, Storage):
-                raise TypeError(f'Field "{name}" can only be used in Storage subclasses.')
+                raise TypeError(f'{self.get_field_name_representation()} can only be used in Storage subclasses.')
 
             self.name = name
             self.base_class = owner
@@ -45,7 +46,7 @@ class Field(Generic[ValueType]):
 
     def __set__(self, instance: Storage, value: ValueType) -> None:
         if self.read_only:
-            raise AttributeError(f'Field "{self.name}" is read-only.')
+            raise AttributeError(f'{self.get_field_name_representation()} is read-only.')
 
         self.check_type_hints(cast(Type[Storage], self.base_class), cast(str, self.name), value)
 
@@ -53,7 +54,7 @@ class Field(Generic[ValueType]):
             instance.__fields__[cast(str, self.name)] = value
 
     def __delete__(self, instance: Any) -> None:
-        raise AttributeError(f"You can't delete the \"{self.name}\" attribute.")
+        raise AttributeError(f"You can't delete the {self.get_field_name_representation()} value.")
 
     def set_field_names(self, owner: Type[Storage], name: str) -> None:
         if '__field_names__' not in owner.__dict__:
@@ -85,4 +86,9 @@ class Field(Generic[ValueType]):
             return
 
         if not check(type_hint, value):
-            raise TypeError(f'The value "{value}" ({type(value).__name__}) of the "{name}" field does not match the type {type_hint.__name__}.')
+            raise TypeError(f'The value "{value}" ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the type {type_hint.__name__}.')
+
+    def get_field_name_representation(self) -> str:
+        if self.doc is None:
+            return f'"{self.name}" field'
+        return f'"{self.name}" field ({self.doc})'
