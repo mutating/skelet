@@ -431,3 +431,8 @@ def test_type_check_when_redefine_defaults_initing_new_object_not_failed():
 
     assert instance.field == 16
     assert type(instance.field) is int
+
+    instance = SomeClass(field=-100)
+
+    assert instance.field == -100
+    assert type(instance.field) is int
