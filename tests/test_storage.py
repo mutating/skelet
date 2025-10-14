@@ -1,4 +1,3 @@
-from bisect import insort
 import sys
 
 import pytest
