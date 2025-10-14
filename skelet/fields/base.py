@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, Any, Optional, Generic, get_type_hints, cast
+from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, get_type_hints, cast
 from threading import Lock
 
 from locklib import ContextLockProtocol
@@ -11,10 +11,12 @@ ValueType = TypeVar('ValueType')
 
 # TODO: use per-field locks to improve thread safety
 class Field(Generic[ValueType]):
-    def __init__(self, default: ValueType, read_only: bool = False, doc: Optional[str] = None) -> None:
+    def __init__(self, default: ValueType, read_only: bool = False, doc: Optional[str] = None, validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None, check_first_time: bool = True) -> None:
         self.default = default
         self.read_only = read_only
         self.doc = doc
+        self.validation = validation
+        self.check_first_time = check_first_time
 
         self.name: Optional[str] = None
         self.base_class: Optional[Type[Storage]] = None
@@ -36,6 +38,8 @@ class Field(Generic[ValueType]):
 
             self.set_field_names(owner, name)
             self.check_type_hints(owner, name, self.default)
+            if self.check_first_time:
+                self.check_value(self.default)
 
     def __get__(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
         if instance is None:
@@ -49,6 +53,7 @@ class Field(Generic[ValueType]):
             raise AttributeError(f'{self.get_field_name_representation()} is read-only.')
 
         self.check_type_hints(cast(Type[Storage], self.base_class), cast(str, self.name), value)
+        self.check_value(value)
 
         with instance._lock:
             instance.__fields__[cast(str, self.name)] = value
@@ -92,3 +97,13 @@ class Field(Generic[ValueType]):
         if self.doc is None:
             return f'"{self.name}" field'
         return f'"{self.name}" field ({self.doc})'
+
+    def check_value(self, value: ValueType) -> None:
+        if self.validation is not None:
+            if isinstance(self.validation, dict):
+                for message, validator in self.validation.items():
+                    if not validator(value):
+                        raise ValueError(message)
+            else:
+                if not self.validation(value):
+                    raise ValueError(f'The value "{value}" ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the validation function.')
