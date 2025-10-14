@@ -411,5 +411,5 @@ def test_type_check_when_define_default_not_failed():
     class SomeClass(Storage):
         field: int = Field(15)
 
-    assert SomeClass.field == 15
-    assert type(SomeClass.field) is int
+    assert SomeClass().field == 15
+    assert type(SomeClass().field) is int
