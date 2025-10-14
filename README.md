@@ -19,6 +19,8 @@ To do:
 - [ ] The ability to set a callback to change any of the fields + a mutex to a mutable field to ensure thread safety)
 - [ ] A separate mutex for each field
 - [ ] Checking fields for conflicts
+- [ ] Secret fields
+- [ ] The ability to disable type checking for a class through class arguments
 - [ ] The specified sections in the `pyproject.toml` file
 - [ ] One or more separate `toml` files
 - [ ] The ability to share a single mutex into several fields
@@ -27,11 +29,9 @@ To do:
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
-- [ ] Secret fields
 - [ ] 'yaml' format support
 - [ ] 'json' format support
 - [ ] The ability to turn-off thread safety
-- [ ] The ability to disable type checking for a class through class arguments
 
 
 Links to add here:
