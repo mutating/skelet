@@ -568,3 +568,129 @@ def test_try_to_use_underscored_name_for_field_with_doc():
         with pytest.raises(ValueError, match=match('Field name "_field" cannot start with an underscore.\nError calling __set_name__ on \'Field\' instance \'_field\' in \'SomeClass\'')):
             class SomeClass(Storage):
                 _field: int = Field(15, doc='some doc')
+
+
+def test_validation_function_failed_when_set():
+    class SomeClass(Storage):
+        field: int = Field(15, validation=lambda value: value > 0)
+
+    instance = SomeClass()
+
+    with pytest.raises(ValueError, match=match('The value "-1" (int) of the "field" field does not match the validation.')):
+        instance.field = -1
+
+
+def test_validation_function_failed_when_set_with_doc():
+    class SomeClass(Storage):
+        field: int = Field(15, validation=lambda value: value > 0, doc='some doc')
+
+    instance = SomeClass()
+
+    with pytest.raises(ValueError, match=match('The value "-1" (int) of the "field" field (some doc) does not match the validation.')):
+        instance.field = -1
+
+
+@pytest.mark.parametrize(
+    ['addictional_parameters'],
+    [
+        ({},),
+        ({'doc': 'some doc'},),
+    ],
+)
+def test_validation_functions_dict_failed_when_set(addictional_parameters):
+    class SomeClass(Storage):
+        field: int = Field(15, validation={'some message': lambda x: x > 0}, **addictional_parameters)
+
+    instance = SomeClass()
+
+    with pytest.raises(ValueError, match=match('some message')):
+        instance.field = -1
+
+
+def test_validation_function_not_failed_when_set():
+    class SomeClass(Storage):
+        field: int = Field(15, validation=lambda value: value > 0)
+
+    instance = SomeClass()
+
+    instance.field = 1
+
+    assert instance.field == 1
+
+
+def test_validation_functions_dict_not_failed_when_set():
+    class SomeClass(Storage):
+        field: int = Field(15, validation={'some message': lambda value: value > 0})
+
+    instance = SomeClass()
+
+    instance.field = 1
+
+    assert instance.field == 1
+
+
+def test_validation_function_failed_when_init():
+    class SomeClass(Storage):
+        field: int = Field(15, validation=lambda value: value > 0)
+
+    with pytest.raises(ValueError, match=match('The value "-1" (int) of the "field" field does not match the validation.')):
+        SomeClass(field=-1)
+
+
+def test_validation_function_failed_when_init_with_doc():
+    class SomeClass(Storage):
+        field: int = Field(15, validation=lambda value: value > 0, doc='some doc')
+
+    with pytest.raises(ValueError, match=match('The value "-1" (int) of the "field" field (some doc) does not match the validation.')):
+        SomeClass(field=-1)
+
+
+@pytest.mark.parametrize(
+    ['addictional_parameters'],
+    [
+        ({},),
+        ({'doc': 'some doc'},),
+    ],
+)
+def test_validation_functions_dict_failed_when_init(addictional_parameters):
+    class SomeClass(Storage):
+        field: int = Field(15, validation={'some message': lambda value: value > 0}, **addictional_parameters)
+
+    with pytest.raises(ValueError, match=match('some message')):
+        SomeClass(field=-1)
+
+
+@pytest.mark.parametrize(
+    ['addictional_parameters'],
+    [
+        ({},),
+        ({'doc': 'some doc'},),
+    ],
+)
+def test_validation_function_not_failed_when_init(addictional_parameters):
+    class SomeClass(Storage):
+        field: int = Field(15, validation=lambda value: value > 0, **addictional_parameters)
+
+    instance = SomeClass()
+
+    instance.field = 1
+
+    assert instance.field == 1
+
+
+@pytest.mark.parametrize(
+    ['addictional_parameters'],
+    [
+        ({},),
+        ({'doc': 'some doc'},),
+    ],
+)
+def test_validation_functions_dict_not_failed_when_init(addictional_parameters):
+    class SomeClass(Storage):
+        field: int = Field(15, validation={'some message': lambda value: value > 0}, **addictional_parameters)
+
+    instance = SomeClass()
+
+    instance.field = 1
+
+    assert instance.field == 1
