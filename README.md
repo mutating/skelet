@@ -9,10 +9,10 @@ It's ready now::
 - [x] Default values specified in the class
 - [x] Values that are set during operation for class attributes
 - [x] Read only fields
+- [x] Typing support
 
 To do:
 
-- [ ] Typing support
 - [ ] Checking field names (prohibit underscores at the beginning)
 - [ ] Documenting fields
 - [ ] The specified sections in the `pyproject.toml` file
