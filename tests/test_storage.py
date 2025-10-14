@@ -402,6 +402,6 @@ def test_type_check_when_define_default_failed():
             class SomeClass(Storage):
                 field: int = Field('15')
     else:
-        with pytest.raises(TypeError, match=match('The value "15" (str) of the "field" field does not match the type int.')):
+        with pytest.raises(TypeError, match=match('The value "15" (str) of the "field" field does not match the type int.\n\nError calling __set_name__ on \'Field\' instance \'field\' in \'SomeClass\'')):
             class SomeClass(Storage):
                 field: int = Field('15')
