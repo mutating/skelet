@@ -443,8 +443,13 @@ def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_f
     class SomeClass(Storage):
         field: Optional[int] = Field(15)
 
-    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type Optional.')):
-        SomeClass(field='kek')
+    if sys.version_info < (3, 9):
+        with pytest.raises(AttributeError):
+            SomeClass(field='kek')
+    else:
+        with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type Optional.')):
+            SomeClass(field='kek')
+
 
     instance = SomeClass(field=None)
 
