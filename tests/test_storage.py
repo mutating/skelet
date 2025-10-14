@@ -1,4 +1,5 @@
 import sys
+from typing import Any, Optional
 
 import pytest
 from full_match import match
@@ -436,3 +437,34 @@ def test_type_check_when_redefine_defaults_initing_new_object_not_failed():
 
     assert instance.field == -100
     assert type(instance.field) is int
+
+
+def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed():
+    class SomeClass(Storage):
+        field: Optional[int] = Field(15)
+
+    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type Optional.')):
+        SomeClass(field='kek')
+
+    instance = SomeClass(field=None)
+
+    assert instance.field is None
+
+    instance = SomeClass(field=1000)
+
+    assert instance.field == 1000
+
+    class SecondClass(Storage):
+        field: Any = Field(15)
+
+    instance = SecondClass(field='kek')
+
+    assert instance.field == 'kek'
+
+    instance = SecondClass(field=None)
+
+    assert instance.field is None
+
+    instance = SecondClass(field=1000)
+
+    assert instance.field == 1000
