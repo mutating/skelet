@@ -730,3 +730,18 @@ def test_validation_function_not_failed_when_default_because_no_check_first_time
         field: int = Field(-15, validation=lambda value: value > 0, validate_default=False, **addictional_parameters)
 
     assert SomeClass().field == -15
+
+
+def test_validation_when_set_is_not_under_lock():
+    class SomeClass(Storage):
+        field: int = Field(10, validation=lambda value: value > 0)
+
+    instance = SomeClass()
+
+    instance.__locks__['field'] = LockTraceWrapper(instance.__locks__['field'])
+    SomeClass.field.validation = lambda x: instance.__locks__['field'].notify('kek') is None
+    instance.field = 5
+
+    assert instance.field == 5
+
+    assert not instance.__locks__['field'].was_event_locked('kek')
