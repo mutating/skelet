@@ -13,10 +13,10 @@ It's ready now::
 - [x] Checking field names (prohibit underscores at the beginning)
 - [x] Documenting fields
 - [x] The ability to validate any fields
+- [x] A separate mutex for each field
 
 To do:
 
-- [ ] A separate mutex for each field
 - [ ] The ability to set a callback to change any of the fields + a mutex to a mutable field to ensure thread safety)
 - [ ] Checking fields for conflicts
 - [ ] Secret fields
