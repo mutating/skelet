@@ -702,6 +702,6 @@ def test_validation_function_failed_when_default():
             class SomeClass(Storage):
                 field: int = Field(-15, validation=lambda value: value > 0)
     else:
-        with pytest.raises(ValueError, match=match('The value "15" (int) of the "field" field does not match the validation.')):
+        with pytest.raises(ValueError, match=match('The value "-15" (int) of the "field" field does not match the validation.')):
             class SomeClass(Storage):
                 field: int = Field(-15, validation=lambda value: value > 0)
