@@ -10,7 +10,7 @@ class Storage:
 
     def __init__(self, **kwargs: Any) -> None:
         self.__fields__: Dict[str, Any] = {}
-        self._lock = Lock()
+        self.__locks__ = {field_name: Lock() for field_name in self.__field_names__}
 
         deduplicated_fields = set(self.__field_names__)
         for key, value in kwargs.items():

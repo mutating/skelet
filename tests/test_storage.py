@@ -321,7 +321,7 @@ def test_try_to_set_not_defined_field_in_init():
         StorageChild(field_3=44)
 
 
-def test_get_from_inner_dict_is_thread_safe_and_use_per_instance_locks():
+def test_get_from_inner_dict_is_thread_safe_and_use_per_fields_locks():
     class SomeClass(Storage):
         field = Field(42)
 
@@ -329,21 +329,21 @@ def test_get_from_inner_dict_is_thread_safe_and_use_per_instance_locks():
     field = SomeClass.field
 
     field.lock = LockTraceWrapper(field.lock)
-    storage._lock = LockTraceWrapper(storage._lock)
+    storage.__locks__['field'] = LockTraceWrapper(storage.__locks__['field'])
     class PseudoDict:
         def get(self, key, default):
-            storage._lock.notify('get')
+            storage.__locks__['field']
             field.lock.notify('get')
             return 43
     storage.__fields__ = PseudoDict()
 
     assert storage.field == 43
-    assert storage._lock.was_event_locked('get')
+    assert storage.__locks__['field'].was_event_locked('get')
 
     assert not field.lock.was_event_locked('get') and field.lock.trace
 
 
-def test_that_set_is_thread_safe_and_use_per_instance_locks():
+def test_that_set_is_thread_safe_and_use_per_field_locks():
     class SomeClass(Storage):
         field = Field(42)
 
@@ -351,21 +351,21 @@ def test_that_set_is_thread_safe_and_use_per_instance_locks():
     field = SomeClass.field
 
     field.lock = LockTraceWrapper(field.lock)
-    storage._lock = LockTraceWrapper(storage._lock)
+    storage.__locks__['field'] = LockTraceWrapper(storage.__locks__['field'])
     class PseudoDict:
         def __setitem__(self, key, default):
-            storage._lock.notify('get')
+            storage.__locks__['field'].notify('get')
             field.lock.notify('get')
     storage.__fields__ = PseudoDict()
 
     storage.field = 44
 
-    assert storage._lock.was_event_locked('get')
+    assert storage.__locks__['field'].was_event_locked('get')
 
     assert not field.lock.was_event_locked('get') and field.lock.trace
 
 
-def test_set_name_uses_per_field_lock():
+def test_set_name_uses_per_field_object_lock():
     class SomeClass(Storage):
         ...
 

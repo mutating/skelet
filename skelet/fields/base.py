@@ -45,7 +45,7 @@ class Field(Generic[ValueType]):
         if instance is None:
             return self
 
-        with instance._lock:
+        with self.get_field_lock(instance):
             return instance.__fields__.get(cast(str, self.name), self.default)
 
     def __set__(self, instance: Storage, value: ValueType) -> None:
@@ -55,7 +55,7 @@ class Field(Generic[ValueType]):
         self.check_type_hints(cast(Type[Storage], self.base_class), cast(str, self.name), value)
         self.check_value(value)
 
-        with instance._lock:
+        with self.get_field_lock(instance):
             instance.__fields__[cast(str, self.name)] = value
 
     def __delete__(self, instance: Any) -> None:
@@ -107,3 +107,6 @@ class Field(Generic[ValueType]):
             else:
                 if not self.validation(value):
                     raise ValueError(f'The value "{value}" ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the validation.')
+
+    def get_field_lock(self, instance: Storage) -> ContextLockProtocol:
+        return instance.__locks__[self.name]
