@@ -772,19 +772,21 @@ def test_type_check_when_set_is_before_validation():
             print(value)
             flags.append('validation')
 
-        return value > 0
+        return isinstance(value, int)
 
     class SomeClass(Storage):
         field: int = Field(10, validation=validation)
 
     instance = SomeClass()
 
-    SomeClass.field.check_type_hints = lambda x, y, z: flags.append('type_check')
+    old_check_type_hints = SomeClass.field.check_type_hints
+    SomeClass.field.check_type_hints = lambda x, y, z: flags.append('type_check') is old_check_type_hints(x, y, z)
     start_check = True
 
-   # with pytest.raises(TypeError):
-   #     instance.field = 'kek'
-    instance.field = 'kek'
+    with pytest.raises(TypeError):
+        instance.field = 'kek'
 
     assert instance.field == 10
     assert flags == ['type_check']
+
+    SomeClass.field.check_type_hints = old_check_type_hints
