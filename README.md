@@ -14,12 +14,12 @@ It's ready now:
 - [x] Documenting fields
 - [x] The ability to validate any fields
 - [x] A separate mutex for each field
+- [x] Secret fields
 
 To do:
 
 - [ ] The ability to set a callback to change any of the fields
 - [ ] Checking fields for conflicts
-- [ ] Secret fields
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] The specified sections in the `pyproject.toml` file
 - [ ] One or more separate `toml` files
