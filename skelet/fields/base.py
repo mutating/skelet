@@ -9,7 +9,6 @@ from skelet.storage import Storage
 
 ValueType = TypeVar('ValueType')
 
-# TODO: use per-field locks to improve thread safety
 class Field(Generic[ValueType]):
     def __init__(self, default: ValueType, read_only: bool = False, doc: Optional[str] = None, validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None, validate_default: bool = True) -> None:
         self.default = default
