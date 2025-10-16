@@ -27,4 +27,4 @@ class Storage:
             if getattr(type(self), field_name).secret:
                 secrets[field_name] = '***'
 
-        return descript_data_object(type(self).__name__, (), fields_content, placeholders=secrets)
+        return descript_data_object(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
