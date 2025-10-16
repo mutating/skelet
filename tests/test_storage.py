@@ -790,3 +790,40 @@ def test_type_check_when_set_is_before_validation():
     assert flags == ['type_check']
 
     SomeClass.field.check_type_hints = old_check_type_hints
+
+
+def test_repr_for_secret_fields():
+    class SomeClass(Storage):
+        field: int = Field(10, secret=True)
+        second_field: int = Field(100)
+
+    instance = SomeClass()
+
+    assert repr(instance) == 'SomeClass(field=***, second_field=100)'
+
+    instance.field = instance.field * 2
+    instance.second_field = instance.second_field * 2
+
+    assert repr(instance) == 'SomeClass(field=***, second_field=200)'
+
+
+def test_change_value_of_secret_field():
+    class SomeClass(Storage):
+        field: int = Field(10, secret=True)
+
+    instance = SomeClass()
+
+    assert instance.field == 10
+
+    instance.field = 20
+
+    assert instance.field == 20
+
+
+def test_change_value_of_secret_field_in_init():
+    class SomeClass(Storage):
+        field: int = Field(10, secret=True)
+
+    instance = SomeClass(field=20)
+
+    assert instance.field == 20
