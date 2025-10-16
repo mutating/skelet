@@ -20,8 +20,11 @@ class Storage:
 
     def __repr__(self) -> str:
         fields_content = {}
+        secrets = {}
 
         for field_name in self.__field_names__:
             fields_content[field_name] = getattr(self, field_name)
+            if getattr(type(self), field_name).secret:
+                secrets[field_name] = '***'
 
-        return descript_data_object(type(self).__name__, (), fields_content)
+        return descript_data_object(type(self).__name__, (), fields_content, placeholders=secrets)

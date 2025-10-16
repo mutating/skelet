@@ -10,12 +10,13 @@ from skelet.storage import Storage
 ValueType = TypeVar('ValueType')
 
 class Field(Generic[ValueType]):
-    def __init__(self, default: ValueType, read_only: bool = False, doc: Optional[str] = None, validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None, validate_default: bool = True) -> None:
+    def __init__(self, default: ValueType, read_only: bool = False, doc: Optional[str] = None, validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None, validate_default: bool = True, secret: bool = False) -> None:
         self.default = default
         self.read_only = read_only
         self.doc = doc
         self.validation = validation
         self.validate_default = validate_default
+        self.secret = secret
 
         self.name: Optional[str] = None
         self.base_class: Optional[Type[Storage]] = None
