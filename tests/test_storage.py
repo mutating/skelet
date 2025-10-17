@@ -933,3 +933,38 @@ def test_change_value_of_secret_field_in_init():
     instance = SomeClass(field=20)
 
     assert instance.field == 20
+
+
+def test_set_action_for_set():
+    flags = []
+
+    class SomeClass(Storage):
+        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))
+
+    instance = SomeClass()
+
+    assert not flags
+
+    instance.field = 13
+
+    assert flags == [True]
+
+    instance.field = 14
+
+    assert flags == [True, True]
+
+
+def test_action_doesnt_work_when_new_value_is_same():
+    flags = []
+
+    class SomeClass(Storage):
+        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))
+
+    instance = SomeClass()
+
+    assert not flags
+
+    instance.field = 10
+
+    assert not flags
+    assert instance.field == 10
