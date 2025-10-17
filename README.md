@@ -32,7 +32,7 @@ To do:
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
 - [ ] 'yaml' format support
 - [ ] 'json' format support
-- [ ] The ability to turn-off thread safety
+- [ ] The ability to turn-off thread safety for reads
 - [ ] A set of standard validators for basic field types
 
 
