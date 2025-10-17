@@ -54,7 +54,7 @@ class Field(Generic[ValueType]):
         return self.real_get(instance, instance_class)
 
     def real_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
-        raise NotImplementedError('If you see this error, it means something is broken.')
+        raise NotImplementedError('If you see this error, it means something is broken.')  # pragma: no cover
 
     def locked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
         with self.get_field_lock(instance):
