@@ -19,7 +19,8 @@ It's ready now:
 
 To do:
 
-- [ ] The ability to set a callback to change any of the fields
+- [ ] The ability to set a callback to change any of the field
+- [ ] The ability to turn-off thread safety for reads
 - [ ] Checking fields for conflicts
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] The specified sections in the `pyproject.toml` file
@@ -32,7 +33,6 @@ To do:
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
 - [ ] 'yaml' format support
 - [ ] 'json' format support
-- [ ] The ability to turn-off thread safety for reads
 - [ ] A set of standard validators for basic field types
 
 
