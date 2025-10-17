@@ -1,5 +1,3 @@
-# skelet
-
 ![logo](https://raw.githubusercontent.com/pomponchik/skelet/develop/docs/assets/logo_6.svg)
 
 Collect all the settings in one place
