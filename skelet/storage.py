@@ -2,10 +2,12 @@ from typing import List, Dict, Any
 from threading import Lock
 
 from printo import descript_data_object
+from locklib import ContextLockProtocol
 
 
 class Storage:
     __fields__: Dict[str, Any]  # pragma: no cover
+    __locks__: Dict[str, ContextLockProtocol]
     __field_names__: List[str] = []  # pragma: no cover
 
     def __init__(self, **kwargs: Any) -> None:
