@@ -1,6 +1,6 @@
 # skelet
 
-![logo](https://raw.githubusercontent.com/pomponchik/skelet/develop/docs/assets/logo_4.svg)
+![logo](https://raw.githubusercontent.com/pomponchik/skelet/develop/docs/assets/logo_5.svg)
 
 Collect all the settings in one place
 
