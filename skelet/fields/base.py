@@ -25,9 +25,9 @@ class Field(Generic[ValueType]):
         self.lock: ContextLockProtocol = Lock()
 
         if read_lock:
-            self.real_get = self.locked_get
+            self.real_get = self.locked_get  # type: ignore[method-assign]
         else:
-            self.real_get = self.unlocked_get
+            self.real_get = self.unlocked_get  # type: ignore[method-assign]
 
     def __set_name__(self, owner: Type[Storage], name: str) -> None:
         if name.startswith('_'):
