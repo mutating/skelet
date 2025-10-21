@@ -33,7 +33,7 @@ To do:
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
 - [ ] 'yaml' format support
 - [ ] 'json' format support
-- [ ] A set of standard validators for basic field types
+- [ ] Special classes for checking through types for belonging to sets of positive or natural numbers
 
 
 Links to add here:
