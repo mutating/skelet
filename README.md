@@ -18,10 +18,10 @@ It's ready now:
 - [x] Secret fields
 - [x] The ability to set a callback to change any of the field
 - [x] The ability to turn-off thread safety for reads of certain field
+- [x] Checking fields for conflicts
 
 To do:
 
-- [ ] Checking fields for conflicts
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] The specified sections in the `pyproject.toml` file
 - [ ] One or more separate `toml` files
