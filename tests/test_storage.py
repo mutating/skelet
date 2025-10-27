@@ -1624,3 +1624,43 @@ def test_variables_order_when_conflicts_checking():
 
     assert len(breadcrumbs) == 5
     assert breadcrumbs[4] == (6, 6, 11, 11)
+
+
+def test_there_is_no_dunder_starting_fields_except_user_ones():
+    class EmptyClass(Storage):
+        ...
+
+    for field_name in dir(EmptyClass()):
+        assert field_name.startswith('_')
+
+    class NotEmptyClass(Storage):
+        field = Field(5)
+        other_field = Field(10)
+
+    for field_name in dir(NotEmptyClass()):
+        if field_name not in ('field', 'other_field'):
+            assert field_name.startswith('_')
+
+
+def test_reverse_fields_container_in_basic_case():
+    class SomeClass(Storage):
+        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
+        other_field: int = Field(10)
+
+    assert SomeClass.__reverse_conflicts__ == {'other_field': ['field']}
+    assert SomeClass.__field_names__ == ['field', 'other_field']
+
+
+def test_reverse_fields_container_in_case_of_inheritance():
+    class SomeClass(Storage):
+        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
+        other_field: int = Field(10)
+
+    class SomeOtherClass(SomeClass):
+        third_field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > 1000})
+
+    assert SomeClass.__reverse_conflicts__ == {'other_field': ['field']}
+    assert SomeOtherClass.__reverse_conflicts__ == {'other_field': ['field', 'third_field']}
+
+    assert SomeClass.__field_names__ == ['field', 'other_field']
+    assert SomeOtherClass.__field_names__ == ['field', 'other_field', 'third_field']
