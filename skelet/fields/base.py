@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, List, Dict, get_type_hints, cast
+from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, get_type_hints, cast
 from threading import Lock
 
 from locklib import ContextLockProtocol
