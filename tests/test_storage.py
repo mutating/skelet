@@ -1651,7 +1651,7 @@ def test_reverse_fields_container_in_basic_case():
     assert SomeClass.__field_names__ == ['field', 'other_field']
 
 
-def test_reverse_fields_container_in_case_of_inheritance():
+def test_reverse_fields_container_in_case_of_inheritance_with_new_field():
     class SomeClass(Storage):
         field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
         other_field: int = Field(10)
@@ -1664,3 +1664,18 @@ def test_reverse_fields_container_in_case_of_inheritance():
 
     assert SomeClass.__field_names__ == ['field', 'other_field']
     assert SomeOtherClass.__field_names__ == ['field', 'other_field', 'third_field']
+
+
+def test_reverse_fields_container_in_case_of_inheritance_with_same_field():
+    class SomeClass(Storage):
+        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
+        other_field: int = Field(10)
+
+    class SomeOtherClass(SomeClass):
+        other_field: int = Field(10, conflicts={'field': lambda old, new, other_old, other_new: old > 1000})
+
+    assert SomeClass.__reverse_conflicts__ == {'other_field': ['field']}
+    assert SomeOtherClass.__reverse_conflicts__ == {'other_field': ['field'], 'field': ['other_field']}
+
+    assert SomeClass.__field_names__ == ['field', 'other_field']
+    assert SomeOtherClass.__field_names__ == ['field', 'other_field']
