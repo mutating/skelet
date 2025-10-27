@@ -3,7 +3,7 @@ from pathlib import Path
 from functools import cached_property
 
 try:
-    from tomllib import load
+    from tomllib import load  # type: ignore[import-not-found]
 except ImportError:  # pragma: no cover
     from tomli import load
 
