@@ -41,8 +41,7 @@ class Storage:
                 if field.conflicts is not None:
                     for other_field_name in field.conflicts:
                         if field.reverse_conflicts_on and reverse_conflicts:
-                            if field_name not in cls.__reverse_conflicts__[other_field_name]:
-                                cls.__reverse_conflicts__[other_field_name].append(field_name)
+                            cls.__reverse_conflicts__[other_field_name].append(field_name)
 
             for field_name in cls.__field_names__:
                 field = getattr(cls, field_name)
