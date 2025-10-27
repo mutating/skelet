@@ -459,7 +459,7 @@ def test_simple_type_check_not_failed_when_set():
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('15', False),
+        ('"15"', False),
     ],
 )
 def test_type_check_when_define_default_failed(wrong_value, secret):
@@ -468,7 +468,7 @@ def test_type_check_when_define_default_failed(wrong_value, secret):
             class SomeClass(Storage):
                 field: int = Field('15', secret=secret)
     else:
-        with pytest.raises(TypeError, match=match(f'The value "{wrong_value}" (str) of the "field" field does not match the type int.\nError calling __set_name__ on \'Field\' instance \'field\' in \'SomeClass\'')):
+        with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field does not match the type int.\nError calling __set_name__ on \'Field\' instance \'field\' in \'SomeClass\'')):
             class SomeClass(Storage):
                 field: int = Field('15', secret=secret)
 
