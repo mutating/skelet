@@ -1102,6 +1102,32 @@ def test_conflicts_check_is_under_field_lock():
     assert lock.was_event_locked('check')
 
 
+def test_reverse_conflicts_check_is_under_field_lock():
+    locks: List[LockTraceWrapper] = []
+
+    def check_function(old, new, other_old, other_new):
+        for lock in locks:
+            lock.notify('check')
+        return False
+
+    class SomeClass(Storage):
+        field: int = Field(10, conflicts={'other_field': check_function})
+        other_field: int = Field(20)
+
+    instance = SomeClass()
+
+    assert instance.__locks__['field'] is instance.__locks__['other_field']
+
+    lock = LockTraceWrapper(instance.__locks__['other_field'])
+    locks.append(lock)
+    instance.__locks__['other_field'] = lock
+
+    instance.other_field = 25
+
+    assert lock.trace
+    assert lock.was_event_locked('check')
+
+
 @pytest.mark.parametrize(
     ['addictional_arguments'],
     [
