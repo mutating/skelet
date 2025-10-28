@@ -10,9 +10,9 @@ from skelet.sources.abstract import AbstractSource
 
 
 class Storage:
-    __fields__: Dict[str, Any]  # pragma: no cover
+    __fields__: Dict[str, Any]
     __locks__: Dict[str, ContextLockProtocol]
-    __field_names__: List[str] = []  # pragma: no cover
+    __field_names__: List[str] = []
     __reverse_conflicts__: Dict[str, List[str]]
     __sources__: SourcesCollection
 
