@@ -5,7 +5,7 @@ import pytest
 from full_match import match
 from locklib import LockTraceWrapper
 
-from skelet import Storage, Field, TOMLSource
+from skelet import Storage, Field, TOMLSource, NaturalNumber, NonNegativeInt
 
 
 def test_try_to_get_descriptor_object_from_class_inherited_from_storage():
@@ -1793,3 +1793,40 @@ def test_read_bad_typed_value_from_toml_source(config_path):
 
     with pytest.raises(TypeError, match=match('The value "[14]" (list) of the "other_field" field does not match the type list.')):
         instance.other_field
+
+
+def test_type_check_with_supertypes():
+    class SomeClass(Storage):
+        field: NaturalNumber = Field(5)
+        other_field: NonNegativeInt = Field(11)
+
+    instance = SomeClass()
+
+    instance.field = 1
+    assert instance.field == 1
+
+    instance.field = 1000
+    assert instance.field == 1000
+
+    with pytest.raises(TypeError, match=match('The value "0" (int) of the "field" field does not match the type NaturalNumber.')):
+        instance.field = 0
+
+    with pytest.raises(TypeError, match=match('The value "-1" (int) of the "field" field does not match the type NaturalNumber.')):
+        instance.field = -1
+
+    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type NaturalNumber.')):
+        instance.field = 'kek'
+
+    assert instance.field == 1000
+
+    instance.other_field = 1000
+    assert instance.other_field == 1000
+
+    instance.other_field = 0
+    assert instance.other_field == 0
+
+    with pytest.raises(TypeError, match=match('The value "-1" (int) of the "other_field" field does not match the type NonNegativeInt.')):
+        instance.other_field = -1
+
+    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "other_field" field does not match the type NonNegativeInt.')):
+        instance.other_field = 'kek'
