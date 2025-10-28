@@ -19,12 +19,12 @@ It's ready now:
 - [x] The ability to set a callback to change any of the field
 - [x] The ability to turn-off thread safety for reads of certain field
 - [x] Checking fields for conflicts
+- [ ] The specified sections in the `pyproject.toml` file
+- [ ] One or more separate `toml` files
 
 To do:
 
 - [ ] The ability to disable type checking for a class through class arguments
-- [ ] The specified sections in the `pyproject.toml` file
-- [ ] One or more separate `toml` files
 - [ ] The ability to share a single mutex into several fields
 - [ ] Converting types from one to another
 - [ ] Subtraction of environment variables
