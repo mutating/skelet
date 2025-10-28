@@ -558,9 +558,6 @@ def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_f
     if sys.version_info < (3, 10):
         with pytest.raises(AttributeError):
             SomeClass(field='kek')
-    elif sys.version_info < (3, 14):
-        with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field does not match the type Optional.')):
-            SomeClass(field='kek')
     else:
         with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field does not match the type Union.')):
             SomeClass(field='kek')
