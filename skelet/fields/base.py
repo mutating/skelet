@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, get_type_hints, cast
+from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, get_type_hints, get_origin, cast
 from threading import Lock
 
 from locklib import ContextLockProtocol
@@ -6,6 +6,9 @@ from simtypes import check
 
 from skelet.storage import Storage
 
+
+class SecondNone:
+    pass
 
 ValueType = TypeVar('ValueType')
 
@@ -75,7 +78,20 @@ class Field(Generic[ValueType]):
             return self.unlocked_get(instance, instance_class)
 
     def unlocked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
-        return instance.__fields__.get(cast(str, self.name), instance.__sources__.get(cast(str, self.name), self.default))
+        second_none = SecondNone()
+
+        saved_value = instance.__fields__.get(cast(str, self.name), second_none)
+
+        if not isinstance(saved_value, SecondNone):
+            return saved_value
+
+        default_from_sources = instance.__sources__.get(cast(str, self.name), second_none)
+
+        if not isinstance(default_from_sources, SecondNone):
+            self.check_type_hints(instance_class, cast(str, self.name), default_from_sources, strict=True)
+            return default_from_sources
+
+        return self.default
 
     def __set__(self, instance: Storage, value: ValueType) -> None:
         if self.read_only:
@@ -128,17 +144,15 @@ class Field(Generic[ValueType]):
         if name not in known_names:  # pragma: no branch
             owner.__field_names__.append(name)
 
-    def check_type_hints(self, owner: Type[Storage], name: str, value: ValueType) -> None:
-        class SecondNone:
-            pass
-
+    def check_type_hints(self, owner: Type[Storage], name: str, value: ValueType, strict: bool = False) -> None:
         type_hint = get_type_hints(owner).get(name, SecondNone())
 
         if isinstance(type_hint, SecondNone):
             return
 
-        if not check(value, type_hint):
-            raise TypeError(f'The value {self.get_value_representation(value)} ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the type {type_hint.__name__}.')
+        if not check(value, type_hint, strict=strict):
+            type_hint_name = type_hint.__name__ if get_origin(type_hint) is None else get_origin(type_hint).__name__
+            raise TypeError(f'The value {self.get_value_representation(value)} ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the type {type_hint_name}.')
 
     def get_field_name_representation(self) -> str:
         if self.doc is None:
