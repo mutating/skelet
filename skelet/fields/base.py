@@ -137,7 +137,7 @@ class Field(Generic[ValueType]):
         if isinstance(type_hint, SecondNone):
             return
 
-        if not check(type_hint, value):
+        if not check(value, type_hint):
             raise TypeError(f'The value {self.get_value_representation(value)} ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the type {type_hint.__name__}.')
 
     def get_field_name_representation(self) -> str:
