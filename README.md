@@ -19,8 +19,8 @@ It's ready now:
 - [x] The ability to set a callback to change any of the field
 - [x] The ability to turn-off thread safety for reads of certain field
 - [x] Checking fields for conflicts
-- [ ] The specified sections in the `pyproject.toml` file
-- [ ] One or more separate `toml` files
+- [x] The specified sections in the `pyproject.toml` file
+- [x] One or more separate `toml` files
 
 To do:
 
