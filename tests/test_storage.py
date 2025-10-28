@@ -1777,3 +1777,26 @@ def test_source_checking_is_under_field_lock():
 
     assert lock.trace
     assert lock.was_event_locked('get')
+
+
+@pytest.mark.parametrize(
+    ['data'],
+    [
+        ({
+            'field': '1',
+            'other_field': [14],
+        },),
+    ],
+)
+def test_read_bad_typed_value_from_toml_source(config_path):
+    class SomeClass(Storage, sources=[TOMLSource(config_path)]):
+        field: int = Field(5)
+        other_field: List[str] = Field([])
+
+    instance = SomeClass()
+
+    with pytest.raises(TypeError, match=match('The value "1" (str) of the "field" field does not match the type int.')):
+        instance.field
+
+    with pytest.raises(TypeError, match=match('The value "[14]" (list) of the "other_field" field does not match the type list.')):
+        instance.other_field
