@@ -26,9 +26,9 @@ It's ready now:
 
 To do:
 
+- [ ] Converting types from one to another
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] The ability to share a single mutex into several fields
-- [ ] Converting types from one to another
 - [ ] Subtraction of environment variables
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
