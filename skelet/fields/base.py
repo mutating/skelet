@@ -33,7 +33,7 @@ class Field(Generic[ValueType]):
             raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
 
         if conversion is not None and default is not MISSING:
-            self._default_before_conversion = default
+            self._default_before_conversion: Union[ValueType, _MISSING_TYPE] = default
             self._default = conversion(default)
         else:
             self._default_before_conversion = MISSING
