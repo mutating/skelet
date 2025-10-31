@@ -30,15 +30,10 @@ def test_try_to_use_one_field_in_two_storage_classes():
     class FirstClass(Storage):
         field = Field(42)
 
-    if sys.version_info < (3, 12):
-        with pytest.raises(RuntimeError):
-            class SecondClass(Storage):
-                field = FirstClass.__dict__['field']
+    with pytest.raises(TypeError):
+        class SecondClass(Storage):
+            field = FirstClass.__dict__['field']
 
-    else:
-        with pytest.raises(TypeError):
-            class SecondClass(Storage):
-                field = FirstClass.__dict__['field']
 
 def test_set_default_value_and_read_it():
     class SomeClass(Storage):
