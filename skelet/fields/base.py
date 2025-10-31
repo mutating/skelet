@@ -12,7 +12,7 @@ from skelet.storage import Storage
 
 ValueType = TypeVar('ValueType')
 
-if version_info < (3, 9):
+if version_info < (3, 9):  # pragma: no cover
     SequenceWithStrings = Sequence
 else:
     SequenceWithStrings = Sequence[str]
