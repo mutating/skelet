@@ -192,5 +192,4 @@ class Field(Generic[ValueType]):
     def raise_exception_in_storage(self, exception: BaseException, raising_on: bool) -> None:
         if raising_on:
             raise exception
-        if self.exception is None:
-            self.exception = exception
+        self.exception = exception
