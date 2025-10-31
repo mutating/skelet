@@ -1,6 +1,6 @@
 from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, get_type_hints, get_origin, cast
 from threading import Lock
-from dataclasses import MISSING
+from dataclasses import MISSING, _MISSING_TYPE
 
 from locklib import ContextLockProtocol
 from simtypes import check
@@ -13,7 +13,7 @@ ValueType = TypeVar('ValueType')
 class Field(Generic[ValueType]):
     def __init__(
         self,
-        default: ValueType = MISSING,
+        default: Union[ValueType, _MISSING_TYPE] = MISSING,
         /,
         read_only: bool = False,
         doc: Optional[str] = None,
@@ -85,7 +85,7 @@ class Field(Generic[ValueType]):
             return self.unlocked_get(instance, instance_class)
 
     def unlocked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
-        return instance.__values__.get(cast(str, self.name))
+        return cast(ValueType, instance.__values__.get(cast(str, self.name)))
 
     def __set__(self, instance: Storage, value: ValueType) -> None:
         if self.read_only:
