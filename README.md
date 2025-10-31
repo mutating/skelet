@@ -21,6 +21,7 @@ It's ready now:
 - [x] Checking fields for conflicts
 - [x] The specified sections in the `pyproject.toml` file
 - [x] One or more separate `toml` files
+- [x] 'json' format support
 - [x] Special classes for checking through types for belonging to sets of positive or natural numbers
 - [x] Default factories
 - [x] Converting values from one to another
@@ -34,8 +35,6 @@ To do:
 - [ ] Reading parameters from the CLI
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
 - [ ] 'yaml' format support
-- [ ] 'json' format support
-
 
 Links to add here:
 
