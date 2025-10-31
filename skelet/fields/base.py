@@ -34,7 +34,7 @@ class Field(Generic[ValueType]):
 
         if conversion is not None and default is not MISSING:
             self._default_before_conversion: Union[ValueType, _MISSING_TYPE] = default
-            self._default = conversion(default)
+            self._default: Union[ValueType, _MISSING_TYPE] = conversion(default)
         else:
             self._default_before_conversion = MISSING
             self._default = default
