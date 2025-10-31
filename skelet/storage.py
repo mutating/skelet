@@ -61,7 +61,7 @@ class Storage:
                     for conflicting_field_name, checker in field.conflicts.items():
                         if checker(self.__values__[field_name], self.__values__[field_name], self.__values__[conflicting_field_name], self.__values__[conflicting_field_name]):
                             conflicting_field = getattr(type(self), conflicting_field_name)
-                            raise ValueError(f'The {field.get_value_representation(self.__values__[field_name])} ({type(self.__values__[field_name]).__name__}) deferred default value of the {field.get_field_name_representation()} conflicts with the {conflicting_field.get_value_representation(self.__values__[conflicting_field_name])} ({type(self.__values__[conflicting_field_name]).__name__}) value of the {conflicting_field.get_field_name_representation()}.')
+                            raise ValueError(f'The {field.get_value_representation(self.__values__[field_name])} deferred default value of the {field.get_field_name_representation()} conflicts with the {conflicting_field.get_value_representation(self.__values__[conflicting_field_name])} value of the {conflicting_field.get_field_name_representation()}.')
 
                 if field_name in self.__reverse_conflicts__:
                     conflicting_field_names = self.__reverse_conflicts__[field_name]
@@ -69,7 +69,7 @@ class Storage:
                         conflicting_field = getattr(type(self), conflicting_field_name)
                         checker = conflicting_field.conflicts[field_name]
                         if checker(self.__values__[conflicting_field_name], self.__values__[conflicting_field_name], self.__values__[field_name], self.__values__[field_name]):
-                            raise ValueError(f'The {conflicting_field.get_value_representation(self.__values__[conflicting_field_name])} ({type(self.__values__[conflicting_field_name]).__name__}) deferred default value of the {conflicting_field.get_field_name_representation()} conflicts with the {field.get_value_representation(self.__values__[field_name])} ({type(self.__values__[field_name]).__name__}) value of the {field.get_field_name_representation()}.')
+                            raise ValueError(f'The {conflicting_field.get_value_representation(self.__values__[conflicting_field_name])} deferred default value of the {conflicting_field.get_field_name_representation()} conflicts with the {field.get_value_representation(self.__values__[field_name])} value of the {field.get_field_name_representation()}.')
 
         deduplicated_fields = set(self.__field_names__)
         for key, value in kwargs.items():
@@ -108,7 +108,7 @@ class Storage:
                             raise NameError(f'You have set a conflict condition for {field.get_field_name_representation()} with field "{conficting_field_name}", but the field "{conficting_field_name}" does not exist in the class {cls.__name__}.')
                         elif field._default is not MISSING and getattr(cls, conficting_field_name)._default is not MISSING and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
                             other_field = getattr(cls, conficting_field_name)
-                            raise ValueError(f'The {field.get_value_representation(field._default)} ({type(field._default).__name__}) default value of the {field.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field._default)} ({type(other_field._default).__name__}) value of the {other_field.get_field_name_representation()}.')
+                            raise ValueError(f'The {field.get_value_representation(field._default)} default value of the {field.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field._default)} value of the {other_field.get_field_name_representation()}.')
 
     def __repr__(self) -> str:
         fields_content = {}

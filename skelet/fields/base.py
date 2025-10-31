@@ -127,7 +127,7 @@ class Field(Generic[ValueType]):
                     other_field = getattr(type(instance), other_field_name)
                     other_field_value = other_field.unlocked_get(instance, type(instance))
                     if checker(old_value, value, other_field_value, other_field_value):
-                        raise ValueError(f'The new {self.get_value_representation(value)} ({type(value).__name__}) value of the {self.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field_value)} ({type(other_field_value).__name__}) value of the {other_field.get_field_name_representation()}.')
+                        raise ValueError(f'The new {self.get_value_representation(value)} value of the {self.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field_value)} value of the {other_field.get_field_name_representation()}.')
 
             if self.name in instance.__reverse_conflicts__:
                 for other_field_name in instance.__reverse_conflicts__[self.name]:
@@ -135,7 +135,7 @@ class Field(Generic[ValueType]):
                     other_field_value = other_field.unlocked_get(instance, type(instance))
                     other_field_checker = other_field.conflicts[self.name]
                     if other_field_checker(other_field_value, other_field_value, old_value, value):
-                        raise ValueError(f'The new {self.get_value_representation(value)} ({type(value).__name__}) value of the {self.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field_value)} ({type(other_field_value).__name__}) value of the {other_field.get_field_name_representation()}.')
+                        raise ValueError(f'The new {self.get_value_representation(value)} value of the {self.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field_value)} value of the {other_field.get_field_name_representation()}.')
 
             instance.__values__[cast(str, self.name)] = value
             if self.change_action is not None and value != old_value:
@@ -173,7 +173,7 @@ class Field(Generic[ValueType]):
         if not check(value, type_hint, strict=strict):
             origin = get_origin(type_hint)
             type_hint_name = type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[union-attr]
-            self.raise_exception_in_storage(TypeError(f'The value {self.get_value_representation(value)} ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the type {type_hint_name}.'), raise_all)
+            self.raise_exception_in_storage(TypeError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the type {type_hint_name}.'), raise_all)
 
     def get_field_name_representation(self) -> str:
         if self.doc is None:
@@ -188,15 +188,14 @@ class Field(Generic[ValueType]):
                         self.raise_exception_in_storage(ValueError(message), raise_all)
             else:
                 if not self.validation(value):
-                    self.raise_exception_in_storage(ValueError(f'The value {self.get_value_representation(value)} ({type(value).__name__}) of the {self.get_field_name_representation()} does not match the validation.'), raise_all)
+                    self.raise_exception_in_storage(ValueError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the validation.'), raise_all)
 
     def get_field_lock(self, instance: Storage) -> ContextLockProtocol:
         return instance.__locks__[cast(str, self.name)]
 
     def get_value_representation(self, value: ValueType) -> str:
-        if self.secret:
-            return '***'
-        return f'"{value}"'
+        base = '***' if self.secret else f'"{value}"'
+        return f'{base} ({type(value).__name__})'
 
     def raise_exception_in_storage(self, exception: BaseException, raising_on: bool) -> None:
         if raising_on:
