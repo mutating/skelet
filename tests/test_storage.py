@@ -5,7 +5,7 @@ import pytest
 from full_match import match
 from locklib import LockTraceWrapper
 
-from skelet import Storage, Field, TOMLSource, JSONSource, NaturalNumber, NonNegativeInt
+from skelet import Storage, Field, TOMLSource, JSONSource, YAMLSource, NaturalNumber, NonNegativeInt
 
 
 def test_try_to_get_descriptor_object_from_class_inherited_from_storage():
@@ -1721,6 +1721,31 @@ def test_load_from_toml(toml_config_path):
         },),
     ],
 )
+def test_load_from_yaml(yaml_config_path):
+    class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
+        field: int = Field(5)
+        other_field: int = Field(10)
+
+    instance = SomeClass()
+
+    assert instance.field == 1
+    assert instance.other_field == 14
+
+    instance.field = 7
+
+    assert instance.field == 7
+    assert instance.other_field == 14
+
+
+@pytest.mark.parametrize(
+    ['data'],
+    [
+        ({
+            'field': 1,
+            'other_field': 14,
+        },),
+    ],
+)
 def test_load_from_json(json_config_path):
     class SomeClass(Storage, sources=[JSONSource(json_config_path)]):
         field: int = Field(5)
@@ -1786,6 +1811,22 @@ def test_read_bad_typed_value_from_toml_source_for_not_deferred_value(toml_confi
         },),
     ],
 )
+def test_read_bad_typed_value_from_yaml_source_for_not_deferred_value(yaml_config_path):
+    class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
+        field: int = Field(5)
+
+    with pytest.raises(TypeError, match=match('The value "1" (str) of the "field" field does not match the type int.')):
+        SomeClass()
+
+
+@pytest.mark.parametrize(
+    ['data'],
+    [
+        ({
+            'field': '1',
+        },),
+    ],
+)
 def test_read_bad_typed_value_from_json_source_for_not_deferred_value(json_config_path):
     class SomeClass(Storage, sources=[JSONSource(json_config_path)]):
         field: int = Field(5)
@@ -1804,6 +1845,22 @@ def test_read_bad_typed_value_from_json_source_for_not_deferred_value(json_confi
 )
 def test_read_bad_typed_value_from_toml_source_for_deferred_value(toml_config_path):
     class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
+        field: List[str] = Field(default_factory=list)
+
+    with pytest.raises(TypeError, match=match('The value "[14]" (list) of the "field" field does not match the type list.')):
+        SomeClass()
+
+
+@pytest.mark.parametrize(
+    ['data'],
+    [
+        ({
+            'field': [14],
+        },),
+    ],
+)
+def test_read_bad_typed_value_from_yaml_source_for_deferred_value(yaml_config_path):
+    class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
         field: List[str] = Field(default_factory=list)
 
     with pytest.raises(TypeError, match=match('The value "[14]" (list) of the "field" field does not match the type list.')):
@@ -2201,13 +2258,18 @@ def test_basic_conversion_when_set_and_init_with_passed_type_check_for_new_and_o
         },),
     ],
 )
-def test_conversion_for_source(toml_config_path, json_config_path):
+def test_conversion_for_source(toml_config_path, json_config_path, yaml_config_path):
     class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
         field: int = Field(10, conversion=lambda x: x * 2)
 
     assert SomeClass().field == 30
 
     class SecondClass(Storage, sources=[JSONSource(json_config_path)]):
+        field: int = Field(10, conversion=lambda x: x * 2)
+
+    assert SecondClass().field == 30
+
+    class SecondClass(Storage, sources=[YAMLSource(yaml_config_path)]):
         field: int = Field(10, conversion=lambda x: x * 2)
 
     assert SecondClass().field == 30
@@ -2223,6 +2285,22 @@ def test_conversion_for_source(toml_config_path, json_config_path):
 )
 def test_type_check_before_conversion_for_toml_source(toml_config_path):
     class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
+        field: str = Field('kek', conversion=lambda x: str(x))
+
+    with pytest.raises(TypeError, match=match('The value "15" (int) of the "field" field does not match the type str.')):
+        SomeClass()
+
+
+@pytest.mark.parametrize(
+    ['data'],
+    [
+        ({
+            'field': 15,
+        },),
+    ],
+)
+def test_type_check_before_conversion_for_yaml_source(yaml_config_path):
+    class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
         field: str = Field('kek', conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value "15" (int) of the "field" field does not match the type str.')):
@@ -2253,13 +2331,17 @@ def test_type_check_before_conversion_for_json_source(json_config_path):
         },),
     ],
 )
-def test_type_check_after_conversion_for_source(toml_config_path, json_config_path):
+def test_type_check_after_conversion_for_source(toml_config_path, json_config_path, yaml_config_path):
     with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
             field: int = Field(10, conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[JSONSource(json_config_path)]):
+            field: int = Field(10, conversion=lambda x: str(x))
+
+    with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
+        class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
             field: int = Field(10, conversion=lambda x: str(x))
 
 
