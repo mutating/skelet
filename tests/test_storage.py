@@ -548,7 +548,6 @@ def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_f
     with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field does not match the type {type_representation}.')):
         SomeClass(field='kek')
 
-
     instance = SomeClass(field=None)
 
     assert instance.field is None
