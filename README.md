@@ -2,7 +2,6 @@
 
 Collect all the settings in one place
 
-
 One object with a configuration for your project.
 
 It's ready now:
