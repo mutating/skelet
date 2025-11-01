@@ -20,8 +20,8 @@ It's ready now:
 - [x] Checking fields for conflicts
 - [x] The specified sections in the `pyproject.toml` file
 - [x] One or more separate `toml` files
-- [x] 'json' format support
-- [x] 'yaml' format support
+- [x] `json` format support
+- [x] `yaml` format support
 - [x] Special classes for checking through types for belonging to sets of positive or natural numbers
 - [x] Default factories
 - [x] Converting values from one to another
