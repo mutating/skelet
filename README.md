@@ -34,6 +34,7 @@ To do:
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
+- [ ] Aliases support
 
 Links to add here:
 
