@@ -1,5 +1,7 @@
 from typing import List, Any
 
+from printo import descript_data_object
+
 from skelet.sources.abstract import AbstractSource
 
 
@@ -15,6 +17,9 @@ class SourcesCollection(AbstractSource):
                 pass
 
         raise KeyError(key)
+
+    def __repr__(self) -> str:
+        return descript_data_object(type(self).__name__, (self.sources,), {})
 
     def get(self, key: str, default: Any = None) -> Any:
         try:

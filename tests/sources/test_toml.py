@@ -208,3 +208,12 @@ def test_defaults_for_libraries():
 def test_defaults_for_not_allowed_library_name():
     with pytest.raises(ValueError, match=match('The library name can only be a valid Python identifier.')):
         TOMLSource.for_library(':library')
+
+
+def test_repr():
+    assert repr(TOMLSource('file.toml')) == "TOMLSource('file.toml')"
+    assert repr(TOMLSource('file.toml', allow_non_existent_files=False)) == "TOMLSource('file.toml', allow_non_existent_files=False)"
+    assert repr(TOMLSource('file.toml', allow_non_existent_files=True)) == "TOMLSource('file.toml')"
+    assert repr(TOMLSource('file.toml', table='lol.kek')) == "TOMLSource('file.toml', table=['lol', 'kek'])"
+    assert repr(TOMLSource('file.toml', table=['lol', 'kek'])) == "TOMLSource('file.toml', table=['lol', 'kek'])"
+    assert repr(TOMLSource('file.toml', table=['lol', 'kek'], allow_non_existent_files=False)) == "TOMLSource('file.toml', table=['lol', 'kek'], allow_non_existent_files=False)"

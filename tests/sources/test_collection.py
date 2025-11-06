@@ -1,6 +1,8 @@
 import pytest
 
+from skelet import TOMLSource, JSONSource
 from skelet.sources.collection import SourcesCollection
+
 
 
 def test_there_is_no_that_key():
@@ -46,3 +48,8 @@ def test_simple_proxy():
 
     with pytest.raises(KeyError):
         SourcesCollection([{'lol': 'kek'}])['kek']
+
+
+def test_repr():
+    assert repr(SourcesCollection([TOMLSource('kek.toml')])) == "SourcesCollection([TOMLSource('kek.toml')])"
+    assert repr(SourcesCollection([TOMLSource('kek.toml'), JSONSource('lol.json')])) == "SourcesCollection([TOMLSource('kek.toml'), JSONSource('lol.json')])"

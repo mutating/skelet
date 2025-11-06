@@ -77,3 +77,9 @@ def test_defaults_for_libraries():
 def test_defaults_for_not_allowed_library_name():
     with pytest.raises(ValueError, match=match('The library name can only be a valid Python identifier.')):
         YAMLSource.for_library(':library')
+
+
+def test_repr():
+    assert repr(YAMLSource('file.yaml')) == "YAMLSource('file.yaml')"
+    assert repr(YAMLSource('file.yaml', allow_non_existent_files=False)) == "YAMLSource('file.yaml', allow_non_existent_files=False)"
+    assert repr(YAMLSource('file.yaml', allow_non_existent_files=True)) == "YAMLSource('file.yaml')"

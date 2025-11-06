@@ -7,6 +7,8 @@ try:
 except ImportError:  # pragma: no cover
     from tomli import load  # type: ignore[assignment, import-not-found, no-redef]
 
+from printo import descript_data_object
+
 from skelet.sources.abstract import AbstractSource
 
 
@@ -28,6 +30,12 @@ class TOMLSource(AbstractSource):
             if not subtable.isidentifier():
                 raise ValueError(f'You can only use a subset of all valid TOML format identifiers that can be used as a Python identifier. You used "{subtable}".')
 
+    def __getitem__(self, key: str) -> Any:
+        return self.data[key]
+
+    def __repr__(self) -> str:
+        return descript_data_object(type(self).__name__, (self.path,), {'table': self.table, 'allow_non_existent_files': self.allow_non_existent_files}, filters={'allow_non_existent_files': lambda x: x != True, 'table': lambda x: bool(x)})
+
     @cached_property
     def data(self):
         try:
@@ -47,9 +55,6 @@ class TOMLSource(AbstractSource):
 
         except KeyError:
             return {}
-
-    def __getitem__(self, key: str) -> Any:
-        return self.data[key]
 
     @classmethod
     def for_library(cls, library_name: str) -> List['TOMLSource']:
