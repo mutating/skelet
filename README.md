@@ -30,8 +30,8 @@ It's ready now:
 
 To do:
 
-- [ ] Aliases support
 - [ ] Individual source lists for each field, with ellipsis support
+- [ ] Aliases support
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
