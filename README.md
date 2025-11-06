@@ -1,7 +1,7 @@
 ![logo](https://raw.githubusercontent.com/pomponchik/skelet/develop/docs/assets/logo_8.svg)
 
 <details>
-  <summary>◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ ◀︎ ▶︎ </summary>
+  <summary> 💀 ◀︎</summary>
 
 [![Downloads](https://static.pepy.tech/badge/skelet/month)](https://pepy.tech/project/skelet)
 [![Downloads](https://static.pepy.tech/badge/skelet)](https://pepy.tech/project/skelet)
