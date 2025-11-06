@@ -1,6 +1,6 @@
 ![logo](https://raw.githubusercontent.com/pomponchik/skelet/develop/docs/assets/logo_8.svg)
 
-<details>
+kek <details>
   <summary>ⓘ</summary>
 
 [![Downloads](https://static.pepy.tech/badge/skelet/month)](https://pepy.tech/project/skelet)
