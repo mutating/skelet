@@ -38,7 +38,7 @@ class EnvSource(AbstractSource):
         for key, value in os.environ.items():
             capitalized_key = key.upper()
             if capitalized_key in seen_keys:
-                if os.environ[key] != os.environ[seen_keys[capitalized_key]]:
+                if os.environ[key] != os.environ[seen_keys[capitalized_key]]:  # pragma: no cover
                     raise CaseError(f'There are 2 environment variables that are written the same way when capitalized: "{key}" and "{seen_keys[capitalized_key]}".')
             seen_keys[capitalized_key] = key
             result[capitalized_key] = value
