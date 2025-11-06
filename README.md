@@ -35,6 +35,7 @@ To do:
 - [ ] Reading parameters from the CLI
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
 - [ ] Aliases support
+- [ ] Individual source lists for each field, with ellipsis support
 
 Links to add here:
 
