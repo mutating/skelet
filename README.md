@@ -46,10 +46,10 @@ It's ready now:
 - [x] The ability to share a single mutex into several fields
 - [x] Subtraction of environment variables
 - [x] Aliases support
+- [x] Individual source lists for each field, with ellipsis support
 
 To do:
 
-- [ ] Individual source lists for each field, with ellipsis support
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
