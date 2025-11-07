@@ -163,6 +163,8 @@ secrets.who_killed_kennedy = 'russians'
 #> ValueError: The value *** (str) of the "who_killed_kennedy" field does not match the validation.
 ```
 
+In all other respects, "secret" fields behave the same as regular ones, you can read values and write new ones.
+
 
 
 
