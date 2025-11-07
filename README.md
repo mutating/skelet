@@ -110,6 +110,36 @@ formula = TheSecretFormula(the_secret_ingredient=13)
 #> TypeError: The value "13" (int) of the "the_secret_ingredient" field (frogs' paws or something else nasty) does not match the type str.
 ```
 
+## Default values
+
+You must specify a default value for each field. It will be used until you somehow redefine it, or if no other value is found in the data sources.
+
+There are 2 types of default values:
+
+- **Ordinary**.
+- **Lazy**, or delayed.
+
+You can already see examples of ordinary default values above. Here's another one:
+
+```python
+class UnremarkableSettingsStorage(Storage):
+    ordinary_field: str = Field('I am the ordinary default value!')
+
+print(UnremarkableSettingsStorage())
+#> UnremarkableSettingsStorage(ordinary_field='I am the ordinary default value!')
+```
+
+But you can also pass a function that returns the default value: it will be called every time a new object is created. This is called a lazy default value:
+
+```python
+class UnremarkableSettingsStorage(Storage):
+    ordinary_field: str = Field(default_factory=lambda: 'I am the lazy default value!')
+
+print(UnremarkableSettingsStorage())
+#> UnremarkableSettingsStorage(ordinary_field='I am the lazy default value!')
+```
+
+This option is preferable if you want to use a mutable object, such as a `list` or `dict`, as the default value.
 
 
 
