@@ -35,7 +35,7 @@ Promo ideas:
 - [**Type checking**](#type-checking)
 - [**Validation of values**](#validation-of-values)
 - [**Conflicts between fields**](#conflicts-between-fields)
-- [**Sources**](#sources)
+- [**Sources:**](#sources)
   - [**Environment variables**](#environment-variables)
   - [**TOML files and pyproject.toml**](#toml-files-and-pyproject-toml)
   - [**JSON files**](#json-files)
