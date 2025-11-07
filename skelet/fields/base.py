@@ -1,7 +1,7 @@
 from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, List, get_type_hints, get_origin, cast
 
 try:
-    from types import EllipsisType
+    from types import EllipsisType  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover
     EllipsisType = type(...)  # type: ignore[misc]
 
