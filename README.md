@@ -20,6 +20,11 @@
 
 Collect all the settings in one place
 
+Promo ideas:
+- Simple and elegant syntax
+- Thread safety and rudimentary transactionality
+- No metaclasses
+
 
 ## Table of contents
 
@@ -81,7 +86,3 @@ To do:
 Links to add here:
 
 - https://www.reddit.com/r/Python/comments/10zdidm/why_type_hinting_sucks/
-
-Promo ideas:
-- Simple and elegant syntax
-- No metaclasses
