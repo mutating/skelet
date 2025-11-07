@@ -139,9 +139,29 @@ print(UnremarkableSettingsStorage())
 #> UnremarkableSettingsStorage(ordinary_field='I am the lazy default value!')
 ```
 
-This option is preferable if you want to use a mutable object, such as a `list` or `dict`, as the default value.
+This option is preferable if you want to use a mutable object, such as a `list` or `dict`, as the default value. A new object will be created for this field every time a new storage object is created, so your data will not be "shuffled".
 
 
+## Secret fields
+
+Sometimes it is better not to see the contents of some fields to strangers. If such people can read, for example, the logs of your program, you may have problems. Secret fields have been invented for such cases:
+
+```python
+class TopStateSecrets(Storage):
+    who_killed_kennedy: str = Field('aliens', validation=lambda x: x != 'russians', secret=True)
+    red_buttons_password: str = Field('1234', secret=True)
+
+print(TopStateSecrets())
+#> TopStateSecret(who_killed_kennedy=***, red_buttons_password=***)
+```
+If you mark a field with the `secret` flag, as in this example, its contents will be hidden not only when printing, but also under any exceptions that the library will raise:
+
+```python
+secrets = TopStateSecrets()
+
+secrets.who_killed_kennedy = 'russians'
+#> ValueError: The value *** (str) of the "who_killed_kennedy" field does not match the validation.
+```
 
 
 
