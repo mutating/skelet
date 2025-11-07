@@ -1,4 +1,7 @@
-from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, get_type_hints, get_origin, cast
+from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, List, get_type_hints, get_origin, cast
+
+from types import EllipsisType
+
 from threading import Lock
 from dataclasses import MISSING, _MISSING_TYPE
 from collections.abc import Sequence
@@ -8,6 +11,8 @@ from locklib import ContextLockProtocol
 from simtypes import check
 
 from skelet.storage import Storage
+from skelet.sources.abstract import AbstractSource
+from skelet.sources.collection import SourcesCollection
 
 
 ValueType = TypeVar('ValueType')
@@ -25,6 +30,7 @@ class Field(Generic[ValueType]):
         default_factory: Optional[Callable[[], ValueType]] = None,
         doc: Optional[str] = None,
         alias: Optional[str] = None,
+        sources: Optional[List[Union[AbstractSource, EllipsisType]]] = None,
         read_only: bool = False,
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
@@ -52,6 +58,7 @@ class Field(Generic[ValueType]):
         self.read_only = read_only
         self.doc = doc
         self.alias = alias
+        self.sources = sources
         self.validation = validation
         self.validate_default = validate_default
         self.secret = secret
@@ -204,3 +211,21 @@ class Field(Generic[ValueType]):
         if raising_on:
             raise exception
         self.exception = exception
+
+    def get_sources(self, instance: Storage) -> SourcesCollection:
+        if self.sources is None:
+            return instance.__sources__
+
+        result = []
+        there_is_ellipsis = False
+
+        for source in self.sources:
+            if source is Ellipsis:
+                there_is_ellipsis = True
+            else:
+                result.append(source)
+
+        if there_is_ellipsis:
+           result.update(instance.__sources__.sources)
+
+        return SourcesCollection(result)

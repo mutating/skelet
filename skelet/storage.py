@@ -34,7 +34,7 @@ class Storage:
 
         for field_name in self.__field_names__:
             field = getattr(type(self), field_name)
-            content = self.__sources__.type_awared_get(field.alias, field.type_hint, MISSING)
+            content = field.get_sources(self).type_awared_get(field.alias, field.type_hint, MISSING)
             it_is_not_default = True
             if content is not MISSING:
                 field.check_type_hints(type(self), field_name, content, strict=True, raise_all=True)
