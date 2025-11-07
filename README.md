@@ -18,10 +18,6 @@
 ![logo](https://raw.githubusercontent.com/pomponchik/skelet/develop/docs/assets/logo_8.svg)
 
 
-
-
-
-
 Collect all the settings in one place
 
 One object with a configuration for your project.
@@ -49,11 +45,11 @@ It's ready now:
 - [x] Converting values from one to another
 - [x] The ability to share a single mutex into several fields
 - [x] Subtraction of environment variables
+- [x] Aliases support
 
 To do:
 
 - [ ] Individual source lists for each field, with ellipsis support
-- [ ] Aliases support
 - [ ] The ability to disable type checking for a class through class arguments
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
