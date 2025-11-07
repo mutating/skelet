@@ -82,6 +82,7 @@ description.name = 3.14
 #> TypeError: The value "3.14" (float) of the "name" field does not match the type str.
 ```
 
+That's not bad! But you will become a real master of storing settings when you read the entire text below.
 
 
 
