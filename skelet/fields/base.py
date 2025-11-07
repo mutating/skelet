@@ -226,6 +226,6 @@ class Field(Generic[ValueType]):
                 result.append(source)
 
         if there_is_ellipsis:
-           result.update(instance.__sources__.sources)
+           result.extend(instance.__sources__.sources)
 
         return SourcesCollection(result)
