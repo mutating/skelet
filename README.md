@@ -20,6 +20,29 @@
 
 Collect all the settings in one place
 
+
+## Table of contents
+
+- [**Quick start**](#quick-start)
+- [**Documenting fields**](#documenting-fields)
+- [**Default values**](#default-values)
+- [**Secret fields**](#secret-fields)
+- [**Type checking**](#type-checking)
+- [**Validation of values**](#validation-of-values)
+- [**Conflicts between fields**](#conflicts-between-fields)
+- [**Sources**](#sources)
+  - [**Environment variables**](#environment-variables)
+  - [**TOML files and pyproject.toml**](#toml-files-and-pyproject-toml)
+  - [**JSON files**](#json-files)
+  - [**YAML files**](#yaml-files)
+  - [**Collecting sources**](#collecting-sources)
+- [**Type conversion**](#type-conversion)
+- [**Thread safety**](#thread-safety)
+- [**Callbacks for changes**](#callbacks-for-changes)
+- [**Read only fields**](#read-only-fields)
+
+
+
 One object with a configuration for your project.
 
 It's ready now:
