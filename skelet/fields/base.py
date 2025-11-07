@@ -2,7 +2,7 @@ from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict,
 
 try:
     from types import EllipsisType
-except ImportError:
+except ImportError:  # pragma: no cover
     EllipsisType = type(...)  # type: ignore[misc]
 
 from threading import Lock
