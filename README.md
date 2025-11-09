@@ -189,7 +189,7 @@ The Python typing system has its limitations. According to the author, it is [to
 - `Any` - means the same thing as the absence of an annotation.
 - `Union` (in the old style or in the new one, using the `|` operator) - means logical OR between types.
 - `Optional` (again, both in the old style and in the new one - via `|`) - means that a value of the specified type is expected, or `None`.
-- `Lists`, `dicts`, and `tuples` can be specified with the types they contain. By default, the contents of these containers are not checked, but this is done in relation to external [sources]((#sources)).
+- `Lists`, `dicts`, and `tuples` can be specified with the types they contain. By default, the contents of these containers are not checked, but this is done in relation to external [sources](#sources).
 
 The author deliberately does not try to implement full type checking in runtime. If you need more powerful verification, it's better to rely on static tools like `mypy`.
 
@@ -201,8 +201,9 @@ The library also supports 2 additional types that allow you to narrow down the b
 Please note that these types of constraints are checked only in runtime.
 
 
+## Validation of values
 
-
+In addition to type checking, you can specify arbitrary conditions by which field values will be checked.
 
 
 
@@ -277,6 +278,8 @@ To do:
 - [ ] Class inheritance support
 - [ ] Reading parameters from the CLI
 - [ ] Context manager like https://confz.readthedocs.io/en/latest/usage/context_manager.html
+- [ ] If you try to use environment variables on Windows in case-dependency mode, an exception will be raised
+- [ ] Check that the action is triggered only after the assignment
 
 
 
