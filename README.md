@@ -260,11 +260,20 @@ class PatientsCard(Storage):
 
 ## Conflicts between fields
 
-Sometimes, individual field values are [acceptable](#validation-of-values), but certain combinations of them are impossible. For such cases, there is a separate type of value check—conflict checking.
+Sometimes, individual field values are [acceptable](#validation-of-values), but certain combinations of them are impossible. For such cases, there is a separate type of value check—conflict checking. This validation is a little more complicated than for individual values. To enable it, you need to pass a dictionary as parameter X, whose keys are the names of other class fields, and whose values are functions that return bool, answering the question “is there a conflict with the value of this field?”:
 
+```python
+class Dossier(Storage):
+    name: str | None = Field(None)
+    is_jew: bool | None = Field(None)
+    eats_pork: bool | None = Field(
+        None,
+        conflicts={'is_jew': lambda old, new, other_old, other_new: new is True and (other_old is True or other_new is True)},
+    )
+    ...
+```
 
-
-
+<abbr title="The answer `True` means that yes, there is a conflict, and `False' means that there is no conflict.">is there a conflict with the value of this field?</abbr>
 
 
 
@@ -335,6 +344,7 @@ To do:
 - [ ] If you try to use environment variables on Windows in case-dependency mode, an exception will be raised
 - [ ] Check that the action is triggered only after the assignment
 - [ ] Add the ability to pass a list of functions for validating values
+- [ ] Add automatic detection of the value validation function's signature, and if it allows, pass the old field value as well
 
 
 
