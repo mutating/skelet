@@ -273,7 +273,6 @@ class Dossier(Storage):
     ...
 ```
 
-<abbr title="The answer `True` means that yes, there is a conflict, and `False' means that there is no conflict.">is there a conflict with the value of this field?</abbr>
 
 
 
