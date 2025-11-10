@@ -285,6 +285,8 @@ dossier.eats_pork = True
 
 > ⓘ Conflict checking only happens after type and individual value checking. This means that only values that are guaranteed to be valid in terms of individuality will be passed to your conflict checking function.
 
+> ⓘ More details on this will be provided in the section on [thread safety](#thread-safety), but here it is useful to know that mutexes for fields with specified conflict conditions are combined. This means that checking fields for conflicts is thread-safe.
+
 The function that checks for a conflict with the value of another field takes 4 positional arguments:
 
 - The old value of the current field.
