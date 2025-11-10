@@ -411,7 +411,7 @@ EnvSource(postfix='_postfix')  # For attribute "field_name", the search will be 
 
 ## TOML files and pyproject.toml
 
-The [`TOML`](https://toml.io/en/) format is currently the most preferred file format for storing application settings for Python.The TOML format is currently the most preferred file format for storing application settings for Python. It is very easy to interpret in programming languages in dictionary-like structures, and it is also minimalistic and easy to read.
+The [`TOML`](https://toml.io/en/) format is currently the most preferred file format for storing application settings for Python. The TOML format is currently the most preferred file format for storing application settings for Python. It is very easy to interpret in programming languages in dictionary-like structures, and it is also minimalistic and easy to read.
 
 To read the configuration from a specific file, create a `TOMLSource` object passing the file name or a [Path-like object](https://docs.python.org/3/library/pathlib.html#basic-use) to the constructor:
 
