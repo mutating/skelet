@@ -444,6 +444,7 @@ To do:
 - [ ] Check that the action is triggered only after the assignment
 - [ ] Add the ability to pass a list of functions for validating values
 - [ ] Add automatic detection of the value validation function's signature, and if it allows, pass the old field value as well
+- [ ] Do not use quotation marks for non-string values in exceptions.
 
 
 
