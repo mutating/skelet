@@ -450,6 +450,8 @@ class MyClass(Storage, sources=[TOMLSource('my_config.toml')]):
 
 
 
+
+
 One object with a configuration for your project.
 
 It's ready now:
@@ -492,6 +494,7 @@ To do:
 - [ ] Do not use quotation marks for non-string values in exceptions
 - [ ] Support for dotfiles as a source
 - [ ] The ability to reset the cache for sources
+- [ ] Make the "for_library" method of AbstractSource abstract
 
 
 
