@@ -321,7 +321,7 @@ However, I do not recommend disabling reverse checks - they ensure that the cont
 
 So far, we have discussed that fields can have default values, as well as values obtained during the program operation. However, there is a third type of value: values loaded from data sources. The library supports several data sources:
 
-- Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](https://en.wikipedia.org/wiki/YAML), and [`JSON`](https://en.wikipedia.org/wiki/JSON)).
+- Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](https://en.wikipedia.org/wiki/YAML), and [`JSON`](#json-files)).
 - [Environment variables](#environment-variables).
 - Support for new sources, such as CLI parameters, will be available soon.
 
@@ -383,6 +383,8 @@ Read more about the available types of sources below.
 For many developers, [environment variables](https://en.wikipedia.org/wiki/Environment_variable) are the first method that comes to mind for [obtaining application settings](#sources) from outside sources. To connect environment variables to your class or class field, use the `EnvSource` class:
 
 ```python
+from skelet import EnvSource
+
 class MyClass(Storage, sources=[EnvSource()]):
     some_field = Field('some_value')
 ```
@@ -426,6 +428,8 @@ The [`TOML`](https://toml.io/en/) format is currently the most preferred file fo
 To read the configuration from a specific file, create a `TOMLSource` object passing the file name or a [Path-like object](https://docs.python.org/3/library/pathlib.html#basic-use) to the constructor:
 
 ```python
+from skelet import TOMLSource
+
 class MyClass(Storage, sources=[TOMLSource('my_config.toml')]):
     ...
 ```
@@ -438,11 +442,21 @@ TOMLSource('my_config.toml', table='first_level.second_level')  # Instead of a d
 
 > ⓘ If you are writing your own library and allowing users to configure it via a [`pyproject.toml`](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) file, it is generally recommended to use table `tool.<your library name>` for this purpose.
 
+> ⓘ All file contents are cached after the first value is read.
 
 
+## JSON files
 
+If you need config files, I recommend using the [`TOML`](#toml-files-and-pyprojecttoml) format. However, if for some reason you are using [`JSON`](https://en.wikipedia.org/wiki/JSON), it can also be connected as a [source](#sources) using class `JSONSource`:
 
+```python
+from skelet import JSONSource
 
+class MyClass(Storage, sources=[JSONSource('my_config.json')]):
+    ...
+```
+
+Everything will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
 
 
