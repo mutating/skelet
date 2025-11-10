@@ -420,9 +420,13 @@ class MyClass(Storage, sources=[TOMLSource('my_config.toml')]):
     ...
 ```
 
+The `TOML` format supports so-called “[tables]https://toml.io/en/v1.0.0#table” — sections of the configuration that are converted into nested hash tables when read. By default, we read the top-level table, but we can also read one of the nested tables. To do this, use the `table` parameter:
 
+```python
+TOMLSource('my_config.toml', table='first_level.second_level')  # Instead of a dot-delimited string, you can also pass a list of strings.
+```
 
-
+> ⓘ If you are writing your own library and allowing users to configure it via a [`pyproject.toml`](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) file, it is generally recommended to use table `tool.<your library name>` for this purpose.
 
 
 
