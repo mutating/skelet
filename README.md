@@ -495,6 +495,83 @@ class MyClass(Storage, sources=for_tool('my_tool_name')):
 If the file does not exist, it will simply be ignored.
 
 
+## Converting values
+
+Sometimes you may need to store data in a format other than the one the user code is trying to save it in. In this case, pass the converter function as argument `conversion`:
+
+```python
+class Digits(Storage):
+    my_favorite_digit: int | str = Field(
+        0,
+        conversion=lambda x: {
+            'zero': 0,
+            'one': 1,
+            'two': 2,
+            'three': 3,
+            'four': 4,
+            'five': 5,
+            'six': 6,
+            'seven': 7,
+            'eight': 8,
+            'nine': 9,
+        }.get(x, x),
+        validation=lambda x: x is not None and x >= 0 and x < 10,
+        doc='my favorite number from 0 to 9',
+    )
+
+digits = Digits()
+
+digits.my_favorite_digit = 'two'
+print(digits.my_favorite_digit)
+#> 2
+```
+
+> ⓘ Values are fully validated ([type](#type-checking) and [individual value validation](#validation-of-values)) before and after conversion. If the conversion changes the type of the value, either do not use a type hint at all, or [use one](#type-checking) that includes both types.
+
+
+## Thread safety
+
+Thread security is an important priority in the development of `skelet`.
+
+All write operations are protected by mutexes by default, with individual mutexes used for each field. A primitive form of transactionality is used here: if a value fails type checking or other checks, it is not applied, and other threads cannot read the “incorrect” value at that time: the new value will only become available once all checks have been passed. If you specify conditions for [checking conflicts](#conflicts-between-fields) between two different fields, they start using the same mutex to ensure that there are no races.
+
+According to [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law), the benefits of program parallelization decrease dramatically as the proportion of execution time that occurs under a mutex increases. Therefore, the `skelet` library uses a mutex only for a critical operation: replacing one value with another, but it does not use it, for example, during the value verification phase.
+
+The key parts of thread safety are reliably tested.
+
+
+## Callbacks for changes
+
+You can specify an arbitrary code that will be applied when the value of a specific field is changed. This only works if it was changed directly from the program code, and not, for example, by replacing the configuration file that is used as a [source](#sources).
+
+> ⓘ If you assign a value to the field that is equal to the value that this field had before, the callback will not be called.
+
+To use this, pass a function that takes 3 positional arguments:
+
+- Old field value.
+- New field value.
+- Config object.
+
+> ⓘ Be careful when accessing other fields in the config object; try not to catch a [deadlock](https://en.wikipedia.org/wiki/Deadlock_(computer_science)).
+
+Example:
+
+```python
+class MyClass(Storage):
+    field: int = Field(0, change_action=lambda old, new, storage: print(f'{old} -> {new}'))
+
+storage = MyClass()
+
+storage.field = 5
+#> 0 -> 5
+storage.field = 55
+#> 5 -> 55
+```
+
+> ⓘ The callback will be called only if the new value passes all the checks. The callback call is closed by the field mutex: two callbacks for the same field of the same object cannot be executed simultaneously. Thus, the callback call is completely [thread-safe](#thread-safety).
+
+
+
 
 
 
@@ -551,6 +628,7 @@ To do:
 - [ ] Support for dotfiles as a source
 - [ ] The ability to reset the cache for sources
 - [ ] Make the "for_library" method of AbstractSource abstract
+- [ ] Rename change_action to action
 
 
 
