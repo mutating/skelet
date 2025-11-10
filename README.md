@@ -321,7 +321,7 @@ However, I do not recommend disabling reverse checks - they ensure that the cont
 
 So far, we have discussed that fields can have default values, as well as values obtained during the program operation. However, there is a third type of value: values loaded from data sources. The library supports several data sources:
 
-- Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](https://en.wikipedia.org/wiki/YAML), and [`JSON`](#json-files)).
+- Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](#yaml-files), and [`JSON`](#json-files)).
 - [Environment variables](#environment-variables).
 - Support for new sources, such as CLI parameters, will be available soon.
 
@@ -458,6 +458,19 @@ class MyClass(Storage, sources=[JSONSource('my_config.json')]):
 
 Everything will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
+
+## YAML files
+
+[YAML](https://en.wikipedia.org/wiki/YAML) is a popular format for storing configurations. I recommend choosing [`TOML`](#toml-files-and-pyprojecttoml) if you have the option, but if not, use the `YAMLSource` class:
+
+```python
+from skelet import YAMLSource
+
+class MyClass(Storage, sources=[YAMLSource('my_config.yaml')]):
+    ...
+```
+
+Everything also will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
 
 
