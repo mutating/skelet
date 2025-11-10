@@ -312,6 +312,8 @@ Reverse checks can be disabled by passing `False` as the `reverse_conflicts` par
     ...
 ```
 
+However, I do not recommend disabling reverse checks - they ensure that the contents of the fields are consistent with each other.
+
 
 
 
