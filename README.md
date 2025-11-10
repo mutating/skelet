@@ -473,11 +473,26 @@ class MyClass(Storage, sources=[YAMLSource('my_config.yaml')]):
 Everything also will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
 
+## Collecting sources
 
+Often, you may want to connect not one, but several different sources for your settings. For example, you may need to combine settings from [environment variables](#environment-variables) and settings from the [`pyproject.toml` file](#toml-files-and-pyprojecttoml), with environment variables having higher priority. The straightforward way to implement this would be to pass multiple source objects to the class, as discussed [above](#sources). However, there is also a way to configure this automatically using the `for_tool` function:
 
+```python
+from skelet import for_tool
 
+class MyClass(Storage, sources=for_tool('my_tool_name')):
+    ...
+```
 
+*How does it work?* This function automatically aggregates a set of sources in the following priority (the higher in the list, the higher the priority):
 
+- [Environment variables](#environment-variables) with the prefix `<my_tool_name>_`.
+- Files `<my_tool_name>.toml` and `.<my_tool_name>.toml`.
+- Section `tool.<my_tool_name>` of [`pyproject.toml` file](#toml-files-and-pyprojecttoml) file.
+- Files `<my_tool_name>.yaml` and `.<my_tool_name>.yaml`.
+- Files `<my_tool_name>.json` and `.<my_tool_name>.json`.
+
+If the file does not exist, it will simply be ignored.
 
 
 
