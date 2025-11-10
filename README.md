@@ -31,7 +31,7 @@ Collect all the settings of your project in one place. Ensure type safety, threa
 - [**Conflicts between fields**](#conflicts-between-fields)
 - [**Sources**](#sources)
   - [**Environment variables**](#environment-variables)
-  - [**TOML files and pyproject.toml**](#toml-files-and-pyproject-toml)
+  - [**TOML files and pyproject.toml**](#toml-files-and-pyprojecttoml)
   - [**JSON files**](#json-files)
   - [**YAML files**](#yaml-files)
   - [**Collecting sources**](#collecting-sources)
@@ -321,7 +321,7 @@ However, I do not recommend disabling reverse checks - they ensure that the cont
 
 So far, we have discussed that fields can have default values, as well as values obtained during the program operation. However, there is a third type of value: values loaded from data sources. The library supports several data sources:
 
-- Configuration files in various formats ([`TOML`](https://toml.io/en/), [`YAML`](https://en.wikipedia.org/wiki/YAML), and [`JSON`](https://en.wikipedia.org/wiki/JSON)).
+- Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](https://en.wikipedia.org/wiki/YAML), and [`JSON`](https://en.wikipedia.org/wiki/JSON)).
 - [Environment variables](#environment-variables).
 - Support for new sources, such as CLI parameters, will be available soon.
 
@@ -410,6 +410,17 @@ EnvSource(postfix='_postfix')  # For attribute "field_name", the search will be 
 
 
 ## TOML files and pyproject.toml
+
+The [`TOML`](https://toml.io/en/) format is currently the most preferred file format for storing application settings for Python.The TOML format is currently the most preferred file format for storing application settings for Python. It is very easy to interpret in programming languages in dictionary-like structures, and it is also minimalistic and easy to read.
+
+To read the configuration from a specific file, create a `TOMLSource` object passing the file name or a [Path-like object](https://docs.python.org/3/library/pathlib.html#basic-use) to the constructor:
+
+```python
+class MyClass(Storage, sources=[TOMLSource('pyproject.toml')]):
+    ...
+```
+
+
 
 
 
