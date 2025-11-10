@@ -362,6 +362,8 @@ class MyClass(Storage, sources=[TOMLSource('pyproject.toml', table='tool.my_tool
     some_field = Field('some_value', sources=[TOMLSource('config_for_this_field.toml'), ...])
 ```
 
+All values from sources are loaded when the config object is created. This means that (theoretically) during program execution, you can, for example, change a configuration file, then create a new config object, and its contents will be different. The old object will not automatically know that the config file has been changed. Avoid this kind of behavior in your programs if you don't want to run into problems that will be very difficult to detect.
+
 Each data source is a dictionary-like object from which the values of a specific field are retrieved by the key in the form of the field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed, with sources for a field having higher priority than sources for the class as a whole.
 
 Values obtained from sources are validated in the same way as all others. However, [type checking](#type-checking) for collections is stricter here: the contents of lists, dictionaries, and tuples are checked in their entirety.
