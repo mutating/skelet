@@ -366,6 +366,13 @@ All values from sources are loaded when the config object is created. This means
 
 Each data source is a dictionary-like object from which the values of a specific field are retrieved by the key in the form of the field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed, with sources for a field having higher priority than sources for the class as a whole.
 
+For any field, you can change the key used to search for its value in the sources using the `alias` parameter:
+
+```python
+class MyClass(Storage, sources=[TOMLSource('pyproject.toml', table='tool.my_tool_name')]):
+    some_field = Field(alias='another_key')
+```
+
 Values obtained from sources are validated in the same way as all others. However, [type checking](#type-checking) for collections is stricter here: the contents of lists, dictionaries, and tuples are checked in their entirety.
 
 Read more about the available types of sources below.
