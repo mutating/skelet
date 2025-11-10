@@ -375,12 +375,31 @@ Read more about the available types of sources below.
 
 For many developers, [environment variables](https://en.wikipedia.org/wiki/Environment_variable) are the first method that comes to mind for [obtaining application settings](#sources) from outside sources. To connect environment variables to your class or class field, use the `EnvSource` class:
 
+```python
+class MyClass(Storage, sources=[EnvSource()]):
+    some_field = Field('some_value')
+```
 
+By default, environment variables are searched for by key in the form of an attribute name, but the layout is ignored. If you want to make the search case-sensitive, pass `True` as the `case_sensitive` parameter:
 
+```python
+EnvSource(case_sensitive=True)
+```
 
+> ⚠️ On `Windows`, environment variables are case-insensitive, so this setting will not work.
 
+Sometimes you may also want to “personalize” environment variables, i.e., bind them to your application or library using a prefix. For example, you may want the value for the `field_name` attribute to be searched for using the `prefix_` key. In this case, set the appropriate prefix:
 
+```python
+EnvSource(prefix='prefix_')  # So, for attribute "field_name", the search will be performed by key "prefix_field_name".
+```
+Similar to the `prefix`, you can also specify a `postfix` — a piece of the key that will be added at the end:
 
+```python
+EnvSource(postfix='_postfix')  # For attribute "field_name", the search will be performed by key "field_name_postfix".
+```
+
+> ⓘ It is important to understand that EnvSource objects cache all environment variable values. A complete cache of all variables is created when the key is searched for the first time. Currently, there is no option to clear the cache; the object can only be replaced entirely.
 
 
 
@@ -452,6 +471,7 @@ To do:
 - [ ] Add automatic detection of the value validation function's signature, and if it allows, pass the old field value as well
 - [ ] Do not use quotation marks for non-string values in exceptions
 - [ ] Support for dotfiles as a source
+- [ ] The ability to reset the cache for sources
 
 
 
