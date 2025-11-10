@@ -371,6 +371,8 @@ Values obtained from sources are validated in the same way as all others. Howeve
 Read more about the available types of sources below.
 
 
+## Environment variables
+
 
 
 
