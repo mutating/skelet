@@ -51,7 +51,7 @@ pip install skelet
 
 You can also quickly try out this and other packages without having to install using [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it—objects of the `Field` class:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
