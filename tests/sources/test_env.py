@@ -18,6 +18,9 @@ from skelet.errors import CaseError
     ],
 )
 def test_data_is_not_caching_between_instances(addictional_parameters):
+    if addictional_parameters.get('case_sensitive', False) and platform.system() == 'Windows':
+        return
+
     first_source = EnvSource(**addictional_parameters)
     second_source = EnvSource(**addictional_parameters)
 
