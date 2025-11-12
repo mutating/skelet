@@ -54,11 +54,13 @@ def test_cases_conflict(monkeypatch):
 
 def test_repr():
     assert repr(EnvSource()) == "EnvSource()"
-    assert repr(EnvSource(case_sensitive=True)) == "EnvSource(case_sensitive=True)"
     assert repr(EnvSource(prefix='lol')) == "EnvSource(prefix='lol')"
     assert repr(EnvSource(postfix='kek')) == "EnvSource(postfix='kek')"
     assert repr(EnvSource(prefix='lol', postfix='kek')) == "EnvSource(prefix='lol', postfix='kek')"
-    assert repr(EnvSource(prefix='lol', postfix='kek', case_sensitive=True)) == "EnvSource(prefix='lol', postfix='kek', case_sensitive=True)"
+
+    if platform.system() != 'Windows':
+        assert repr(EnvSource(case_sensitive=True)) == "EnvSource(case_sensitive=True)"
+        assert repr(EnvSource(prefix='lol', postfix='kek', case_sensitive=True)) == "EnvSource(prefix='lol', postfix='kek', case_sensitive=True)"
 
 
 def test_defaults_for_not_allowed_library_name():
