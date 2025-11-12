@@ -18,6 +18,9 @@ from skelet.errors import CaseError
     ],
 )
 def test_data_is_not_caching_between_instances(addictional_parameters):
+    if addictional_parameters.get('case_sensitive', False) and platform.system() == 'Windows':
+        return
+
     first_source = EnvSource(**addictional_parameters)
     second_source = EnvSource(**addictional_parameters)
 
@@ -42,23 +45,28 @@ def test_cases_conflict(monkeypatch):
     assert 'lol' not in EnvSource(case_sensitive=False).data
     assert 'LoL' not in EnvSource(case_sensitive=False).data
 
-    assert EnvSource(case_sensitive=True)['lol'] == '1'
-    assert EnvSource(case_sensitive=True)['LoL'] == '1'
-
     if platform.system() != 'Windows':
+        assert EnvSource(case_sensitive=True)['lol'] == '1'
+        assert EnvSource(case_sensitive=True)['LoL'] == '1'
+
         with pytest.raises(KeyError):
             EnvSource(case_sensitive=True)['LOL']
     else:
-        assert EnvSource(case_sensitive=True)['LOL'] == '1'
+        assert EnvSource()['LOL'] == '1'
+        assert EnvSource()['lol'] == '1'
+        assert EnvSource()['lOl'] == '1'
+        assert EnvSource()['LoL'] == '1'
 
 
 def test_repr():
     assert repr(EnvSource()) == "EnvSource()"
-    assert repr(EnvSource(case_sensitive=True)) == "EnvSource(case_sensitive=True)"
     assert repr(EnvSource(prefix='lol')) == "EnvSource(prefix='lol')"
     assert repr(EnvSource(postfix='kek')) == "EnvSource(postfix='kek')"
     assert repr(EnvSource(prefix='lol', postfix='kek')) == "EnvSource(prefix='lol', postfix='kek')"
-    assert repr(EnvSource(prefix='lol', postfix='kek', case_sensitive=True)) == "EnvSource(prefix='lol', postfix='kek', case_sensitive=True)"
+
+    if platform.system() != 'Windows':
+        assert repr(EnvSource(case_sensitive=True)) == "EnvSource(case_sensitive=True)"
+        assert repr(EnvSource(prefix='lol', postfix='kek', case_sensitive=True)) == "EnvSource(prefix='lol', postfix='kek', case_sensitive=True)"
 
 
 def test_defaults_for_not_allowed_library_name():
@@ -102,11 +110,12 @@ def test_read_existing_key(monkeypatch):
     assert EnvSource().type_awared_get('LOL', str) == '1'
     assert EnvSource().type_awared_get('LOL', int) == 1
 
-    assert EnvSource(case_sensitive=True)['lol'] == '1'
-    assert EnvSource(case_sensitive=True).type_awared_get('lol', str) == '1'
-    assert EnvSource(case_sensitive=True).type_awared_get('lol', int) == 1
+
 
     if platform.system() != 'Windows':
+        assert EnvSource(case_sensitive=True)['lol'] == '1'
+        assert EnvSource(case_sensitive=True).type_awared_get('lol', str) == '1'
+        assert EnvSource(case_sensitive=True).type_awared_get('lol', int) == 1
         assert EnvSource(case_sensitive=True).type_awared_get('LOL', str) is None
         assert EnvSource(case_sensitive=True).type_awared_get('LOL', int) is None
         assert EnvSource(case_sensitive=True).type_awared_get('LOL', str, default=1) == 1
@@ -115,8 +124,11 @@ def test_read_existing_key(monkeypatch):
         with pytest.raises(KeyError):
             EnvSource(case_sensitive=True)['LOL']
     else:
-        assert EnvSource(case_sensitive=True).type_awared_get('LOL', str) == '1'
-        assert EnvSource(case_sensitive=True)['LOL'] == '1'
+        assert EnvSource()['lol'] == '1'
+        assert EnvSource().type_awared_get('lol', str) == '1'
+        assert EnvSource().type_awared_get('lol', int) == 1
+        assert EnvSource().type_awared_get('LOL', str) == '1'
+        assert EnvSource()['LOL'] == '1'
 
 
 def test_type_awared_get(monkeypatch):
@@ -164,10 +176,12 @@ def test_read_with_prefix(monkeypatch):
     if platform.system() != 'Windows':
         with pytest.raises(KeyError):
             EnvSource(prefix='library_', case_sensitive=True)['key']
+        assert EnvSource(prefix='LIBRARY_', case_sensitive=True)['KEY'] == 'kek'
     else:
-        assert EnvSource(prefix='library_', case_sensitive=True)['key'] == 'kek'
+        assert EnvSource(prefix='library_')['key'] == 'kek'
+        assert EnvSource(prefix='LIBRARY_')['KEY'] == 'kek'
 
-    assert EnvSource(prefix='LIBRARY_', case_sensitive=True)['KEY'] == 'kek'
+    assert EnvSource(prefix='LIBRARY_')['KEY'] == 'kek'
 
 
 def test_read_with_postfix(monkeypatch):
@@ -178,10 +192,12 @@ def test_read_with_postfix(monkeypatch):
     if platform.system() != 'Windows':
         with pytest.raises(KeyError):
             EnvSource(postfix='_key', case_sensitive=True)['library']
+        assert EnvSource(postfix='_KEY', case_sensitive=True)['LIBRARY'] == 'kek'
     else:
-        assert EnvSource(postfix='_key', case_sensitive=True)['library'] == 'kek'
+        assert EnvSource(postfix='_key')['library'] == 'kek'
+        assert EnvSource(postfix='_KEY')['LIBRARY'] == 'kek'
 
-    assert EnvSource(postfix='_KEY', case_sensitive=True)['LIBRARY'] == 'kek'
+    assert EnvSource(postfix='_KEY')['LIBRARY'] == 'kek'
 
 
 def test_read_with_prefix_and_postfix(monkeypatch):
@@ -192,7 +208,14 @@ def test_read_with_prefix_and_postfix(monkeypatch):
     if platform.system() != 'Windows':
         with pytest.raises(KeyError):
             EnvSource(prefix='library_', postfix='_postfix', case_sensitive=True)['key']
+        assert EnvSource(prefix='LIBRARY_', postfix='_POSTFIX', case_sensitive=True)['KEY'] == 'kek'
     else:
-        assert EnvSource(prefix='library_', postfix='_postfix', case_sensitive=True)['key'] == 'kek'
+        assert EnvSource(prefix='library_', postfix='_postfix')['key'] == 'kek'
 
-    assert EnvSource(prefix='LIBRARY_', postfix='_POSTFIX', case_sensitive=True)['KEY'] == 'kek'
+    assert EnvSource(prefix='LIBRARY_', postfix='_POSTFIX')['KEY'] == 'kek'
+
+
+@pytest.mark.skipif(platform.system() != 'Windows', reason='On Windows, the environment variables are case-independent.')
+def test_try_to_use_case_sensitive_mod_on_windows():
+    with pytest.raises(OSError, match=match('On Windows, the environment variables are case-independent.')):
+        EnvSource(case_sensitive=True)

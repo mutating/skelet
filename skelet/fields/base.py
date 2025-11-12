@@ -45,9 +45,7 @@ class Field(Generic[ValueType]):
         conversion: Optional[Callable[[ValueType], ValueType]] = None,
         share_mutex_with: Optional[SequenceWithStrings] = None,
     ) -> None:
-        if default is MISSING and default_factory is None:
-            raise ValueError('The default value or default value factory must be specified for the field.')
-        elif default_factory is not None and default is not MISSING:
+        if default_factory is not None and default is not MISSING:
             raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
 
         if conversion is not None and default is not MISSING:
@@ -207,7 +205,7 @@ class Field(Generic[ValueType]):
         return instance.__locks__[cast(str, self.name)]
 
     def get_value_representation(self, value: ValueType) -> str:
-        base = '***' if self.secret else f'"{value}"'
+        base = '***' if self.secret else f'{repr(value)}'
         return f'{base} ({type(value).__name__})'
 
     def raise_exception_in_storage(self, exception: BaseException, raising_on: bool) -> None:

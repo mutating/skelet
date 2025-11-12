@@ -80,6 +80,11 @@ class Storage:
                 raise KeyError(f'The "{key}" field is not defined.')
             setattr(self, key, value)
 
+        for field_name in self.__field_names__:
+            field_content = getattr(self, field_name)
+            if field_content is MISSING:
+                raise ValueError(f'The value for the "{field_name}" field is undefined. Set the default value, or specify the value when creating the instance.')
+
 
     def __init_subclass__(cls, reverse_conflicts: bool = True, sources: Optional[List[AbstractSource]] = None, **kwargs: Any):
             super().__init_subclass__(**kwargs)

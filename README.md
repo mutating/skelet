@@ -51,14 +51,14 @@ pip install skelet
 
 You can also quickly try out this and other packages without having to install using [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it—objects of the `Field` class:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it — objects of the `Field` class:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
 
 class ManDescription(Storage):
-    name: str = Field('*')
-    age: NonNegativeInt = Field(0, validation={'You must be 18 or older to feel important': lambda x: x >= 18}, validate_default=False)
+    name: str = Field()
+    age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18}, validate_default=False)
 ```
 
 You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better sharpened specifically for use for storing settings.
@@ -75,11 +75,11 @@ The object that we created is not just a storage for several fields. It can also
 
 ```python
 description.age = -5
-#> TypeError: The value "-5" (int) of the "age" field does not match the type NonNegativeInt.
+#> TypeError: The value -5 (int) of the "age" field does not match the type NonNegativeInt.
 description.age = 5
 #> ValueError: You must be 18 or older to feel important
 description.name = 3.14
-#> TypeError: The value "3.14" (float) of the "name" field does not match the type str.
+#> TypeError: The value 3.14 (float) of the "name" field does not match the type str.
 ```
 
 That's not bad! But you will become a real master of storing settings when you read the entire text below.
@@ -87,9 +87,9 @@ That's not bad! But you will become a real master of storing settings when you r
 
 ## Default values
 
-You must specify a default value for each field. It will be used until you somehow redefine it, or if no other value is found in the [data sources](#sources).
+The default value is used, you know, when there is no other data source to fill in the field. It will be used until you somehow redefine it, or if no other value is found in the [data sources](#sources).
 
-There are 2 types of default values:
+You may not define a default value, but in this case you need to pass these values when creating the storage object. If you do set a default value, there are 2 ways to do this:
 
 - **Ordinary**.
 - **Lazy**, or delayed.
@@ -123,7 +123,7 @@ Sometimes, in order not to forget what a particular field in the repository mean
 
 ```python
 class TheSecretFormula(Storage):
-    the_secret_ingredient: str = Field('*')  # frogs' paws or something else nasty
+    the_secret_ingredient: str = Field()  # frogs' paws or something else nasty
     ...
 ```
 
@@ -131,7 +131,7 @@ Don't do that! It is better to use the `doc` parameter in the field:
 
 ```python
 class TheSecretFormula(Storage):
-    the_secret_ingredient: str = Field('*', doc="frogs' paws or something else nasty")
+    the_secret_ingredient: str = Field(doc="frogs' paws or something else nasty")
     ...
 ```
 
@@ -139,7 +139,7 @@ Not only does this make the code self-documenting, you will also receive "free" 
 
 ```python
 formula = TheSecretFormula(the_secret_ingredient=13)
-#> TypeError: The value "13" (int) of the "the_secret_ingredient" field (frogs' paws or something else nasty) does not match the type str.
+#> TypeError: The value 13 (int) of the "the_secret_ingredient" field (frogs' paws or something else nasty) does not match the type str.
 ```
 
 
@@ -179,7 +179,7 @@ class HumanMeasurements(Storage):
 measurements = HumanMeasurements()
 
 measurements.number_of_legs = 'two'
-#> TypeError: The value "two" (str) of the "number_of_legs" field does not match the type int.
+#> TypeError: The value 'two' (str) of the "number_of_legs" field does not match the type int.
 ```
 
 The Python typing system has its limitations. According to the author, it is [too overcomplicated](https://www.reddit.com/r/Python/comments/10zdidm/why_type_hinting_sucks/), there are too many different concepts in it, and checking some of the type constraints in runtime is almost impossible. Therefore, the library supports only a subset of types from the typing module.
@@ -217,12 +217,11 @@ numbers = ScaryNumbers()
 
 This function should return `True` if the value is valid, and `False` if it is not. If you try to assign an invalid value to the field, an exception will be raised:
 
-
 ```python
 numbers.unlucky_number = 7
-#> ValueError: The value "7" (int) of the "unlucky_number" field (a number that is considered unlucky by a particular people) does not match the validation.
+#> ValueError: The value 7 (int) of the "unlucky_number" field (a number that is considered unlucky by a particular people) does not match the validation.
 numbers.number_of_the_beast = 555
-#> ValueError: The value "555" (int) of the "number_of_the_beast" field (different translations of the Bible give different numbers for the beast) does not match the validation.
+#> ValueError: The value 555 (int) of the "number_of_the_beast" field (different translations of the Bible give different numbers for the beast) does not match the validation.
 ```
 
 You can also pass a dictionary as a `validation` parameter, where the keys are messages that will accompany the raised exceptions, and the values are the same functions that return boolean values:
@@ -264,7 +263,7 @@ Sometimes, individual field values are [acceptable](#validation-of-values), but 
 
 ```python
 class Dossier(Storage):
-    name: str | None = Field(None)
+    name: str = Field()
     is_jew: bool | None = Field(None, doc='jews do not eat pork')
     eats_pork: bool | None = Field(
         None,
@@ -280,7 +279,7 @@ dossier = Dossier(name='John')
 
 dossier.is_jew = True
 dossier.eats_pork = True
-#> ValueError: The new "True" (bool) value of the "eats_pork" field conflicts with the "True" (bool) value of the "is_jew" field (jews do not eat pork).
+#> ValueError: The new True (bool) value of the "eats_pork" field conflicts with the True (bool) value of the "is_jew" field (jews do not eat pork).
 ```
 
 > ⓘ Conflict checking only happens after [type](#type-checking) and individual [value checking](#validation-of-values). This means that only values that are guaranteed to be valid in terms of individuality will be passed to your conflict checking function.
@@ -299,7 +298,7 @@ But why can there be two values for another field? The fact is that, by default,
 ```python
 dossier.eats_pork = True
 dossier.is_jew = True
-#> ValueError: The new "True" (bool) value of the "is_jew" field (jews do not eat pork) conflicts with the "True" (bool) value of the "eats_pork" field.
+#> ValueError: The new True (bool) value of the "is_jew" field (jews do not eat pork) conflicts with the True (bool) value of the "eats_pork" field.
 ```
 
 Reverse checks can be disabled by passing `False` as the `reverse_conflicts` parameter:
