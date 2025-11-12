@@ -51,14 +51,14 @@ pip install skelet
 
 You can also quickly try out this and other packages without having to install using [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it—objects of the `Field` class:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it — objects of the `Field` class:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
 
 class ManDescription(Storage):
-    name: str = Field('*')
-    age: NonNegativeInt = Field(0, validation={'You must be 18 or older to feel important': lambda x: x >= 18}, validate_default=False)
+    name: str = Field()
+    age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18}, validate_default=False)
 ```
 
 You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better sharpened specifically for use for storing settings.
@@ -87,9 +87,9 @@ That's not bad! But you will become a real master of storing settings when you r
 
 ## Default values
 
-You must specify a default value for each field. It will be used until you somehow redefine it, or if no other value is found in the [data sources](#sources).
+The default value is used, you know, when there is no other data source to fill in the field. It will be used until you somehow redefine it, or if no other value is found in the [data sources](#sources).
 
-There are 2 types of default values:
+You may not define a default value, but in this case you need to pass these values when creating the storage object. If you do set a default value, there are 2 ways to do this:
 
 - **Ordinary**.
 - **Lazy**, or delayed.
