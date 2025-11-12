@@ -1,4 +1,5 @@
 import os
+import platform
 from typing import List, Dict, Type, TypeVar, Optional, Any, cast
 from functools import cached_property
 from copy import copy
@@ -14,6 +15,9 @@ ExpectedType = TypeVar('ExpectedType')
 
 class EnvSource(AbstractSource):
     def __init__(self, prefix: Optional[str] = '', postfix: Optional[str] = '', case_sensitive: bool = False) -> None:
+        if platform.system() == 'Windows' and case_sensitive:
+            raise OSError('On Windows, the environment variables are case-independent.')
+
         self.prefix = prefix
         self.postfix = postfix
         self.case_sensitive = case_sensitive

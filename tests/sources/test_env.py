@@ -196,3 +196,9 @@ def test_read_with_prefix_and_postfix(monkeypatch):
         assert EnvSource(prefix='library_', postfix='_postfix', case_sensitive=True)['key'] == 'kek'
 
     assert EnvSource(prefix='LIBRARY_', postfix='_POSTFIX', case_sensitive=True)['KEY'] == 'kek'
+
+
+@pytest.mark.skipif(platform.system() != 'Windows', reason='On Windows, the environment variables are case-independent.')
+def test_try_to_use_case_sensitive_mod_on_windows():
+    with pytest.raises(OSError, match=match('On Windows, the environment variables are case-independent.')):
+        EnvSource(case_sensitive=True)
