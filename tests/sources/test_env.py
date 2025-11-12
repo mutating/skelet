@@ -45,14 +45,17 @@ def test_cases_conflict(monkeypatch):
     assert 'lol' not in EnvSource(case_sensitive=False).data
     assert 'LoL' not in EnvSource(case_sensitive=False).data
 
-    assert EnvSource(case_sensitive=True)['lol'] == '1'
-    assert EnvSource(case_sensitive=True)['LoL'] == '1'
-
     if platform.system() != 'Windows':
+        assert EnvSource(case_sensitive=True)['lol'] == '1'
+        assert EnvSource(case_sensitive=True)['LoL'] == '1'
+
         with pytest.raises(KeyError):
             EnvSource(case_sensitive=True)['LOL']
     else:
-        assert EnvSource(case_sensitive=True)['LOL'] == '1'
+        assert EnvSource()['LOL'] == '1'
+        assert EnvSource()['lol'] == '1'
+        assert EnvSource()['lOl'] == '1'
+        assert EnvSource()['LoL'] == '1'
 
 
 def test_repr():
