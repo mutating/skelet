@@ -24,7 +24,7 @@ class EnvSource(AbstractSource):
 
     def __getitem__(self, key: str) -> Any:
         full_key = f'{self.prefix}{key}{self.postfix}'
-        if not self.case_sensitive:
+        if not self.case_sensitive:  # pragma: no cover
             full_key = full_key.upper()
 
         return self.data[full_key]
@@ -34,7 +34,7 @@ class EnvSource(AbstractSource):
 
     @cached_property
     def data(self) -> Dict[str, str]:
-        if self.case_sensitive:
+        if self.case_sensitive:  # pragma: no cover
             return cast(Dict[str, str], copy(os.environ))
 
         result = {}
