@@ -396,7 +396,7 @@ def test_simple_type_check_failed_when_set_bool_if_expected_int():
     ['int_value', 'float_value', 'secret'],
     [
         ('***', '***', True),
-        ('"15"', '"15.0"', False),
+        ("'15'", '15.0', False),
     ],
 )
 def test_simple_type_check_failed_when_set(int_value, float_value, secret):
@@ -419,7 +419,7 @@ def test_simple_type_check_failed_when_set(int_value, float_value, secret):
     ['int_value', 'float_value', 'secret'],
     [
         ('***', '***', True),
-        ('"15"', '"15.0"', False),
+        ("'15'", "15.0", False),
     ],
 )
 def test_simple_type_check_failed_when_set_with_doc(int_value, float_value, secret):
@@ -454,7 +454,7 @@ def test_simple_type_check_not_failed_when_set():
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"15"', False),
+        ("'15'", False),
     ],
 )
 def test_type_check_when_define_default_failed(wrong_value, secret):
@@ -467,7 +467,7 @@ def test_type_check_when_define_default_failed(wrong_value, secret):
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"15"', False),
+        ("'15'", False),
     ],
 )
 def test_type_check_when_define_default_failed_with_doc(wrong_value, secret):
@@ -488,7 +488,7 @@ def test_type_check_when_define_default_not_failed():
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"kek"', False),
+        ("'kek'", False),
     ],
 )
 def test_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value, secret):
@@ -503,7 +503,7 @@ def test_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"kek"', False),
+        ("'kek'", False),
     ],
 )
 def test_type_check_when_redefine_defaults_initing_new_object_failed_with_doc(wrong_value, secret):
@@ -533,7 +533,7 @@ def test_type_check_when_redefine_defaults_initing_new_object_not_failed():
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"kek"', False),
+        ("'kek'", False),
     ],
 )
 def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value, secret):
@@ -576,7 +576,7 @@ def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_f
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"kek"', False),
+        ("'kek'", False),
     ],
 )
 def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed_with_doc(wrong_value, secret):
@@ -608,7 +608,7 @@ def test_try_to_use_underscored_name_for_field_with_doc():
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"-1"', False),
+        ('-1', False),
     ],
 )
 def test_validation_function_failed_when_set(wrong_value, secret):
@@ -625,7 +625,7 @@ def test_validation_function_failed_when_set(wrong_value, secret):
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"-1"', False),
+        ('-1', False),
     ],
 )
 def test_validation_function_failed_when_set_with_doc(wrong_value, secret):
@@ -681,7 +681,7 @@ def test_validation_functions_dict_not_failed_when_set():
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"-1"', False),
+        ('-1', False),
     ],
 )
 def test_validation_function_failed_when_init(wrong_value, secret):
@@ -696,7 +696,7 @@ def test_validation_function_failed_when_init(wrong_value, secret):
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"-1"', False),
+        ('-1', False),
     ],
 )
 def test_validation_function_failed_when_init_with_doc(wrong_value, secret):
@@ -762,7 +762,7 @@ def test_validation_functions_dict_not_failed_when_init(addictional_parameters):
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"-15"', False),
+        ('-15', False),
     ],
 )
 def test_validation_function_failed_when_default(wrong_value, secret):
@@ -775,7 +775,7 @@ def test_validation_function_failed_when_default(wrong_value, secret):
     ['wrong_value', 'secret'],
     [
         ('***', True),
-        ('"-15"', False),
+        ('-15', False),
     ],
 )
 def test_validation_function_failed_when_default_with_doc(wrong_value, secret):
@@ -1138,14 +1138,14 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
 
     if 'doc' in addictional_arguments:
         if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the "20" (int) value of the "other_field" field (some doc).'
+            exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
         else:
-            exception_message = 'The new "21" (int) value of the "field" field (some doc) conflicts with the "20" (int) value of the "other_field" field (some doc).'
+            exception_message = 'The new 21 (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
     else:
         if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field conflicts with the "20" (int) value of the "other_field" field.'
+            exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
         else:
-            exception_message = 'The new "21" (int) value of the "field" field conflicts with the "20" (int) value of the "other_field" field.'
+            exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         instance.field = 21
@@ -1156,12 +1156,12 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
         if main_field_is_secret:
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
         else:
-            exception_message = 'The new "-1" (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
+            exception_message = 'The new -1 (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
     else:
         if main_field_is_secret:
             exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
         else:
-            exception_message = 'The new "-1" (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
+            exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         instance.field = -1
@@ -1199,14 +1199,14 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
 
     if 'doc' in addictional_arguments:
         if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the "20" (int) value of the "other_field" field (some doc).'
+            exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
         else:
-            exception_message = 'The new "21" (int) value of the "field" field (some doc) conflicts with the "20" (int) value of the "other_field" field (some doc).'
+            exception_message = 'The new 21 (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
     else:
         if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field conflicts with the "20" (int) value of the "other_field" field.'
+            exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
         else:
-            exception_message = 'The new "21" (int) value of the "field" field conflicts with the "20" (int) value of the "other_field" field.'
+            exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         SomeClass(field=21)
@@ -1215,12 +1215,12 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
         if main_field_is_secret:
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
         else:
-            exception_message = 'The new "-1" (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
+            exception_message = 'The new -1 (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
     else:
         if main_field_is_secret:
             exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
         else:
-            exception_message = 'The new "-1" (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
+            exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         SomeClass(field=-1)
@@ -1245,12 +1245,12 @@ def test_conflicting_fields_when_defaults_are_conflicting(addictional_arguments,
         if are_fields_secret:
             exception_message = 'The *** (int) default value of the "field" field (some doc) conflicts with the *** (int) value of the "other_field" field (some doc).'
         else:
-            exception_message = 'The "21" (int) default value of the "field" field (some doc) conflicts with the "20" (int) value of the "other_field" field (some doc).'
+            exception_message = 'The 21 (int) default value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
     else:
         if are_fields_secret:
             exception_message = 'The *** (int) default value of the "field" field conflicts with the *** (int) value of the "other_field" field.'
         else:
-            exception_message = 'The "21" (int) default value of the "field" field conflicts with the "20" (int) value of the "other_field" field.'
+            exception_message = 'The 21 (int) default value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         class SomeClass(Storage):
@@ -1294,12 +1294,12 @@ def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are
         if are_fields_secret:
             exception_message = 'The new *** (int) value of the "other_field" field (some doc) conflicts with the *** (int) value of the "field" field (some doc).'
         else:
-            exception_message = 'The new "5" (int) value of the "other_field" field (some doc) conflicts with the "10" (int) value of the "field" field (some doc).'
+            exception_message = 'The new 5 (int) value of the "other_field" field (some doc) conflicts with the 10 (int) value of the "field" field (some doc).'
     else:
         if are_fields_secret:
             exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
         else:
-            exception_message = 'The new "5" (int) value of the "other_field" field conflicts with the "10" (int) value of the "field" field.'
+            exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         instance.other_field = 5
@@ -1344,12 +1344,12 @@ def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional
         if are_fields_secret:
             exception_message = 'The new *** (int) value of the "other_field" field (some doc) conflicts with the *** (int) value of the "field" field (some doc).'
         else:
-            exception_message = 'The new "5" (int) value of the "other_field" field (some doc) conflicts with the "10" (int) value of the "field" field (some doc).'
+            exception_message = 'The new 5 (int) value of the "other_field" field (some doc) conflicts with the 10 (int) value of the "field" field (some doc).'
     else:
         if are_fields_secret:
             exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
         else:
-            exception_message = 'The new "5" (int) value of the "other_field" field conflicts with the "10" (int) value of the "field" field.'
+            exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         SomeClass(other_field=5)
@@ -1896,13 +1896,13 @@ def test_type_check_with_supertypes():
     instance.field = 1000
     assert instance.field == 1000
 
-    with pytest.raises(TypeError, match=match('The value "0" (int) of the "field" field does not match the type NaturalNumber.')):
+    with pytest.raises(TypeError, match=match('The value 0 (int) of the "field" field does not match the type NaturalNumber.')):
         instance.field = 0
 
-    with pytest.raises(TypeError, match=match('The value "-1" (int) of the "field" field does not match the type NaturalNumber.')):
+    with pytest.raises(TypeError, match=match('The value -1 (int) of the "field" field does not match the type NaturalNumber.')):
         instance.field = -1
 
-    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type NaturalNumber.')):
+    with pytest.raises(TypeError, match=match('The value \'kek\' (str) of the "field" field does not match the type NaturalNumber.')):
         instance.field = 'kek'
 
     assert instance.field == 1000
@@ -1913,10 +1913,10 @@ def test_type_check_with_supertypes():
     instance.other_field = 0
     assert instance.other_field == 0
 
-    with pytest.raises(TypeError, match=match('The value "-1" (int) of the "other_field" field does not match the type NonNegativeInt.')):
+    with pytest.raises(TypeError, match=match('The value -1 (int) of the "other_field" field does not match the type NonNegativeInt.')):
         instance.other_field = -1
 
-    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "other_field" field does not match the type NonNegativeInt.')):
+    with pytest.raises(TypeError, match=match('The value \'kek\' (str) of the "other_field" field does not match the type NonNegativeInt.')):
         instance.other_field = 'kek'
 
 
@@ -1962,7 +1962,7 @@ def test_type_check_for_default_factory():
     class SomeClass(Storage):
         field: int = Field(default_factory=lambda: 'kek')
 
-    with pytest.raises(TypeError, match=match('The value "kek" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'kek\' (str) of the "field" field does not match the type int.')):
         SomeClass()
 
 
@@ -1977,7 +1977,7 @@ def test_validate_default_factory_value_fith_function_when_its_on_and_validation
     class SomeClass(Storage):
         field: str = Field(default_factory=lambda: 'kek', validation=lambda x: x != 'kek', **addictional_parameters)
 
-    with pytest.raises(ValueError, match=match('The value "kek" (str) of the "field" field does not match the validation.')):
+    with pytest.raises(ValueError, match=match('The value \'kek\' (str) of the "field" field does not match the validation.')):
         SomeClass()
 
 
@@ -2072,12 +2072,12 @@ def test_conflicts_for_default_factory():
         other_field: int = Field(20)
         other_lazy_field: int = Field(default_factory=lambda: other_lazy_field_value)
 
-    with pytest.raises(ValueError, match=match('The "10" (int) deferred default value of the "field" field conflicts with the "5" (int) value of the "other_lazy_field" field.')):
+    with pytest.raises(ValueError, match=match('The 10 (int) deferred default value of the "field" field conflicts with the 5 (int) value of the "other_lazy_field" field.')):
         SomeClass()
 
     field_value = 25
 
-    with pytest.raises(ValueError, match=match('The "25" (int) deferred default value of the "field" field conflicts with the "20" (int) value of the "other_field" field.')):
+    with pytest.raises(ValueError, match=match('The 25 (int) deferred default value of the "field" field conflicts with the 20 (int) value of the "other_field" field.')):
         SomeClass()
 
     field_value = 5
@@ -2097,7 +2097,7 @@ def test_reverse_conflicts_for_default_factory():
         field: int = Field(10, conflicts={'other_lazy_field': lambda old, new, other_old, other_new: new > other_old})
         other_lazy_field: int = Field(default_factory=lambda: other_lazy_field_value)
 
-    with pytest.raises(ValueError, match=match('The "10" (int) deferred default value of the "field" field conflicts with the "5" (int) value of the "other_lazy_field" field.')):
+    with pytest.raises(ValueError, match=match('The 10 (int) deferred default value of the "field" field conflicts with the 5 (int) value of the "other_lazy_field" field.')):
         SomeClass()
 
     other_lazy_field_value = 15
@@ -2167,19 +2167,19 @@ def test_conflicts_check_on_set_is_after_conversion():
 
     instance = SomeClass()
 
-    with pytest.raises(ValueError, match=match('The new "20" (int) value of the "field" field conflicts with the "10" (int) value of the "other_field" field.')):
+    with pytest.raises(ValueError, match=match('The new 20 (int) value of the "field" field conflicts with the 10 (int) value of the "other_field" field.')):
         instance.field = 10
 
 
 def test_conflicts_check_on_defaults_is_after_conversion():
-    with pytest.raises(ValueError, match=match('The "20" (int) default value of the "field" field conflicts with the "10" (int) value of the "other_field" field.')):
+    with pytest.raises(ValueError, match=match('The 20 (int) default value of the "field" field conflicts with the 10 (int) value of the "other_field" field.')):
         class SomeClass(Storage):
             field: int = Field(10, conversion=lambda x: x * 2, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new})
             other_field: int = Field(10)
 
 
 def test_value_check_for_defaults_is_after_conversion():
-    with pytest.raises(ValueError, match=match('The value "20" (int) of the "field" field does not match the validation.')):
+    with pytest.raises(ValueError, match=match('The value 20 (int) of the "field" field does not match the validation.')):
         class SomeClass(Storage):
             field: int = Field(10, conversion=lambda x: x * 2, validation=lambda x: x == 10)
             other_field: int = Field(10)
@@ -2192,18 +2192,18 @@ def test_value_check_for_set_is_after_conversion():
 
     instance = SomeClass()
 
-    with pytest.raises(ValueError, match=match('The value "20" (int) of the "field" field does not match the validation.')):
+    with pytest.raises(ValueError, match=match('The value 20 (int) of the "field" field does not match the validation.')):
         instance.field = 10
 
 
 def test_type_check_for_defaults_is_before_conversion():
-    with pytest.raises(TypeError, match=match('The value "5" (int) of the "field" field does not match the type str.')):
+    with pytest.raises(TypeError, match=match('The value 5 (int) of the "field" field does not match the type str.')):
         class SomeClass(Storage):
             field: str = Field(5, conversion=lambda x: str(x))
 
 
 def test_type_check_for_defaults_is_after_conversion():
-    with pytest.raises(TypeError, match=match('The value "5" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'5\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage):
             field: int = Field(5, conversion=lambda x: str(x))
 
@@ -2221,7 +2221,7 @@ def test_type_check_for_set_is_before_conversion():
     else:
         type_representation = 'Union'
 
-    with pytest.raises(TypeError, match=match(f'The value "5.5" (float) of the "field" field does not match the type {type_representation}.')):
+    with pytest.raises(TypeError, match=match(f'The value 5.5 (float) of the "field" field does not match the type {type_representation}.')):
         instance.field = 5.5
 
 
@@ -2233,7 +2233,7 @@ def test_type_check_for_set_is_after_conversion():
 
     assert instance.field == 5
 
-    with pytest.raises(TypeError, match=match('The value "6" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'6\' (str) of the "field" field does not match the type int.')):
         instance.field = 6
 
 
@@ -2332,15 +2332,15 @@ def test_type_check_before_conversion_for_json_source(json_config_path):
     ],
 )
 def test_type_check_after_conversion_for_source(toml_config_path, json_config_path, yaml_config_path):
-    with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
             field: int = Field(10, conversion=lambda x: str(x))
 
-    with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[JSONSource(json_config_path)]):
             field: int = Field(10, conversion=lambda x: str(x))
 
-    with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
             field: int = Field(10, conversion=lambda x: str(x))
 
@@ -2356,7 +2356,7 @@ def test_type_check_is_before_conversion_for_default_factory():
     class SomeClass(Storage):
         field: str = Field(default_factory=lambda: 10, conversion=lambda x: str(x))
 
-    with pytest.raises(TypeError, match=match('The value "10" (int) of the "field" field does not match the type str.')):
+    with pytest.raises(TypeError, match=match('The value 10 (int) of the "field" field does not match the type str.')):
         SomeClass()
 
 
@@ -2364,7 +2364,7 @@ def test_type_check_is_after_conversion_for_default_factory():
     class SomeClass(Storage):
         field: int = Field(default_factory=lambda: 10, conversion=lambda x: str(x))
 
-    with pytest.raises(TypeError, match=match('The value "10" (str) of the "field" field does not match the type int.')):
+    with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         SomeClass()
 
 
@@ -2372,7 +2372,7 @@ def test_validation_is_after_conversion_for_default_factory():
     class SomeClass(Storage):
         field: int = Field(default_factory=lambda: 5, conversion=lambda x: 10, validation=lambda x: x != 10)
 
-    with pytest.raises(ValueError, match=match('The value "10" (int) of the "field" field does not match the validation.')):
+    with pytest.raises(ValueError, match=match('The value 10 (int) of the "field" field does not match the validation.')):
         SomeClass()
 
 
@@ -2384,7 +2384,7 @@ def test_validation_is_after_conversion_for_default_factory_when_its_off():
 
     assert instance.field == 10
 
-    with pytest.raises(ValueError, match=match('The value "10" (int) of the "field" field does not match the validation.')):
+    with pytest.raises(ValueError, match=match('The value 10 (int) of the "field" field does not match the validation.')):
         instance.field = 5
 
 

@@ -207,7 +207,7 @@ class Field(Generic[ValueType]):
         return instance.__locks__[cast(str, self.name)]
 
     def get_value_representation(self, value: ValueType) -> str:
-        base = '***' if self.secret else f'"{value}"'
+        base = '***' if self.secret else f'{repr(value)}'
         return f'{base} ({type(value).__name__})'
 
     def raise_exception_in_storage(self, exception: BaseException, raising_on: bool) -> None:
