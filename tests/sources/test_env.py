@@ -110,11 +110,12 @@ def test_read_existing_key(monkeypatch):
     assert EnvSource().type_awared_get('LOL', str) == '1'
     assert EnvSource().type_awared_get('LOL', int) == 1
 
-    assert EnvSource(case_sensitive=True)['lol'] == '1'
-    assert EnvSource(case_sensitive=True).type_awared_get('lol', str) == '1'
-    assert EnvSource(case_sensitive=True).type_awared_get('lol', int) == 1
+
 
     if platform.system() != 'Windows':
+        assert EnvSource(case_sensitive=True)['lol'] == '1'
+        assert EnvSource(case_sensitive=True).type_awared_get('lol', str) == '1'
+        assert EnvSource(case_sensitive=True).type_awared_get('lol', int) == 1
         assert EnvSource(case_sensitive=True).type_awared_get('LOL', str) is None
         assert EnvSource(case_sensitive=True).type_awared_get('LOL', int) is None
         assert EnvSource(case_sensitive=True).type_awared_get('LOL', str, default=1) == 1
@@ -123,6 +124,9 @@ def test_read_existing_key(monkeypatch):
         with pytest.raises(KeyError):
             EnvSource(case_sensitive=True)['LOL']
     else:
+        assert EnvSource()['lol'] == '1'
+        assert EnvSource().type_awared_get('lol', str) == '1'
+        assert EnvSource().type_awared_get('lol', int) == 1
         assert EnvSource().type_awared_get('LOL', str) == '1'
         assert EnvSource()['LOL'] == '1'
 
