@@ -58,7 +58,7 @@ from skelet import Storage, Field, NonNegativeInt
 
 class ManDescription(Storage):
     name: str = Field()
-    age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18}, validate_default=False)
+    age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
 You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better sharpened specifically for use for storing settings.
