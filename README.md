@@ -39,6 +39,7 @@ Collect all the settings of your project in one place. Ensure type safety, threa
 - [**Thread safety**](#thread-safety)
 - [**Callbacks for changes**](#callbacks-for-changes)
 - [**Read only fields**](#read-only-fields)
+- [**Transformations and serialization**](#transformations-and-serialization)
 
 
 ## Quick start
@@ -587,3 +588,8 @@ storage.inevitability = 'There are a lot of unavoidable things.'
 ```
 
 > ⓘ This restriction only applies to user code. Default values and loading values from sources will continue to function.
+
+
+## Transformations and serialization
+
+Application settings are rarely selected “outside”; usually, they do not need to be sent over the network or anything like that. But if you suddenly need to do so, you can convert such an object into a standard Python format for serialization, dict:
