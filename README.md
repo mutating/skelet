@@ -592,4 +592,17 @@ storage.inevitability = 'There are a lot of unavoidable things.'
 
 ## Transformations and serialization
 
-Application settings are rarely selected “outside”; usually, they do not need to be sent over the network or anything like that. But if you suddenly need to do so, you can convert such an object into a standard Python format for serialization, dict:
+Application settings are rarely selected «outside»; usually, they do not need to be sent over the network or anything like that. But if you suddenly need to do so, you can convert such an object into a standard Python format for serialization, [`dict`](https://docs.python.org/3/library/stdtypes.html#typesmapping), using the `asdict()` function:
+
+```python
+from skelet import asdict
+
+class FlyingСonfig(Storage):
+    some_field: int = Field(42)
+
+data = asdict(FlyingСonfig())
+print(data)
+#> {'some_field': 42}
+```
+
+After completing this conversion, you can continue to treat the data as a regular `dict`, for example, convert it to `JSON` and send it over the network.
