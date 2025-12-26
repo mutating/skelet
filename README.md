@@ -39,6 +39,7 @@ Collect all the settings of your project in one place. Ensure type safety, threa
 - [**Thread safety**](#thread-safety)
 - [**Callbacks for changes**](#callbacks-for-changes)
 - [**Read only fields**](#read-only-fields)
+- [**Transformations and serialization**](#transformations-and-serialization)
 
 
 ## Quick start
@@ -58,7 +59,7 @@ from skelet import Storage, Field, NonNegativeInt
 
 class ManDescription(Storage):
     name: str = Field()
-    age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18}, validate_default=False)
+    age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
 You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better sharpened specifically for use for storing settings.
@@ -587,3 +588,21 @@ storage.inevitability = 'There are a lot of unavoidable things.'
 ```
 
 > ⓘ This restriction only applies to user code. Default values and loading values from sources will continue to function.
+
+
+## Transformations and serialization
+
+Application settings are rarely selected «outside»; usually, they do not need to be sent over the network or anything like that. But if you suddenly need to do so, you can convert such an object into a standard Python format for serialization, [`dict`](https://docs.python.org/3/library/stdtypes.html#typesmapping), using the `asdict()` function:
+
+```python
+from skelet import asdict
+
+class FlyingСonfig(Storage):
+    some_field: int = Field(42)
+
+data = asdict(FlyingСonfig())
+print(data)
+#> {'some_field': 42}
+```
+
+After completing this conversion, you can continue to treat the data as a regular `dict`, for example, convert it to `JSON` and send it over the network.
