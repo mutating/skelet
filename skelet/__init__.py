@@ -9,3 +9,5 @@ from skelet.sources.yaml import YAMLSource as YAMLSource  # noqa: F401
 from skelet.sources.env import EnvSource as EnvSource  # noqa: F401
 from skelet.sources.memory import MemorySource as MemorySource  # noqa: F401
 from skelet.sources.getter_for_libraries import for_tool as for_tool  # noqa: F401
+
+from skelet.functions.asdict import asdict as asdict  # noqa: F401
