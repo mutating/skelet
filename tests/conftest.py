@@ -1,3 +1,5 @@
+import sys
+from typing import List, Optional
 from os.path import join
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -45,3 +47,13 @@ def yaml_config_path(request, data, temporary_dir_path):
         file.write(serialized_data)
 
     yield request.param(file_path)
+
+
+@pytest.fixture
+def temp_argv(monkeypatch, argv):
+    if argv is None:
+        argv = []
+
+    result = sys.argv[:1] + argv
+    monkeypatch.setattr(sys, "argv", result)
+    return result
