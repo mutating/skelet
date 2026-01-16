@@ -31,8 +31,8 @@ class FixedCLISource(AbstractSource):
                 if not parameter.isidentifier():
                     raise ValueError(f'The {parameter} parameter is not a valid Python identifier.')
 
-        self.position_arguments = position_arguments
-        self.named_arguments = named_arguments
+        self.position_arguments = position_arguments if position_arguments is not None else []
+        self.named_arguments = named_arguments if named_arguments is not None else []
 
         self.parser = ArgumentParser()
 
@@ -60,12 +60,23 @@ class FixedCLISource(AbstractSource):
                 raise KeyError(key) from e  # pragma: no cover
 
     def __repr__(self) -> str:
-        return descript_data_object(type(self).__name__, (), {'position_arguments': self.position_arguments, 'named_arguments': self.named_arguments}, filters={'position_arguments': not_none, 'named_arguments': not_none})
+        return descript_data_object(
+            type(self).__name__,
+            (),
+            {
+                'position_arguments': self.position_arguments,
+                'named_arguments': self.named_arguments
+            },
+            filters={
+                'position_arguments': lambda x: x,
+                'named_arguments': lambda x: x,
+            },
+        )
 
     def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = InnerNone) -> Optional[ExpectedType]:
         subresult = self.get(key, default)
 
-        if hint is bool:
+        if hint is bool and key in self.named_arguments:
             if subresult is None:
                 return cast(ExpectedType, True)
             elif subresult is InnerNone:
