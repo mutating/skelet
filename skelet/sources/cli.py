@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from contextlib import redirect_stderr
 
 from simtypes import from_string
-from printo import descript_data_object, not_none
+from printo import descript_data_object
 from denial import InnerNone
 
 from skelet.sources.abstract import AbstractSource
