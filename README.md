@@ -34,6 +34,7 @@ Collect all the settings of your project in one place. Ensure type safety, threa
   - [**TOML files and pyproject.toml**](#toml-files-and-pyprojecttoml)
   - [**JSON files**](#json-files)
   - [**YAML files**](#yaml-files)
+  - [**CLI interfaces**](#cli-interfaces)
   - [**Collecting sources**](#collecting-sources)
 - [**Converting values**](#converting-values)
 - [**Thread safety**](#thread-safety)
@@ -471,6 +472,11 @@ class MyClass(Storage, sources=[YAMLSource('my_config.yaml')]):
 ```
 
 Everything also will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
+
+
+## CLI interfaces
+
+
 
 
 ## Collecting sources
