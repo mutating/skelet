@@ -1,5 +1,5 @@
 import os
-from typing import List, Type, TypeVar, Optional, Any
+from typing import List, Type, TypeVar, Optional, Any, cast
 from argparse import ArgumentParser
 from contextlib import redirect_stderr
 
@@ -47,9 +47,9 @@ class FixedCLISource(AbstractSource):
 
         if hint is bool:
             if subresult is None:
-                return True
+                return cast(ExpectedType, True)
             elif subresult is InnerNone:
-                return False
+                return cast(ExpectedType, False)
             else:
                 raise CLIFormatError("You can't pass values for boolean fields to the CLI.")
 
