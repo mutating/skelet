@@ -18,10 +18,6 @@ class FixedCLISource(AbstractSource):
         if named_arguments is None and position_arguments is None:
             raise ValueError("You need to pass a list of named arguments or a list of positional arguments, you haven't passed anything.")
 
-        arguments_intersection = set([] if position_arguments is None else position_arguments) & set([] if named_arguments is None else named_arguments)
-        if arguments_intersection:
-            raise ValueError(f"The following parameters overlap among positional and named command line arguments: {', '.join(sorted(arguments_intersection))}")
-
         if named_arguments is not None:
             for parameter in named_arguments:
                 if not parameter.isidentifier() or parameter == '_' or '__' in parameter:
@@ -30,6 +26,10 @@ class FixedCLISource(AbstractSource):
             for parameter in position_arguments:
                 if not parameter.isidentifier():
                     raise ValueError(f'The "{parameter}" parameter is not a valid Python identifier.')
+
+        arguments_intersection = set([] if position_arguments is None else position_arguments) & set([] if named_arguments is None else named_arguments)
+        if arguments_intersection:
+            raise ValueError(f"The following parameters overlap among positional and named command line arguments: {', '.join(sorted(arguments_intersection))}")
 
         self.position_arguments = position_arguments if position_arguments is not None else []
         self.named_arguments = named_arguments if named_arguments is not None else []
