@@ -4,6 +4,7 @@ import pytest
 from full_match import match
 
 from skelet import FixedCLISource
+from skelet.errors import CLIFormatError
 
 
 def test_repr():
@@ -116,3 +117,38 @@ def test_type_awared_get(temp_argv):
 
     with pytest.raises(TypeError, match=match('The string "kek" cannot be interpreted as an integer.')):
         FixedCLISource(field_names).type_awared_get("string", int)
+
+
+def test_pass_not_valid_variable_names():
+    with pytest.raises(ValueError, match=match('The "_" parameter is not valid for use on the command line (most likely, it is also not a valid Python name).')):
+        FixedCLISource(['_'])
+
+    with pytest.raises(ValueError, match=match('The "lol__kek" parameter is not valid for use on the command line (most likely, it is also not a valid Python name).')):
+        FixedCLISource(['lol__kek'])
+
+    with pytest.raises(ValueError, match=match('The "+lol_kek" parameter is not valid for use on the command line (most likely, it is also not a valid Python name).')):
+        FixedCLISource(['+lol_kek'])
+
+
+@pytest.mark.parametrize(
+    ['argv'],
+    [
+        ([
+            '-o', 'kek',
+        ],),
+    ],
+)
+def test_one_letter_field_name(temp_argv):
+    assert FixedCLISource(['o']).get('o') == 'kek'
+
+@pytest.mark.parametrize(
+    ['argv'],
+    [
+        ([
+            '--lol', 'kek',
+        ],),
+    ],
+)
+def test_bool_variable_with_value(temp_argv):
+    with pytest.raises(CLIFormatError, match=match("You can't pass values for boolean fields to the CLI.")):
+        FixedCLISource(['lol']).type_awared_get('lol', bool)
