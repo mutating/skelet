@@ -34,7 +34,7 @@ class FixedCLISource(AbstractSource):
         self.position_arguments = position_arguments if position_arguments is not None else []
         self.named_arguments = named_arguments if named_arguments is not None else []
 
-        self.parser = ArgumentParser()
+        self.parser = ArgumentParser(add_help=False)
 
         for parameter in self.named_arguments:
             if len(parameter) == 1:

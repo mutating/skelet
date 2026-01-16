@@ -214,3 +214,15 @@ def test_arguments_intersection():
 def test_incorrect_positional_name():
     with pytest.raises(ValueError, match=match('The "*a" parameter is not a valid Python identifier.')):
         FixedCLISource(position_arguments=['*a'])
+
+
+@pytest.mark.parametrize(
+    ['argv'],
+    [
+        ([
+            '--help',
+        ],),
+    ],
+)
+def test_help_field(temp_argv):
+    FixedCLISource(named_arguments=['help']).type_awared_get('help', bool) == True
