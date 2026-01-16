@@ -36,17 +36,15 @@ class FixedCLISource(AbstractSource):
 
         self.parser = ArgumentParser()
 
-        if self.named_arguments is not None:
-            for parameter in self.named_arguments:
-                if len(parameter) == 1:
-                    full_parameter = f'-{parameter}'
-                else:
-                    full_parameter = f'--{parameter.replace("_", "-")}'
-                self.parser.add_argument(full_parameter, nargs='?', const=None, default=InnerNone)
+        for parameter in self.named_arguments:
+            if len(parameter) == 1:
+                full_parameter = f'-{parameter}'
+            else:
+                full_parameter = f'--{parameter.replace("_", "-")}'
+            self.parser.add_argument(full_parameter, nargs='?', const=None, default=InnerNone)
 
-        if self.position_arguments is not None:
-            for parameter in self.position_arguments:
-                self.parser.add_argument(parameter, nargs='?', const=None, default=InnerNone)
+        for parameter in self.position_arguments:
+            self.parser.add_argument(parameter, nargs='?', const=None, default=InnerNone)
 
     def __getitem__(self, key: str) -> Any:
         with open(os.devnull, 'w') as devnull, redirect_stderr(devnull):
