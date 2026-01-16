@@ -8,7 +8,7 @@ from simtypes import from_string
 from printo import descript_data_object
 from denial import InnerNone
 
-from skelet.sources.abstract import AbstractSource, SecondNone
+from skelet.sources.abstract import AbstractSource
 from skelet.errors import CLIFormatError
 
 
@@ -19,6 +19,7 @@ class FixedCLISource(AbstractSource):
         for parameter in parameters:
             if not parameter.isidentifier() or parameter == '_' or '__' in parameter:
                 raise ValueError(f'The "{parameter}" parameter is not valid for use on the command line (most likely, it is also not a valid Python name).')
+
         self.parameters = parameters
         self.parser = ArgumentParser()
         for parameter in self.parameters:
@@ -42,19 +43,19 @@ class FixedCLISource(AbstractSource):
     def __repr__(self) -> str:
         return descript_data_object(type(self).__name__, (self.parameters,), {})
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = SecondNone) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = InnerNone) -> Optional[ExpectedType]:
         subresult = self.get(key, default)
 
         if hint is bool:
             if subresult is None:
                 return True
-            elif subresult is SecondNone:
+            elif subresult is InnerNone:
                 return False
             else:
                 raise CLIFormatError("You can't pass values for boolean fields to the CLI.")
 
         if subresult is default:
-            if default is SecondNone:
+            if default is not InnerNone:
                 return default
             return None
 
