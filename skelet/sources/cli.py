@@ -29,7 +29,7 @@ class FixedCLISource(AbstractSource):
         if position_arguments is not None:
             for parameter in position_arguments:
                 if not parameter.isidentifier():
-                    raise ValueError(f'The {parameter} parameter is not a valid Python identifier.')
+                    raise ValueError(f'The "{parameter}" parameter is not a valid Python identifier.')
 
         self.position_arguments = position_arguments if position_arguments is not None else []
         self.named_arguments = named_arguments if named_arguments is not None else []
