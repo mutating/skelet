@@ -71,7 +71,7 @@ class FixedCLISource(AbstractSource):
             elif subresult is InnerNone:
                 return cast(ExpectedType, False)
             else:
-                raise CLIFormatError("You can't pass values for boolean fields to the CLI.")
+                raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
 
         if subresult is default:
             if default is not InnerNone:
