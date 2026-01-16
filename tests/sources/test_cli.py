@@ -152,5 +152,65 @@ def test_one_letter_field_name(temp_argv):
     ],
 )
 def test_bool_variable_with_value(temp_argv):
-    with pytest.raises(CLIFormatError, match=match("You can't pass values for boolean fields to the CLI.")):
+    with pytest.raises(CLIFormatError, match=match("You can't pass values for boolean named fields to the CLI.")):
         FixedCLISource(named_arguments=['lol']).type_awared_get('lol', bool)
+
+
+@pytest.mark.parametrize(
+    ['argv'],
+    [
+        ([
+            'lol', 'kek',
+        ],),
+    ],
+)
+def test_get_position_arguments(temp_argv):
+    assert FixedCLISource(position_arguments=['a', 'b'])['a'] == 'lol'
+    assert FixedCLISource(position_arguments=['a', 'b'])['b'] == 'kek'
+
+
+@pytest.mark.parametrize(
+    ['argv'],
+    [
+        ([
+            'lol',
+        ],),
+    ],
+)
+def test_get_partical_position_arguments(temp_argv):
+    assert FixedCLISource(position_arguments=['a', 'b'])['a'] == 'lol'
+
+    with pytest.raises(KeyError):
+        FixedCLISource(position_arguments=['a', 'b'])['b']
+
+    assert FixedCLISource(position_arguments=['a', 'b']).get('b') is None
+
+
+@pytest.mark.parametrize(
+    ['argv'],
+    [
+        ([
+            '123', 'yes',
+        ],),
+    ],
+)
+def test_get_type_awared_position_arguments(temp_argv):
+    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('a', int) == 123
+    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('a', str) == '123'
+    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('b', bool) == True
+    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('b', str) == 'yes'
+
+
+def test_use_without_arguments():
+    with pytest.raises(ValueError, match=match("You need to pass a list of named arguments or a list of positional arguments, you haven't passed anything.")):
+        FixedCLISource()
+
+
+def test_arguments_intersection():
+    with pytest.raises(ValueError, match=match("The following parameters overlap among positional and named command line arguments: b, c")):
+        FixedCLISource(position_arguments=['a', 'b', 'c'], named_arguments=['b', 'c', 'd'])
+
+
+def test_incorrect_positional_name():
+    with pytest.raises(ValueError, match=match('The "*a" parameter is not a valid Python identifier.')):
+        FixedCLISource(position_arguments=['*a'])
