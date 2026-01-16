@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import List, Type, TypeVar, Optional, Any
 from argparse import ArgumentParser
 from contextlib import redirect_stderr

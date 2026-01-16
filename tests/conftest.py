@@ -1,5 +1,4 @@
 import sys
-from typing import List, Optional
 from os.path import join
 from tempfile import TemporaryDirectory
 from pathlib import Path
