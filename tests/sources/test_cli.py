@@ -225,4 +225,4 @@ def test_incorrect_positional_name():
     ],
 )
 def test_help_field(temp_argv):
-    FixedCLISource(named_arguments=['help']).type_awared_get('help', bool) == True
+    assert FixedCLISource(named_arguments=['help']).type_awared_get('help', bool) == True
