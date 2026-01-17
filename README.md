@@ -34,6 +34,7 @@ Collect all the settings of your project in one place. Ensure type safety, threa
   - [**TOML files and pyproject.toml**](#toml-files-and-pyprojecttoml)
   - [**JSON files**](#json-files)
   - [**YAML files**](#yaml-files)
+  - [**CLI interfaces**](#cli-interfaces)
   - [**Collecting sources**](#collecting-sources)
 - [**Converting values**](#converting-values)
 - [**Thread safety**](#thread-safety)
@@ -471,6 +472,40 @@ class MyClass(Storage, sources=[YAMLSource('my_config.yaml')]):
 ```
 
 Everything also will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
+
+
+## CLI interfaces
+
+`skelet` can automatically parse command line arguments. To do this, use the `FixedCLISource` object, to which you need to pass a list of positional and/or named command line arguments:
+
+```python
+#!/usr/bin/env python3
+# Obviously, this is not a completed program, just a fragment of the code in it.
+
+from skelet import FixedCLISource
+
+class MyClass(Storage, sources=[
+    FixedCLISource(
+        named_arguments=['first_field', 'second_field'],
+        position_arguments=['third_field'],
+    ),
+]):
+    first_field: str = Field('default')
+    second_field: str = Field('default')
+    third_field: str = Field('default')
+```
+
+Now we can run our script, and the arguments that we pass will automatically fill in the corresponding fields of our class:
+
+```bash
+./our_script.py --first-field value "positional argument"
+```
+
+As you can see, names of positional arguments require adding two hyphens at the beginning, like this: `--`, and also all the underscores should also be replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
+
+If a specific named field has a `bool` type hint, it does not need to pass any value. The rest of the fields need it, and they will be interpreted according to their type hints.
+
+All arguments are optional, and if they are not present on the command line, just the default value will be used. The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command line argument.
 
 
 ## Collecting sources
