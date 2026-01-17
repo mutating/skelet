@@ -501,11 +501,11 @@ Now we can run our script, and the arguments that we pass will automatically fil
 ./our_script.py --first-field value "positional argument"
 ```
 
-As you can see, names of positional arguments require adding two hyphens at the beginning, like this: `--`, and also all the underscores should also be replaced with hyphens. All arguments are optional, and if they are not present on the command line, just the default value will be used.
+As you can see, names of positional arguments require adding two hyphens at the beginning, like this: `--`, and also all the underscores should also be replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
 
 If a specific named field has a `bool` type hint, it does not need to pass any value. The rest of the fields need it, and they will be interpreted according to their type hints.
 
-The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command line argument.
+All arguments are optional, and if they are not present on the command line, just the default value will be used. The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command line argument.
 
 
 ## Collecting sources
