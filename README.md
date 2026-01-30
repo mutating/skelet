@@ -324,7 +324,7 @@ So far, we have discussed that fields can have default values, as well as values
 
 - Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](#yaml-files), and [`JSON`](#json-files)).
 - [Environment variables](#environment-variables).
-- Support for new sources, such as CLI parameters, will be available soon.
+- [Command line arguments](#cli-interfaces).
 
 The current value of each class field is determined by the following order:
 
