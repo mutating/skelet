@@ -52,7 +52,7 @@ class Field(Generic[ValueType]):
 
         if conversion is not None and default is not sentinel:
             self._default_before_conversion: Union[ValueType, InnerNoneType] = default
-            self._default: Union[ValueType, InnerNoneType] = conversion(default)
+            self._default: Union[ValueType, InnerNoneType] = conversion(cast(ValueType, default))
         else:
             self._default_before_conversion = sentinel
             self._default = default
@@ -102,13 +102,13 @@ class Field(Generic[ValueType]):
             self.base_class = owner
 
             if self._default_before_conversion is not sentinel:
-                self.check_type_hints(owner, name, self._default_before_conversion)
+                self.check_type_hints(owner, name, cast(ValueType, self._default_before_conversion))
 
             self.set_field_names(owner, name)
             if self._default is not sentinel:
-                self.check_type_hints(owner, name, self._default)
+                self.check_type_hints(owner, name, cast(ValueType, self._default))
                 if self.validate_default:
-                    self.check_value(self._default)
+                    self.check_value(cast(ValueType, self._default))
 
     def __get__(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
         if instance is None:
