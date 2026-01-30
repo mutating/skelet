@@ -55,7 +55,7 @@ class EnvSource(AbstractSource):
         subresult = self.get(key, default)
 
         if subresult is default:
-            if not (default is sentinel):
+            if default is not sentinel:
                 return default
             return None
 

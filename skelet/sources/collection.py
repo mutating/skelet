@@ -37,7 +37,7 @@ class SourcesCollection(AbstractSource):
             if maybe_result is not default:
                 return maybe_result
 
-        if not (default is sentinel):
+        if default is not sentinel:
             return default
 
         return None
