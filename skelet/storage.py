@@ -5,10 +5,13 @@ from collections import defaultdict
 
 from printo import descript_data_object
 from locklib import ContextLockProtocol
+from denial import InnerNoneType
 
 from skelet.sources.collection import SourcesCollection
 from skelet.sources.abstract import AbstractSource
 
+
+sentinel = InnerNoneType()
 
 class Storage:
     __values__: Dict[str, Any]
@@ -34,9 +37,9 @@ class Storage:
 
         for field_name in self.__field_names__:
             field = getattr(type(self), field_name)
-            content = field.get_sources(self).type_awared_get(field.alias, field.type_hint, MISSING)
+            content = field.get_sources(self).type_awared_get(field.alias, field.type_hint, sentinel)
             it_is_not_default = True
-            if content is not MISSING:
+            if content is not sentinel:
                 field.check_type_hints(type(self), field_name, content, strict=True, raise_all=True)
                 field.check_value(content, raise_all=True)
             else:
@@ -82,7 +85,7 @@ class Storage:
 
         for field_name in self.__field_names__:
             field_content = getattr(self, field_name)
-            if field_content is MISSING:
+            if field_content is sentinel:
                 raise ValueError(f'The value for the "{field_name}" field is undefined. Set the default value, or specify the value when creating the instance.')
 
 
@@ -119,7 +122,7 @@ class Storage:
                     for conficting_field_name, checker in field.conflicts.items():
                         if conficting_field_name not in deduplicated_field_names:
                             raise NameError(f'You have set a conflict condition for {field.get_field_name_representation()} with field "{conficting_field_name}", but the field "{conficting_field_name}" does not exist in the class {cls.__name__}.')
-                        elif field._default is not MISSING and getattr(cls, conficting_field_name)._default is not MISSING and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
+                        elif field._default is not sentinel and getattr(cls, conficting_field_name)._default is not sentinel and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
                             other_field = getattr(cls, conficting_field_name)
                             raise ValueError(f'The {field.get_value_representation(field._default)} default value of the {field.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field._default)} value of the {other_field.get_field_name_representation()}.')
 
