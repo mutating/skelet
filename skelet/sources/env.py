@@ -6,12 +6,14 @@ from copy import copy
 
 from printo import descript_data_object
 from simtypes import from_string
+from denial import InnerNoneType
 
-from skelet.sources.abstract import AbstractSource, SecondNone
+from skelet.sources.abstract import AbstractSource
 from skelet.errors import CaseError
 
 
 ExpectedType = TypeVar('ExpectedType')
+sentinel = InnerNoneType()
 
 class EnvSource(AbstractSource):
     def __init__(self, prefix: Optional[str] = '', postfix: Optional[str] = '', case_sensitive: bool = False) -> None:
@@ -49,11 +51,11 @@ class EnvSource(AbstractSource):
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = SecondNone()) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
         subresult = self.get(key, default)
 
         if subresult is default:
-            if not isinstance(default, SecondNone):
+            if default is not sentinel:
                 return default
             return None
 

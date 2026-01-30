@@ -6,12 +6,12 @@ except ImportError:  # pragma: no cover
     EllipsisType = type(...)  # type: ignore[misc]
 
 from threading import Lock
-from dataclasses import MISSING, _MISSING_TYPE
 from collections.abc import Sequence
 from sys import version_info
 
 from locklib import ContextLockProtocol
 from simtypes import check
+from denial import InnerNoneType
 
 from skelet.storage import Storage
 from skelet.sources.abstract import AbstractSource
@@ -25,10 +25,12 @@ if version_info < (3, 9):  # pragma: no cover
 else:  # pragma: no cover
     SequenceWithStrings = Sequence[str]  # type: ignore[misc, assignment]
 
+sentinel = InnerNoneType()
+
 class Field(Generic[ValueType]):
     def __init__(
         self,
-        default: Union[ValueType, _MISSING_TYPE] = MISSING,
+        default: Union[ValueType, InnerNoneType] = sentinel,
         /,
         default_factory: Optional[Callable[[], ValueType]] = None,
         doc: Optional[str] = None,
@@ -45,14 +47,14 @@ class Field(Generic[ValueType]):
         conversion: Optional[Callable[[ValueType], ValueType]] = None,
         share_mutex_with: Optional[SequenceWithStrings] = None,
     ) -> None:
-        if default_factory is not None and default is not MISSING:
+        if default_factory is not None and default is not sentinel:
             raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
 
-        if conversion is not None and default is not MISSING:
-            self._default_before_conversion: Union[ValueType, _MISSING_TYPE] = default
-            self._default: Union[ValueType, _MISSING_TYPE] = conversion(default)
+        if conversion is not None and default is not sentinel:
+            self._default_before_conversion: Union[ValueType, InnerNoneType] = default
+            self._default: Union[ValueType, InnerNoneType] = conversion(cast(ValueType, default))
         else:
-            self._default_before_conversion = MISSING
+            self._default_before_conversion = sentinel
             self._default = default
 
         self._default_factory = default_factory
@@ -99,14 +101,14 @@ class Field(Generic[ValueType]):
 
             self.base_class = owner
 
-            if self._default_before_conversion is not MISSING:
-                self.check_type_hints(owner, name, self._default_before_conversion)
+            if self._default_before_conversion is not sentinel:
+                self.check_type_hints(owner, name, cast(ValueType, self._default_before_conversion))
 
             self.set_field_names(owner, name)
-            if self._default is not MISSING:
-                self.check_type_hints(owner, name, self._default)
+            if self._default is not sentinel:
+                self.check_type_hints(owner, name, cast(ValueType, self._default))
                 if self.validate_default:
-                    self.check_value(self._default)
+                    self.check_value(cast(ValueType, self._default))
 
     def __get__(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
         if instance is None:

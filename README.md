@@ -324,7 +324,7 @@ So far, we have discussed that fields can have default values, as well as values
 
 - Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](#yaml-files), and [`JSON`](#json-files)).
 - [Environment variables](#environment-variables).
-- Support for new sources, such as CLI parameters, will be available soon.
+- [Command line arguments](#cli-interfaces).
 
 The current value of each class field is determined by the following order:
 
@@ -417,8 +417,9 @@ Environment variables can be used to store values of only certain data types. Th
 - `int` - any integers.
 - `float` - any floating-point numbers, including infinities and [`NaN`](https://en.wikipedia.org/wiki/NaN).
 - `bool`- the strings `"yes"`, `"True"`, and `"true"` are interpreted as `True`, while `"no"`, `"False"`, or `"false"` are interpreted as `False`.
+- `date` or `datetime` - strings representing, respectively, dates or dates + time in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
 - `list` - lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
-- `tuple` - lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected. This is the only type where the value produced does not match the type, the value is always a list. For this reason, I do not recommend using tuples.
+- `tuple` - lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
 - `dict` - dicts in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
 
 
