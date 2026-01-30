@@ -3,12 +3,10 @@ from abc import ABC, abstractmethod
 from typing import TypeVar, Type
 
 from simtypes import check
+from denial import InnerNoneType
 
 
-class SecondNone:
-    pass
-
-SECOND_NONE = SecondNone()
+sentinel = InnerNoneType()
 
 ExpectedType = TypeVar('ExpectedType')
 
@@ -25,11 +23,11 @@ class AbstractSource(ABC):
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = SECOND_NONE) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
         result = self.get(key, default)
 
         if result is default:
-            if default is SECOND_NONE:
+            if default is sentinel:
                 return None
             return default
 

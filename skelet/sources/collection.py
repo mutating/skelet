@@ -1,11 +1,13 @@
 from typing import List, Type, TypeVar, Optional, Any
 
 from printo import descript_data_object
+from denial import InnerNoneType
 
-from skelet.sources.abstract import AbstractSource, SecondNone
+from skelet.sources.abstract import AbstractSource
 
 
 ExpectedType = TypeVar('ExpectedType')
+sentinel = InnerNoneType()
 
 class SourcesCollection(AbstractSource):
     def __init__(self, sources: List[AbstractSource]) -> None:
@@ -29,13 +31,13 @@ class SourcesCollection(AbstractSource):
         except KeyError:
             return default
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = SecondNone()) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
         for source in self.sources:
             maybe_result = source.type_awared_get(key, hint, default=default)
             if maybe_result is not default:
                 return maybe_result
 
-        if not isinstance(default, SecondNone):
+        if not (default is sentinel):
             return default
 
         return None

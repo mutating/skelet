@@ -5,13 +5,14 @@ from contextlib import redirect_stderr
 
 from simtypes import from_string
 from printo import descript_data_object
-from denial import InnerNone
+from denial import InnerNoneType
 
 from skelet.sources.abstract import AbstractSource
 from skelet.errors import CLIFormatError
 
 
 ExpectedType = TypeVar('ExpectedType')
+sentinel = InnerNoneType()
 
 class FixedCLISource(AbstractSource):
     def __init__(self, position_arguments: Optional[List[str]] = None, named_arguments: Optional[List[str]] = None) -> None:
@@ -41,16 +42,16 @@ class FixedCLISource(AbstractSource):
                 full_parameter = f'-{parameter}'
             else:
                 full_parameter = f'--{parameter.replace("_", "-")}'
-            self.parser.add_argument(full_parameter, nargs='?', const=None, default=InnerNone)
+            self.parser.add_argument(full_parameter, nargs='?', const=None, default=sentinel)
 
         for parameter in self.position_arguments:
-            self.parser.add_argument(parameter, nargs='?', const=None, default=InnerNone)
+            self.parser.add_argument(parameter, nargs='?', const=None, default=sentinel)
 
     def __getitem__(self, key: str) -> Any:
         with open(os.devnull, 'w') as devnull, redirect_stderr(devnull):
             try:
                 result = vars(self.parser.parse_args())[key]
-                if result is InnerNone:
+                if result is sentinel:
                     raise KeyError(key)
                 return result
             # TODO: from python 3.9 use exit_on_error
@@ -71,19 +72,19 @@ class FixedCLISource(AbstractSource):
             },
         )
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = InnerNone) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
         subresult = self.get(key, default)
 
         if hint is bool and key in self.named_arguments:
             if subresult is None:
                 return cast(ExpectedType, True)
-            elif subresult is InnerNone:
+            elif subresult is sentinel:
                 return cast(ExpectedType, False)
             else:
                 raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
 
         if subresult is default:
-            if default is not InnerNone:
+            if default is not sentinel:
                 return default
             return None
 
