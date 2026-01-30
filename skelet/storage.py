@@ -1,4 +1,3 @@
-from dataclasses import MISSING
 from typing import List, Dict, Optional, Any
 from threading import Lock
 from collections import defaultdict
@@ -85,7 +84,7 @@ class Storage:
 
         for field_name in self.__field_names__:
             field_content = getattr(self, field_name)
-            if field_content is sentinel:
+            if isinstance(field_content, InnerNoneType):
                 raise ValueError(f'The value for the "{field_name}" field is undefined. Set the default value, or specify the value when creating the instance.')
 
 
@@ -122,7 +121,7 @@ class Storage:
                     for conficting_field_name, checker in field.conflicts.items():
                         if conficting_field_name not in deduplicated_field_names:
                             raise NameError(f'You have set a conflict condition for {field.get_field_name_representation()} with field "{conficting_field_name}", but the field "{conficting_field_name}" does not exist in the class {cls.__name__}.')
-                        elif field._default is not sentinel and getattr(cls, conficting_field_name)._default is not sentinel and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
+                        elif not isinstance(field._default, InnerNoneType) and not isinstance(getattr(cls, conficting_field_name)._default, InnerNoneType) and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
                             other_field = getattr(cls, conficting_field_name)
                             raise ValueError(f'The {field.get_value_representation(field._default)} default value of the {field.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field._default)} value of the {other_field.get_field_name_representation()}.')
 
