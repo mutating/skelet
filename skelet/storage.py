@@ -1,21 +1,20 @@
-from typing import List, Dict, Optional, Any
-from threading import Lock
 from collections import defaultdict
+from threading import Lock
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from printo import descript_data_object
-from locklib import ContextLockProtocol
 from denial import InnerNoneType
+from locklib import ContextLockProtocol
+from printo import descript_data_object
 
-from skelet.sources.collection import SourcesCollection
 from skelet.sources.abstract import AbstractSource
-
+from skelet.sources.collection import SourcesCollection
 
 sentinel = InnerNoneType()
 
 class Storage:
     __values__: Dict[str, Any]
     __locks__: Dict[str, ContextLockProtocol]
-    __field_names__: List[str] = []
+    __field_names__: Union[List[str], Tuple[str, ...]] = ()
     __reverse_conflicts__: Dict[str, List[str]]
     __sources__: SourcesCollection
 
@@ -39,21 +38,20 @@ class Storage:
             content = field.get_sources(self).type_awared_get(field.alias, field.type_hint, sentinel)
             it_is_not_default = True
             if content is not sentinel:
-                field.check_type_hints(type(self), field_name, content, strict=True, raise_all=True)
+                field.check_type_hints(content, strict=True, raise_all=True)
                 field.check_value(content, raise_all=True)
+            elif field._default_factory is not None:
+                content = field._default_factory()
+                field.check_type_hints(content, strict=True, raise_all=True)
+                if field.validate_default:
+                    field.check_value(content, raise_all=True)
             else:
-                if field._default_factory is not None:
-                    content = field._default_factory()
-                    field.check_type_hints(type(self), field_name, content, strict=True, raise_all=True)
-                    if field.validate_default:
-                        field.check_value(content, raise_all=True)
-                else:
-                    it_is_not_default = False
-                    content = field._default
+                it_is_not_default = False
+                content = field._default
 
             if field.conversion is not None and it_is_not_default:
                 content = field.conversion(content)
-                field.check_type_hints(type(self), field_name, content, strict=True, raise_all=True)
+                field.check_type_hints(content, strict=True, raise_all=True)
                 if field.validate_default:
                     field.check_value(content, raise_all=True)
 
@@ -121,7 +119,7 @@ class Storage:
                     for conficting_field_name, checker in field.conflicts.items():
                         if conficting_field_name not in deduplicated_field_names:
                             raise NameError(f'You have set a conflict condition for {field.get_field_name_representation()} with field "{conficting_field_name}", but the field "{conficting_field_name}" does not exist in the class {cls.__name__}.')
-                        elif not isinstance(field._default, InnerNoneType) and not isinstance(getattr(cls, conficting_field_name)._default, InnerNoneType) and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
+                        if not isinstance(field._default, InnerNoneType) and not isinstance(getattr(cls, conficting_field_name)._default, InnerNoneType) and reverse_conflicts and field.reverse_conflicts_on and checker(field._default, field._default, getattr(cls, conficting_field_name)._default, getattr(cls, conficting_field_name)._default):
                             other_field = getattr(cls, conficting_field_name)
                             raise ValueError(f'The {field.get_value_representation(field._default)} default value of the {field.get_field_name_representation()} conflicts with the {other_field.get_value_representation(other_field._default)} value of the {other_field.get_field_name_representation()}.')
 

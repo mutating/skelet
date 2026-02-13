@@ -1,4 +1,4 @@
-from skelet import for_tool, EnvSource, TOMLSource, YAMLSource, JSONSource
+from skelet import EnvSource, JSONSource, TOMLSource, YAMLSource, for_tool
 
 
 def test_all_sources():

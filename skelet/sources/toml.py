@@ -1,6 +1,6 @@
-from typing import List, Union, Optional, Any
-from pathlib import Path
 from functools import cached_property
+from pathlib import Path
+from typing import Any, List, Optional, Union
 
 try:
     from tomllib import load  # type: ignore[import-not-found]
@@ -47,11 +47,10 @@ class TOMLSource(AbstractSource):
 
             return table
 
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             if self.allow_non_existent_files:
                 return {}
-            else:
-                raise e
+            raise
 
         except KeyError:
             return {}

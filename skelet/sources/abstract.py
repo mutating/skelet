@@ -1,10 +1,8 @@
-from typing import Optional, Any
 from abc import ABC, abstractmethod
-from typing import TypeVar, Type
+from typing import Any, Optional, Type, TypeVar
 
-from simtypes import check
 from denial import InnerNoneType
-
+from simtypes import check
 
 sentinel = InnerNoneType()
 

@@ -1,15 +1,14 @@
 import os
-from typing import List, Type, TypeVar, Optional, Any, cast
 from argparse import ArgumentParser
 from contextlib import redirect_stderr
+from typing import Any, List, Optional, Type, TypeVar, cast
 
-from simtypes import from_string
-from printo import descript_data_object
 from denial import InnerNoneType
+from printo import descript_data_object
+from simtypes import from_string
 
-from skelet.sources.abstract import AbstractSource
 from skelet.errors import CLIFormatError
-
+from skelet.sources.abstract import AbstractSource
 
 ExpectedType = TypeVar('ExpectedType')
 sentinel = InnerNoneType()
@@ -64,7 +63,7 @@ class FixedCLISource(AbstractSource):
             (),
             {
                 'position_arguments': self.position_arguments,
-                'named_arguments': self.named_arguments
+                'named_arguments': self.named_arguments,
             },
             filters={
                 'position_arguments': lambda x: x,
@@ -78,10 +77,9 @@ class FixedCLISource(AbstractSource):
         if hint is bool and key in self.named_arguments:
             if subresult is None:
                 return cast(ExpectedType, True)
-            elif subresult is sentinel:
+            if subresult is sentinel:
                 return cast(ExpectedType, False)
-            else:
-                raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
+            raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
 
         if subresult is default:
             if default is not sentinel:

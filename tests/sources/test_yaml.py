@@ -7,16 +7,9 @@ from skelet import YAMLSource
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'int_top_value': 1,
-            'str_top_value': 'lol',
-            'list_top_value': ['lol', 'kek'],
-            'float_top_value': 1.5,
-            'bool_top_value': True,
-            'dict_top_value': {'another_bool_top_value': True},
-        },),
+        {'int_top_value': 1, 'str_top_value': 'lol', 'list_top_value': ['lol', 'kek'], 'float_top_value': 1.5, 'bool_top_value': True, 'dict_top_value': {'another_bool_top_value': True}},
     ],
 )
 def test_read_simple_values_from_top_level(yaml_config_path):
@@ -31,9 +24,9 @@ def test_read_simple_values_from_top_level(yaml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({},),
+        {},
     ],
 )
 def test_read_empty_value_from_top_level_table(yaml_config_path):
@@ -44,10 +37,10 @@ def test_read_empty_value_from_top_level_table(yaml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'allow_non_existent_files': True},),
+        {},
+        {'allow_non_existent_files': True},
     ],
 )
 def test_non_existing_files_are_allowed(addictional_parameters):
@@ -88,14 +81,9 @@ def test_repr():
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'string': 'kek',
-            'number': 123,
-            'list_with_numbers': [123, 456],
-            'list_with_strings': ['123', '456'],
-        },),
+        {'string': 'kek', 'number': 123, 'list_with_numbers': [123, 456], 'list_with_strings': ['123', '456']},
     ],
 )
 def test_type_awared_get(yaml_config_path):

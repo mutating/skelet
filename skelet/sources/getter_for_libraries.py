@@ -1,7 +1,7 @@
 from typing import List
 
+from skelet import EnvSource, JSONSource, TOMLSource, YAMLSource
 from skelet.sources.abstract import AbstractSource
-from skelet import EnvSource, TOMLSource, JSONSource, YAMLSource
 
 
 def for_tool(tool_name: str) -> List[AbstractSource]:

@@ -1,16 +1,15 @@
 import os
 import platform
-from typing import List, Dict, Type, TypeVar, Optional, Any, cast
-from functools import cached_property
 from copy import copy
+from functools import cached_property
+from typing import Any, Dict, List, Optional, Type, TypeVar, cast
 
+from denial import InnerNoneType
 from printo import descript_data_object
 from simtypes import from_string
-from denial import InnerNoneType
 
-from skelet.sources.abstract import AbstractSource
 from skelet.errors import CaseError
-
+from skelet.sources.abstract import AbstractSource
 
 ExpectedType = TypeVar('ExpectedType')
 sentinel = InnerNoneType()

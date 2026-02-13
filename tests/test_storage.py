@@ -1,11 +1,21 @@
 import sys
-from typing import List, Any, Union, Optional
+from typing import Any, List, Optional, Union
 
 import pytest
 from full_match import match
 from locklib import LockTraceWrapper
 
-from skelet import Storage, Field, TOMLSource, JSONSource, YAMLSource, EnvSource, MemorySource, NaturalNumber, NonNegativeInt
+from skelet import (
+    EnvSource,
+    Field,
+    JSONSource,
+    MemorySource,
+    NaturalNumber,
+    NonNegativeInt,
+    Storage,
+    TOMLSource,
+    YAMLSource,
+)
 
 
 def test_try_to_get_descriptor_object_from_class_inherited_from_storage():
@@ -65,24 +75,24 @@ def test_set_not_default_value_and_read_multiple_times():
     class SomeClass(Storage):
         field = Field(0)
 
-    object = SomeClass()
+    instance = SomeClass()
 
     for index in range(10):
-        assert object.field == index
-        object.field += 1
+        assert instance.field == index
+        instance.field += 1
 
 
 def test_changing_value_is_not_changing_the_default_value():
     class SomeClass(Storage):
         field = Field(42)
 
-    object = SomeClass()
+    instance = SomeClass()
 
-    assert object.field == 42
+    assert instance.field == 42
 
-    object.field += 1
+    instance.field += 1
 
-    assert object.field == 43
+    assert instance.field == 43
 
     assert SomeClass().field == 42
 
@@ -107,24 +117,24 @@ def test_try_to_set_new_value_to_read_only_attribute():
     class SomeClass(Storage):
         field = Field(42, read_only=True)
 
-    object = SomeClass()
+    instance = SomeClass()
 
     with pytest.raises(AttributeError, match=match('"field" field is read-only.')):
-        object.field = 43
+        instance.field = 43
 
-    assert object.field == 42
+    assert instance.field == 42
 
 
 def test_try_to_set_new_value_to_read_only_attribute_with_doc():
     class SomeClass(Storage):
         field = Field(42, read_only=True, doc='some doc')
 
-    object = SomeClass()
+    instance = SomeClass()
 
     with pytest.raises(AttributeError, match=match('"field" field (some doc) is read-only.')):
-        object.field = 43
+        instance.field = 43
 
-    assert object.field == 42
+    assert instance.field == 42
 
 
 def test_all_storage_childs_have_their_own_lists_with_names():
@@ -181,7 +191,7 @@ def test_inheritance_of_fields_and_adding_new_fields():
         field_4 = Field(45)
 
     assert FirstClass.__field_names__ == ['field_1', 'field_2', 'field_3']
-    assert SecondClass.__field_names__ == FirstClass.__field_names__ + ['field_4']
+    assert SecondClass.__field_names__ ==  [*FirstClass.__field_names__, 'field_4']
 
     assert FirstClass().field_1 == 42
     assert FirstClass().field_2 == 43
@@ -205,8 +215,8 @@ def test_inheritance_of_fields_and_adding_new_fields_two_times():
         field_5 = Field(46)
 
     assert FirstClass.__field_names__ == ['field_1', 'field_2', 'field_3']
-    assert SecondClass.__field_names__ == FirstClass.__field_names__ + ['field_4']
-    assert ThirdClass.__field_names__ == SecondClass.__field_names__ + ['field_5']
+    assert SecondClass.__field_names__ ==  [*FirstClass.__field_names__, 'field_4']
+    assert ThirdClass.__field_names__ == [*SecondClass.__field_names__, 'field_5']
 
     assert FirstClass().field_1 == 42
     assert FirstClass().field_2 == 43
@@ -267,7 +277,7 @@ def test_storage_child_has_fields_list():
     class StorageChild(Storage):
         ...
 
-    assert StorageChild.__field_names__ == []
+    assert StorageChild.__field_names__ == ()
 
 
 def test_repr_without_fields():
@@ -326,7 +336,7 @@ def test_get_from_inner_dict_is_thread_safe_and_use_per_fields_locks():
     field.lock = LockTraceWrapper(field.lock)
     storage.__locks__['field'] = LockTraceWrapper(storage.__locks__['field'])
     class PseudoDict:
-        def get(self, key):
+        def get(self, key):  # noqa: ARG002
             storage.__locks__['field']
             field.lock.notify('get')
             return 43
@@ -335,7 +345,8 @@ def test_get_from_inner_dict_is_thread_safe_and_use_per_fields_locks():
     assert storage.field == 43
     assert storage.__locks__['field'].was_event_locked('get')
 
-    assert not field.lock.was_event_locked('get') and field.lock.trace
+    assert not field.lock.was_event_locked('get')
+    assert field.lock.trace
 
 
 def test_that_set_is_thread_safe_and_use_per_field_locks():
@@ -352,7 +363,7 @@ def test_that_set_is_thread_safe_and_use_per_field_locks():
             storage.__locks__['field'].notify('set')
             field.lock.notify('set')
 
-        def get(self, key):
+        def get(self, key):  # noqa: ARG002
             storage.__locks__['field'].notify('get')
             field.lock.notify('get')
             return 42
@@ -364,8 +375,9 @@ def test_that_set_is_thread_safe_and_use_per_field_locks():
     assert storage.__locks__['field'].was_event_locked('set')
     assert storage.__locks__['field'].was_event_locked('get')
 
-    assert not field.lock.was_event_locked('set') and field.lock.trace
-    assert not field.lock.was_event_locked('get') and field.lock.trace
+    assert not field.lock.was_event_locked('set')
+    assert field.lock.trace
+    assert not field.lock.was_event_locked('get')
 
 
 def test_set_name_uses_per_field_object_lock():
@@ -374,11 +386,12 @@ def test_set_name_uses_per_field_object_lock():
 
     field = Field(42)
     field.lock = LockTraceWrapper(field.lock)
-    field.set_field_names = lambda x, y: field.lock.notify('get')
+    field.set_field_names = lambda x, y: field.lock.notify('get')  # noqa: ARG005
 
     field.__set_name__(SomeClass, 'field')
 
-    assert field.lock.was_event_locked('get') and field.lock.trace
+    assert field.lock.was_event_locked('get')
+    assert field.lock.trace
 
 
 def test_simple_type_check_failed_when_set_bool_if_expected_int():
@@ -393,7 +406,7 @@ def test_simple_type_check_failed_when_set_bool_if_expected_int():
 
 
 @pytest.mark.parametrize(
-    ['int_value', 'float_value', 'secret'],
+    ('int_value', 'float_value', 'secret'),
     [
         ('***', '***', True),
         ("'15'", '15.0', False),
@@ -416,7 +429,7 @@ def test_simple_type_check_failed_when_set(int_value, float_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['int_value', 'float_value', 'secret'],
+    ('int_value', 'float_value', 'secret'),
     [
         ('***', '***', True),
         ("'15'", "15.0", False),
@@ -451,7 +464,7 @@ def test_simple_type_check_not_failed_when_set():
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ("'15'", False),
@@ -464,7 +477,7 @@ def test_type_check_when_define_default_failed(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ("'15'", False),
@@ -485,7 +498,7 @@ def test_type_check_when_define_default_not_failed():
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ("'kek'", False),
@@ -500,7 +513,7 @@ def test_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ("'kek'", False),
@@ -530,7 +543,7 @@ def test_type_check_when_redefine_defaults_initing_new_object_not_failed():
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ("'kek'", False),
@@ -573,7 +586,7 @@ def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_f
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ("'kek'", False),
@@ -605,7 +618,7 @@ def test_try_to_use_underscored_name_for_field_with_doc():
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ('-1', False),
@@ -622,7 +635,7 @@ def test_validation_function_failed_when_set(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ('-1', False),
@@ -639,10 +652,10 @@ def test_validation_function_failed_when_set_with_doc(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_validation_functions_dict_failed_when_set(addictional_parameters):
@@ -678,7 +691,7 @@ def test_validation_functions_dict_not_failed_when_set():
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ('-1', False),
@@ -693,7 +706,7 @@ def test_validation_function_failed_when_init(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ('-1', False),
@@ -708,10 +721,10 @@ def test_validation_function_failed_when_init_with_doc(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_validation_functions_dict_failed_when_init(addictional_parameters):
@@ -723,10 +736,10 @@ def test_validation_functions_dict_failed_when_init(addictional_parameters):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_validation_function_not_failed_when_init(addictional_parameters):
@@ -741,10 +754,10 @@ def test_validation_function_not_failed_when_init(addictional_parameters):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_validation_functions_dict_not_failed_when_init(addictional_parameters):
@@ -759,7 +772,7 @@ def test_validation_functions_dict_not_failed_when_init(addictional_parameters):
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ('-15', False),
@@ -772,7 +785,7 @@ def test_validation_function_failed_when_default(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['wrong_value', 'secret'],
+    ('wrong_value', 'secret'),
     [
         ('***', True),
         ('-15', False),
@@ -785,10 +798,10 @@ def test_validation_function_failed_when_default_with_doc(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_validation_function_not_failed_when_default_because_no_check_first_time(addictional_parameters):
@@ -805,7 +818,7 @@ def test_validation_when_set_is_not_under_lock():
     instance = SomeClass()
 
     instance.__locks__['field'] = LockTraceWrapper(instance.__locks__['field'])
-    SomeClass.field.validation = lambda x: instance.__locks__['field'].notify('kek') is None
+    SomeClass.field.validation = lambda x: instance.__locks__['field'].notify('kek') is None  # noqa: ARG005
     instance.field = 5
 
     assert instance.field == 5
@@ -820,7 +833,7 @@ def test_type_check_when_set_is_not_under_lock():
     instance = SomeClass()
 
     instance.__locks__['field'] = LockTraceWrapper(instance.__locks__['field'])
-    SomeClass.field.check_type_hints = lambda x, y, z, raise_all: instance.__locks__['field'].notify('kek')
+    SomeClass.field.check_type_hints = lambda x, raise_all: instance.__locks__['field'].notify('kek')  # noqa: ARG005
     instance.field = 5
 
     assert instance.field == 5
@@ -845,7 +858,7 @@ def test_type_check_when_set_is_before_validation():
     instance = SomeClass()
 
     old_check_type_hints = SomeClass.field.check_type_hints
-    SomeClass.field.check_type_hints = lambda x, y, z, raise_all: flags.append('type_check') is old_check_type_hints(x, y, z, raise_all=raise_all)
+    SomeClass.field.check_type_hints = lambda z, raise_all: flags.append('type_check') is old_check_type_hints(z, raise_all=raise_all)
     start_check = True
 
     with pytest.raises(TypeError):
@@ -898,7 +911,7 @@ def test_set_action_for_set():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))
+        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -917,7 +930,7 @@ def test_action_doesnt_work_when_new_value_is_same():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))
+        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -930,9 +943,9 @@ def test_action_doesnt_work_when_new_value_is_same():
 
 
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({'read_lock': True},),
+        {'read_lock': True},
     ],
 )
 def test_read_lock_on(addictional_arguments):
@@ -947,7 +960,7 @@ def test_read_lock_on(addictional_arguments):
     field.lock = LockTraceWrapper(field.lock)
 
     class PseudoDict:
-        def get(self, key):
+        def get(self, key):  # noqa: ARG002
             lock.notify('get')
             field.lock.notify('get')
             return 10
@@ -978,7 +991,7 @@ def test_read_lock_off():
     field.lock = LockTraceWrapper(field.lock)
 
     class PseudoDict:
-        def get(self, key):
+        def get(self, key):  # noqa: ARG002
             lock.notify('get')
             field.lock.notify('get')
             return 10
@@ -1026,7 +1039,7 @@ def test_storage_is_not_singleton():
 
 def test_conflicting_fields_have_the_same_lock():
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old})
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old})  # noqa: ARG005
         other_field: int = Field(20)
         second_other_field: int = Field(25)
 
@@ -1039,7 +1052,7 @@ def test_conflicting_fields_have_the_same_lock():
 def test_conflicts_check_is_under_field_lock():
     locks: List[LockTraceWrapper] = []
 
-    def check_function(old, new, other_old, other_new):
+    def check_function(old, new, other_old, other_new):  # noqa: ARG001
         for lock in locks:
             lock.notify('check')
         return False
@@ -1063,7 +1076,7 @@ def test_conflicts_check_is_under_field_lock():
 def test_reverse_conflicts_check_is_under_field_lock():
     locks: List[LockTraceWrapper] = []
 
-    def check_function(old, new, other_old, other_new):
+    def check_function(old, new, other_old, other_new):  # noqa: ARG001
         for lock in locks:
             lock.notify('check')
         return False
@@ -1087,10 +1100,10 @@ def test_reverse_conflicts_check_is_under_field_lock():
 
 
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_non_existing_conflicting_field_name(addictional_arguments):
@@ -1101,7 +1114,7 @@ def test_non_existing_conflicting_field_name(addictional_arguments):
 
     with pytest.raises(NameError, match=match(exception_message)):
         class SomeClass(Storage):
-            field: int = Field(10, conflicts={'ather_field': lambda old, new, other: new > other}, **addictional_arguments)
+            field: int = Field(10, conflicts={'ather_field': lambda old, new, other: new > other}, **addictional_arguments)  # noqa: ARG005
             other_field: int = Field(20)
 
 
@@ -1109,22 +1122,22 @@ def test_non_existing_conflicting_field_name(addictional_arguments):
 # Check: exceptions messages for both types of fields on the both sides, direct and reverse
 
 @pytest.mark.parametrize(
-    ['main_field_is_secret'],
+    'main_field_is_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret)  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
         secret_other_field: int = Field(20, secret=True, doc=addictional_arguments.get('doc'))
 
@@ -1141,11 +1154,10 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
         else:
             exception_message = 'The new 21 (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
+    elif main_field_is_secret:
+        exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
     else:
-        if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
-        else:
-            exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
+        exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         instance.field = 21
@@ -1157,11 +1169,10 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
         else:
             exception_message = 'The new -1 (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
+    elif main_field_is_secret:
+        exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
     else:
-        if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
-        else:
-            exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
+        exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         instance.field = -1
@@ -1170,22 +1181,22 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
 
 
 @pytest.mark.parametrize(
-    ['main_field_is_secret'],
+    'main_field_is_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_is_secret):
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret)  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
         secret_other_field: int = Field(20, secret=True, doc=addictional_arguments.get('doc'))
 
@@ -1202,11 +1213,10 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
         else:
             exception_message = 'The new 21 (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
+    elif main_field_is_secret:
+        exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
     else:
-        if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
-        else:
-            exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
+        exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         SomeClass(field=21)
@@ -1216,28 +1226,27 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
         else:
             exception_message = 'The new -1 (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
+    elif main_field_is_secret:
+        exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
     else:
-        if main_field_is_secret:
-            exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
-        else:
-            exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
+        exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         SomeClass(field=-1)
 
 
 @pytest.mark.parametrize(
-    ['are_fields_secret'],
+    'are_fields_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_conflicting_fields_when_defaults_are_conflicting(addictional_arguments, are_fields_secret):
@@ -1246,39 +1255,38 @@ def test_conflicting_fields_when_defaults_are_conflicting(addictional_arguments,
             exception_message = 'The *** (int) default value of the "field" field (some doc) conflicts with the *** (int) value of the "other_field" field (some doc).'
         else:
             exception_message = 'The 21 (int) default value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
+    elif are_fields_secret:
+        exception_message = 'The *** (int) default value of the "field" field conflicts with the *** (int) value of the "other_field" field.'
     else:
-        if are_fields_secret:
-            exception_message = 'The *** (int) default value of the "field" field conflicts with the *** (int) value of the "other_field" field.'
-        else:
-            exception_message = 'The 21 (int) default value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
+        exception_message = 'The 21 (int) default value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         class SomeClass(Storage):
-            field: int = Field(21, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new > 30}, doc=addictional_arguments.get('doc'), secret=are_fields_secret)
+            field: int = Field(21, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new > 30}, doc=addictional_arguments.get('doc'), secret=are_fields_secret)  # noqa: ARG005
             other_field: int = Field(20, doc=addictional_arguments.get('doc'), secret=are_fields_secret)
 
 
 @pytest.mark.parametrize(
-    ['are_fields_secret'],
+    'are_fields_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
-        ({'reverse_conflicts': True},),
-        ({'reverse_conflicts': True, 'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
+        {'reverse_conflicts': True},
+        {'reverse_conflicts': True, 'doc': 'some doc'},
     ],
 )
 def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are_fields_secret):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments)  # noqa: ARG005
         other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
 
     instance = SomeClass()
@@ -1295,11 +1303,10 @@ def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are
             exception_message = 'The new *** (int) value of the "other_field" field (some doc) conflicts with the *** (int) value of the "field" field (some doc).'
         else:
             exception_message = 'The new 5 (int) value of the "other_field" field (some doc) conflicts with the 10 (int) value of the "field" field (some doc).'
+    elif are_fields_secret:
+        exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
     else:
-        if are_fields_secret:
-            exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
-        else:
-            exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
+        exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         instance.other_field = 5
@@ -1309,26 +1316,26 @@ def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are
 
 
 @pytest.mark.parametrize(
-    ['are_fields_secret'],
+    'are_fields_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
-        ({'reverse_conflicts': True},),
-        ({'reverse_conflicts': True, 'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
+        {'reverse_conflicts': True},
+        {'reverse_conflicts': True, 'doc': 'some doc'},
     ],
 )
 def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional_arguments, are_fields_secret):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments)  # noqa: ARG005
         other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
 
     instance = SomeClass()
@@ -1345,43 +1352,42 @@ def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional
             exception_message = 'The new *** (int) value of the "other_field" field (some doc) conflicts with the *** (int) value of the "field" field (some doc).'
         else:
             exception_message = 'The new 5 (int) value of the "other_field" field (some doc) conflicts with the 10 (int) value of the "field" field (some doc).'
+    elif are_fields_secret:
+        exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
     else:
-        if are_fields_secret:
-            exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
-        else:
-            exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
+        exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         SomeClass(other_field=5)
 
 
 @pytest.mark.parametrize(
-    ['reverse_check_parameters'],
+    'reverse_check_parameters',
     [
-        ({'class': False, 'field': True},),
-        ({'class': True, 'field': False},),
-        ({'class': False, 'field': False},),
+        {'class': False, 'field': True},
+        {'class': True, 'field': False},
+        {'class': False, 'field': False},
     ],
 )
 @pytest.mark.parametrize(
-    ['are_fields_secret'],
+    'are_fields_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_basic_conflicting_fields_reverse_when_its_off(addictional_arguments, are_fields_secret, reverse_check_parameters):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
 
     instance = SomeClass()
@@ -1400,32 +1406,32 @@ def test_basic_conflicting_fields_reverse_when_its_off(addictional_arguments, ar
 
 
 @pytest.mark.parametrize(
-    ['reverse_check_parameters'],
+    'reverse_check_parameters',
     [
-        ({'class': False, 'field': True},),
-        ({'class': True, 'field': False},),
-        ({'class': False, 'field': False},),
+        {'class': False, 'field': True},
+        {'class': True, 'field': False},
+        {'class': False, 'field': False},
     ],
 )
 @pytest.mark.parametrize(
-    ['are_fields_secret'],
+    'are_fields_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 def test_conflicting_fields_reverse_when_its_off_and_when_set_in_init(addictional_arguments, are_fields_secret, reverse_check_parameters):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
 
     instance = SomeClass()
@@ -1444,30 +1450,30 @@ def test_conflicting_fields_reverse_when_its_off_and_when_set_in_init(addictiona
 
 
 @pytest.mark.parametrize(
-    ['main_field_is_secret'],
+    'main_field_is_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 @pytest.mark.parametrize(
-    ['reverse_check_parameters'],
+    'reverse_check_parameters',
     [
-        ({'class': False, 'field': True},),
-        ({'class': True, 'field': False},),
-        ({'class': False, 'field': False},),
+        {'class': False, 'field': True},
+        {'class': True, 'field': False},
+        {'class': False, 'field': False},
     ],
 )
 def test_conflicting_fields_when_reverse_check_off(addictional_arguments, main_field_is_secret, reverse_check_parameters):
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass()
@@ -1480,30 +1486,30 @@ def test_conflicting_fields_when_reverse_check_off(addictional_arguments, main_f
 
 
 @pytest.mark.parametrize(
-    ['main_field_is_secret'],
+    'main_field_is_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 @pytest.mark.parametrize(
-    ['reverse_check_parameters'],
+    'reverse_check_parameters',
     [
-        ({'class': False, 'field': True},),
-        ({'class': True, 'field': False},),
-        ({'class': False, 'field': False},),
+        {'class': False, 'field': True},
+        {'class': True, 'field': False},
+        {'class': False, 'field': False},
     ],
 )
 def test_conflicting_fields_in_init_when_reverse_check_off(addictional_arguments, main_field_is_secret, reverse_check_parameters):
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass(other_field=5)
@@ -1513,30 +1519,30 @@ def test_conflicting_fields_in_init_when_reverse_check_off(addictional_arguments
 
 
 @pytest.mark.parametrize(
-    ['main_field_is_secret'],
+    'main_field_is_secret',
     [
-        (True,),
-        (False,),
+        True,
+        False,
     ],
 )
 @pytest.mark.parametrize(
-    ['addictional_arguments'],
+    'addictional_arguments',
     [
-        ({},),
-        ({'doc': 'some doc'},),
+        {},
+        {'doc': 'some doc'},
     ],
 )
 @pytest.mark.parametrize(
-    ['reverse_check_parameters'],
+    'reverse_check_parameters',
     [
-        ({'class': False, 'field': True},),
-        ({'class': True, 'field': False},),
-        ({'class': False, 'field': False},),
+        {'class': False, 'field': True},
+        {'class': True, 'field': False},
+        {'class': False, 'field': False},
     ],
 )
 def test_conflicting_fields_in_defaults_when_reverse_check_off(addictional_arguments, main_field_is_secret, reverse_check_parameters):
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(5, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass()
@@ -1602,7 +1608,7 @@ def test_there_is_no_dunder_starting_fields_except_user_ones():
 
 def test_reverse_fields_container_in_basic_case():
     class SomeClass(Storage):
-        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
+        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})  # noqa: ARG005
         other_field: int = Field(10)
 
     assert SomeClass.__reverse_conflicts__ == {'other_field': ['field']}
@@ -1611,11 +1617,11 @@ def test_reverse_fields_container_in_basic_case():
 
 def test_reverse_fields_container_in_case_of_inheritance_with_new_field():
     class SomeClass(Storage):
-        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
+        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})  # noqa: ARG005
         other_field: int = Field(10)
 
     class SomeOtherClass(SomeClass):
-        third_field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > 1000})
+        third_field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > 1000})  # noqa: ARG005
 
     assert SomeClass.__reverse_conflicts__ == {'other_field': ['field']}
     assert SomeOtherClass.__reverse_conflicts__ == {'other_field': ['field', 'third_field']}
@@ -1626,11 +1632,11 @@ def test_reverse_fields_container_in_case_of_inheritance_with_new_field():
 
 def test_reverse_fields_container_in_case_of_inheritance_with_same_field():
     class SomeClass(Storage):
-        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})
+        field: int = Field(5, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new})  # noqa: ARG005
         other_field: int = Field(10)
 
     class SomeOtherClass(SomeClass):
-        other_field: int = Field(10, conflicts={'field': lambda old, new, other_old, other_new: old > 1000})
+        other_field: int = Field(10, conflicts={'field': lambda old, new, other_old, other_new: old > 1000})  # noqa: ARG005
 
     assert SomeClass.__reverse_conflicts__ == {'other_field': ['field']}
     assert SomeOtherClass.__reverse_conflicts__ == {'other_field': ['field'], 'field': ['other_field']}
@@ -1640,10 +1646,10 @@ def test_reverse_fields_container_in_case_of_inheritance_with_same_field():
 
 
 @pytest.mark.parametrize(
-    ['sources'],
+    'sources',
     [
-        ([],),
-        ([MemorySource({})],),
+        [],
+        [MemorySource({})],
     ],
 )
 def test_empty_set_of_sources(sources):
@@ -1688,12 +1694,9 @@ def test_order_of_sources():
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 1,
-            'other_field': 14,
-        },),
+        {'field': 1, 'other_field': 14},
     ],
 )
 def test_load_from_toml(toml_config_path):
@@ -1713,12 +1716,9 @@ def test_load_from_toml(toml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 1,
-            'other_field': 14,
-        },),
+        {'field': 1, 'other_field': 14},
     ],
 )
 def test_load_from_yaml(yaml_config_path):
@@ -1738,12 +1738,9 @@ def test_load_from_yaml(yaml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 1,
-            'other_field': 14,
-        },),
+        {'field': 1, 'other_field': 14},
     ],
 )
 def test_load_from_json(json_config_path):
@@ -1788,11 +1785,9 @@ def test_source_checking_is_under_field_lock_when_its_on():
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': '1',
-        },),
+        {'field': '1'},
     ],
 )
 def test_read_bad_typed_value_from_toml_source_for_not_deferred_value(toml_config_path):
@@ -1804,11 +1799,9 @@ def test_read_bad_typed_value_from_toml_source_for_not_deferred_value(toml_confi
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': '1',
-        },),
+        {'field': '1'},
     ],
 )
 def test_read_bad_typed_value_from_yaml_source_for_not_deferred_value(yaml_config_path):
@@ -1820,11 +1813,9 @@ def test_read_bad_typed_value_from_yaml_source_for_not_deferred_value(yaml_confi
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': '1',
-        },),
+        {'field': '1'},
     ],
 )
 def test_read_bad_typed_value_from_json_source_for_not_deferred_value(json_config_path):
@@ -1836,11 +1827,9 @@ def test_read_bad_typed_value_from_json_source_for_not_deferred_value(json_confi
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': [14],
-        },),
+        {'field': [14]},
     ],
 )
 def test_read_bad_typed_value_from_toml_source_for_deferred_value(toml_config_path):
@@ -1852,11 +1841,9 @@ def test_read_bad_typed_value_from_toml_source_for_deferred_value(toml_config_pa
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': [14],
-        },),
+        {'field': [14]},
     ],
 )
 def test_read_bad_typed_value_from_yaml_source_for_deferred_value(yaml_config_path):
@@ -1868,11 +1855,9 @@ def test_read_bad_typed_value_from_yaml_source_for_deferred_value(yaml_config_pa
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': [14],
-        },),
+        {'field': [14]},
     ],
 )
 def test_read_bad_typed_value_from_json_source_for_deferred_value(json_config_path):
@@ -1963,10 +1948,10 @@ def test_type_check_for_default_factory():
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'validate_default': True},),
+        {},
+        {'validate_default': True},
     ],
 )
 def test_validate_default_factory_value_fith_function_when_its_on_and_validation_not_passed(addictional_parameters):
@@ -1978,10 +1963,10 @@ def test_validate_default_factory_value_fith_function_when_its_on_and_validation
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'validate_default': True},),
+        {},
+        {'validate_default': True},
     ],
 )
 def test_validate_default_factory_value_fith_function_when_its_on_and_validation_passed(addictional_parameters):
@@ -1994,10 +1979,10 @@ def test_validate_default_factory_value_fith_function_when_its_on_and_validation
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'validate_default': True},),
+        {},
+        {'validate_default': True},
     ],
 )
 def test_validate_default_factory_value_fith_dict_when_its_on_and_validation_not_passed(addictional_parameters):
@@ -2009,10 +1994,10 @@ def test_validate_default_factory_value_fith_dict_when_its_on_and_validation_not
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'validate_default': True},),
+        {},
+        {'validate_default': True},
     ],
 )
 def test_validate_default_factory_value_fith_dict_when_its_on_and_validation_passed(addictional_parameters):
@@ -2064,7 +2049,7 @@ def test_conflicts_for_default_factory():
     field_value = 10
     other_lazy_field_value = 5
     class SomeClass(Storage):
-        field: int = Field(default_factory=lambda: field_value, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'other_lazy_field': lambda old, new, other_old, other_new: new > other_old})
+        field: int = Field(default_factory=lambda: field_value, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'other_lazy_field': lambda old, new, other_old, other_new: new > other_old})  # noqa: ARG005
         other_field: int = Field(20)
         other_lazy_field: int = Field(default_factory=lambda: other_lazy_field_value)
 
@@ -2090,7 +2075,7 @@ def test_reverse_conflicts_for_default_factory():
     other_lazy_field_value = 5
 
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_lazy_field': lambda old, new, other_old, other_new: new > other_old})
+        field: int = Field(10, conflicts={'other_lazy_field': lambda old, new, other_old, other_new: new > other_old})  # noqa: ARG005
         other_lazy_field: int = Field(default_factory=lambda: other_lazy_field_value)
 
     with pytest.raises(ValueError, match=match('The 10 (int) deferred default value of the "field" field conflicts with the 5 (int) value of the "other_lazy_field" field.')):
@@ -2105,7 +2090,7 @@ def test_reverse_conflicts_for_default_factory():
 
 
 @pytest.mark.parametrize(
-    ['class_flag', 'field_flag'],
+    ('class_flag', 'field_flag'),
     [
         (True, False),
         (False, True),
@@ -2116,7 +2101,7 @@ def test_reverse_conflicts_off_for_default_factory(class_flag, field_flag):
     other_lazy_field_value = 5
 
     class SomeClass(Storage, reverse_conflicts=class_flag):
-        field: int = Field(10, conflicts={'other_lazy_field': lambda old, new, other_old, other_new: new > other_old}, reverse_conflicts=field_flag)
+        field: int = Field(10, conflicts={'other_lazy_field': lambda old, new, other_old, other_new: new > other_old}, reverse_conflicts=field_flag)  # noqa: ARG005
         other_lazy_field: int = Field(default_factory=lambda: other_lazy_field_value)
 
     instance = SomeClass()
@@ -2153,12 +2138,13 @@ def test_conversion_is_not_under_field_lock():
 
     assert storage.field == 10
 
-    assert not lock.was_event_locked('conversion') and lock.trace
+    assert not lock.was_event_locked('conversion')
+    assert lock.trace
 
 
 def test_conflicts_check_on_set_is_after_conversion():
     class SomeClass(Storage):
-        field: int = Field(5, conversion=lambda x: x * 2, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new})
+        field: int = Field(5, conversion=lambda x: x * 2, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new})  # noqa: ARG005
         other_field: int = Field(10)
 
     instance = SomeClass()
@@ -2170,7 +2156,7 @@ def test_conflicts_check_on_set_is_after_conversion():
 def test_conflicts_check_on_defaults_is_after_conversion():
     with pytest.raises(ValueError, match=match('The 20 (int) default value of the "field" field conflicts with the 10 (int) value of the "other_field" field.')):
         class SomeClass(Storage):
-            field: int = Field(10, conversion=lambda x: x * 2, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new})
+            field: int = Field(10, conversion=lambda x: x * 2, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new})  # noqa: ARG005
             other_field: int = Field(10)
 
 
@@ -2247,11 +2233,9 @@ def test_basic_conversion_when_set_and_init_with_passed_type_check_for_new_and_o
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 15,
-        },),
+        {'field': 15},
     ],
 )
 def test_conversion_for_source(toml_config_path, json_config_path, yaml_config_path):
@@ -2272,11 +2256,9 @@ def test_conversion_for_source(toml_config_path, json_config_path, yaml_config_p
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 15,
-        },),
+        {'field': 15},
     ],
 )
 def test_type_check_before_conversion_for_toml_source(toml_config_path):
@@ -2288,11 +2270,9 @@ def test_type_check_before_conversion_for_toml_source(toml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 15,
-        },),
+        {'field': 15},
     ],
 )
 def test_type_check_before_conversion_for_yaml_source(yaml_config_path):
@@ -2304,11 +2284,9 @@ def test_type_check_before_conversion_for_yaml_source(yaml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 15,
-        },),
+        {'field': 15},
     ],
 )
 def test_type_check_before_conversion_for_json_source(json_config_path):
@@ -2320,11 +2298,9 @@ def test_type_check_before_conversion_for_json_source(json_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'field': 15,
-        },),
+        {'field': 15},
     ],
 )
 def test_type_check_after_conversion_for_source(toml_config_path, json_config_path, yaml_config_path):
@@ -2366,7 +2342,7 @@ def test_type_check_is_after_conversion_for_default_factory():
 
 def test_validation_is_after_conversion_for_default_factory():
     class SomeClass(Storage):
-        field: int = Field(default_factory=lambda: 5, conversion=lambda x: 10, validation=lambda x: x != 10)
+        field: int = Field(default_factory=lambda: 5, conversion=lambda x: 10, validation=lambda x: x != 10)  # noqa: ARG005
 
     with pytest.raises(ValueError, match=match('The value 10 (int) of the "field" field does not match the validation.')):
         SomeClass()
@@ -2374,7 +2350,7 @@ def test_validation_is_after_conversion_for_default_factory():
 
 def test_validation_is_after_conversion_for_default_factory_when_its_off():
     class SomeClass(Storage):
-        field: int = Field(default_factory=lambda: 5, conversion=lambda x: 10, validation=lambda x: x != 10, validate_default=False)
+        field: int = Field(default_factory=lambda: 5, conversion=lambda x: 10, validation=lambda x: x != 10, validate_default=False)  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -2389,7 +2365,7 @@ def test_share_locks():
         first_field: int = Field(1, share_mutex_with=['second_field'])
         second_field: int = Field(2)
         third_field: int = Field(3)
-        forth_field: int = Field(4, conflicts={'fifth_field': lambda x, y, z, m: False})
+        forth_field: int = Field(4, conflicts={'fifth_field': lambda x, y, z, m: False})  # noqa: ARG005
         fifth_field: int = Field(5)
 
     instance = SomeClass()
@@ -2431,7 +2407,7 @@ def test_share_mutex_with_twice():
 
 def test_share_mutex_with_conflicting_field():
     class SomeClass(Storage):
-        first_field: int = Field(1, share_mutex_with=['second_field'], conflicts={'third_field': lambda x, y, z, m: False})
+        first_field: int = Field(1, share_mutex_with=['second_field'], conflicts={'third_field': lambda x, y, z, m: False})  # noqa: ARG005
         second_field: int = Field(2)
         third_field: int = Field(3)
 

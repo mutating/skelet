@@ -1,10 +1,9 @@
-from typing import List, Type, TypeVar, Optional, Any
+from typing import Any, List, Optional, Type, TypeVar
 
-from printo import descript_data_object
 from denial import InnerNoneType
+from printo import descript_data_object
 
 from skelet.sources.abstract import AbstractSource
-
 
 ExpectedType = TypeVar('ExpectedType')
 sentinel = InnerNoneType()

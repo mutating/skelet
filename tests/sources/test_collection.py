@@ -3,9 +3,8 @@ from typing import List
 import pytest
 from full_match import match
 
-from skelet import TOMLSource, JSONSource, MemorySource
+from skelet import JSONSource, MemorySource, TOMLSource
 from skelet.sources.collection import SourcesCollection
-
 
 
 def test_there_is_no_that_key():
@@ -19,11 +18,11 @@ def test_there_is_no_that_key_and_use_get_method():
 
 
 @pytest.mark.parametrize(
-    ['sources'],
+    'sources',
     [
-        ([{'key': 'value'}, {}, {}],),
-        ([{}, {'key': 'value'}, {}],),
-        ([{}, {}, {'key': 'value'}],),
+        [{'key': 'value'}, {}, {}],
+        [{}, {'key': 'value'}, {}],
+        [{}, {}, {'key': 'value'}],
     ],
 )
 def test_there_is_key_in_one_source(sources):
@@ -33,11 +32,11 @@ def test_there_is_key_in_one_source(sources):
 
 
 @pytest.mark.parametrize(
-    ['sources'],
+    'sources',
     [
-        ([{'key': 'value'}, {}, {}, {'key': 'second_value'}],),
-        ([{}, {'key': 'value'}, {}, {'key': 'second_value'}],),
-        ([{}, {}, {'key': 'value'}, {'key': 'second_value'}],),
+        [{'key': 'value'}, {}, {}, {'key': 'second_value'}],
+        [{}, {'key': 'value'}, {}, {'key': 'second_value'}],
+        [{}, {}, {'key': 'value'}, {'key': 'second_value'}],
     ],
 )
 def test_shading_sources(sources):

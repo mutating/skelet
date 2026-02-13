@@ -1,7 +1,8 @@
-from typing import List, Union, Any
-from pathlib import Path
+# noqa: A005
 from functools import cached_property
 from json import load
+from pathlib import Path
+from typing import Any, List, Union
 
 from printo import descript_data_object
 
@@ -25,11 +26,10 @@ class JSONSource(AbstractSource):
             with open(self.path, 'r') as file:
                 return load(file)
 
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             if self.allow_non_existent_files:
                 return {}
-            else:
-                raise e
+            raise
 
     @classmethod
     def for_library(cls, library_name: str) -> List['JSONSource']:

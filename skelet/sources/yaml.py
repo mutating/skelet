@@ -1,9 +1,9 @@
-from typing import List, Union, Any
-from pathlib import Path
 from functools import cached_property
+from pathlib import Path
+from typing import Any, List, Union
 
-from yaml import load, Loader
 from printo import descript_data_object
+from yaml import Loader, load
 
 from skelet.sources.abstract import AbstractSource
 
@@ -25,11 +25,10 @@ class YAMLSource(AbstractSource):
             with open(self.path, 'r') as file:
                 return load(file, Loader=Loader)
 
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             if self.allow_non_existent_files:
                 return {}
-            else:
-                raise e
+            raise
 
     @classmethod
     def for_library(cls, library_name: str) -> List['YAMLSource']:
