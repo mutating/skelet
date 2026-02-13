@@ -43,7 +43,7 @@ jobs:
 
       - name: Run mypy
         shell: bash
-        run: mypy skelet
+        run: mypy --strict skelet
 
       - name: Run mypy for tests
         shell: bash
