@@ -1,6 +1,6 @@
 from functools import cached_property
 from pathlib import Path
-from typing import Any, List, Union, Dict, cast
+from typing import Dict, List, Union, cast
 
 from printo import descript_data_object
 from yaml import Loader, load

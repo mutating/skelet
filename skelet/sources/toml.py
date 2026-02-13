@@ -1,12 +1,14 @@
 from functools import cached_property
 from pathlib import Path
-from typing import Any, List, Optional, Union, Dict
+from typing import Dict, List, Optional, Union
 
 try:
     # TODO: This appeared in Python 3.11, this condition needs to be removed when there are no earlier versions in CI.
     from tomllib import load  # type: ignore[import-not-found]
 except ImportError:  # pragma: no cover
-    from tomli import load  # type: ignore[assignment, import-not-found, no-redef, unused-ignore]
+    from tomli import (
+        load,  # type: ignore[assignment, import-not-found, no-redef, unused-ignore]
+    )
 
 from printo import descript_data_object
 

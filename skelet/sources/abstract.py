@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type, TypeVar, cast, Generic
+from typing import Generic, Optional, Type, TypeVar, cast
 
 from denial import InnerNoneType
 from simtypes import check
-
 
 ExpectedType = TypeVar('ExpectedType')
 sentinel = InnerNoneType()
@@ -21,7 +20,7 @@ class AbstractSource(Generic[ExpectedType], ABC):
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
         result = self.get(key, default)
 
         if result is default:

@@ -1,7 +1,7 @@
 import os
 from argparse import ArgumentParser
 from contextlib import redirect_stderr
-from typing import Any, List, Optional, Type, TypeVar, cast, Union
+from typing import List, Optional, Type, Union, cast
 
 from denial import InnerNoneType, SentinelType
 from printo import descript_data_object
@@ -9,7 +9,6 @@ from simtypes import from_string
 
 from skelet.errors import CLIFormatError
 from skelet.sources.abstract import AbstractSource, ExpectedType
-
 
 sentinel = InnerNoneType()
 
@@ -71,7 +70,7 @@ class FixedCLISource(AbstractSource[ExpectedType]):
             },
         )
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
         subresult = cast(Union[str, SentinelType], self.get(key, default))
 
         if hint is bool and key in self.named_arguments:

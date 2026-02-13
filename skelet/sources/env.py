@@ -2,7 +2,7 @@ import os
 import platform
 from copy import copy
 from functools import cached_property
-from typing import Any, Dict, List, Optional, Type, TypeVar, cast
+from typing import Dict, List, Optional, Type, cast
 
 from denial import InnerNoneType
 from printo import descript_data_object
@@ -10,7 +10,6 @@ from simtypes import from_string
 
 from skelet.errors import CaseError
 from skelet.sources.abstract import AbstractSource, ExpectedType
-
 
 sentinel = InnerNoneType()
 
@@ -50,7 +49,7 @@ class EnvSource(AbstractSource[ExpectedType]):
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
         subresult = cast(str, self.get(key, default))
 
         if subresult is default:
