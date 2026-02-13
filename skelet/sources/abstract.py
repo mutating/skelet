@@ -1,27 +1,27 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar, cast, Generic
 
 from denial import InnerNoneType
 from simtypes import check
 
-sentinel = InnerNoneType()
 
 ExpectedType = TypeVar('ExpectedType')
+sentinel = InnerNoneType()
 
-class AbstractSource(ABC):
+class AbstractSource(Generic[ExpectedType], ABC):
     @abstractmethod
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> ExpectedType:
         ...  # pragma: no cover
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Optional[ExpectedType] = None) -> Optional[ExpectedType]:
         try:
-            result = self[key]
+            result: ExpectedType = self[key]
         except KeyError:
             return default
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:
         result = self.get(key, default)
 
         if result is default:

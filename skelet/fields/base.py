@@ -13,8 +13,9 @@ from typing import (
     get_type_hints,
 )
 
+# EllipsisType was added to types module in Python 3.10.
 try:
-    from types import EllipsisType  # type: ignore[attr-defined]
+    from types import EllipsisType
 except ImportError:  # pragma: no cover
     EllipsisType = type(...)  # type: ignore[misc]
 
@@ -26,7 +27,7 @@ from denial import InnerNoneType
 from locklib import ContextLockProtocol
 from simtypes import check
 
-from skelet.sources.abstract import AbstractSource
+from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 from skelet.storage import Storage
 
@@ -47,7 +48,7 @@ class Field(Generic[ValueType]):
         default_factory: Optional[Callable[[], ValueType]] = None,
         doc: Optional[str] = None,
         alias: Optional[str] = None,
-        sources: Optional[List[Union[AbstractSource, EllipsisType]]] = None,
+        sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
         read_only: bool = False,
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
@@ -57,7 +58,7 @@ class Field(Generic[ValueType]):
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
         reverse_conflicts: bool = True,
         conversion: Optional[Callable[[ValueType], ValueType]] = None,
-        share_mutex_with: Optional[SequenceWithStrings] = None,
+        share_mutex_with: Optional[SequenceWithStrings] = None,  # type: ignore[type-arg]
     ) -> None:
         if default_factory is not None and default is not sentinel:
             raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
@@ -191,12 +192,12 @@ class Field(Generic[ValueType]):
             known_names = set(owner.__field_names__)
 
         if name not in known_names:  # pragma: no branch
-            owner.__field_names__.append(name)
+            cast(List[str], owner.__field_names__).append(name)
 
     def check_type_hints(self, value: ValueType, strict: bool = False, raise_all: bool = False) -> None:
-        if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type]
+        if not check(value, self.type_hint, strict=strict):
             origin = get_origin(self.type_hint)
-            type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined]
+            type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)
             self.raise_exception_in_storage(TypeError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the type {type_hint_name}.'), raise_all)
 
     def get_field_name_representation(self) -> str:
@@ -225,7 +226,7 @@ class Field(Generic[ValueType]):
             raise exception
         self.exception = exception
 
-    def get_sources(self, instance: Storage) -> SourcesCollection:
+    def get_sources(self, instance: Storage) -> SourcesCollection[ExpectedType]:
         if self.sources is None:
             return instance.__sources__
 
@@ -241,4 +242,4 @@ class Field(Generic[ValueType]):
         if there_is_ellipsis:
            result.extend(instance.__sources__.sources)
 
-        return SourcesCollection(result)
+        return cast(SourcesCollection[ExpectedType], SourcesCollection(result))

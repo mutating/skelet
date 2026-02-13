@@ -6,7 +6,7 @@ from denial import InnerNoneType
 from locklib import ContextLockProtocol
 from printo import descript_data_object
 
-from skelet.sources.abstract import AbstractSource
+from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 
 sentinel = InnerNoneType()
@@ -16,7 +16,7 @@ class Storage:
     __locks__: Dict[str, ContextLockProtocol]
     __field_names__: Union[List[str], Tuple[str, ...]] = ()
     __reverse_conflicts__: Dict[str, List[str]]
-    __sources__: SourcesCollection
+    __sources__: SourcesCollection  # type: ignore[type-arg]
 
     def __init__(self, **kwargs: Any) -> None:
         self.__values__: Dict[str, Any] = {}
@@ -86,7 +86,7 @@ class Storage:
                 raise ValueError(f'The value for the "{field_name}" field is undefined. Set the default value, or specify the value when creating the instance.')
 
 
-    def __init_subclass__(cls, reverse_conflicts: bool = True, sources: Optional[List[AbstractSource]] = None, **kwargs: Any):
+    def __init_subclass__(cls, reverse_conflicts: bool = True, sources: Optional[List[AbstractSource[ExpectedType]]] = None, **kwargs: Any):
             super().__init_subclass__(**kwargs)
 
             for field_name in cls.__field_names__:

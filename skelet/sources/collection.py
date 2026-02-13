@@ -1,15 +1,15 @@
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, List, Optional, Type, TypeVar, cast
 
 from denial import InnerNoneType
 from printo import descript_data_object
 
-from skelet.sources.abstract import AbstractSource
+from skelet.sources.abstract import AbstractSource, ExpectedType
 
-ExpectedType = TypeVar('ExpectedType')
+
 sentinel = InnerNoneType()
 
-class SourcesCollection(AbstractSource):
-    def __init__(self, sources: List[AbstractSource]) -> None:
+class SourcesCollection(AbstractSource[ExpectedType]):
+    def __init__(self, sources: List[AbstractSource[ExpectedType]]) -> None:
         self.sources = sources
 
     def __getitem__(self, key: str) -> Any:
@@ -30,7 +30,7 @@ class SourcesCollection(AbstractSource):
         except KeyError:
             return default
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:
         for source in self.sources:
             maybe_result = source.type_awared_get(key, hint, default=default)
             if maybe_result is not default:
