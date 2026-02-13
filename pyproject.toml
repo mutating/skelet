@@ -19,7 +19,6 @@ dependencies = [
     'denial>=0.0.6',
     'sigmatch>=0.0.6',
 ]
-
 classifiers = [
     "Operating System :: OS Independent",
     'Operating System :: MacOS :: MacOS X',
