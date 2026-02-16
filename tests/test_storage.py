@@ -1789,7 +1789,7 @@ def test_velue_reading_is_under_field_lock_when_its_on():
     locks: List[LockTraceWrapper] = []
 
     class PseudoDict:
-        def get(self, key: str) -> Any:
+        def get(self, key: str) -> Any:  # noqa: ARG002
             for lock in locks:
                 lock.notify('get')
             return 1
