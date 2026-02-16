@@ -328,18 +328,20 @@ def test_try_to_set_not_defined_field_in_init():
 
 def test_get_from_inner_dict_is_thread_safe_and_use_per_fields_locks():
     class SomeClass(Storage):
-        field = Field(42)
+        field = Field(42, read_lock=True)
 
     storage = SomeClass()
     field = SomeClass.field
 
     field.lock = LockTraceWrapper(field.lock)
     storage.__locks__['field'] = LockTraceWrapper(storage.__locks__['field'])
+
     class PseudoDict:
         def get(self, key):  # noqa: ARG002
-            storage.__locks__['field']
+            storage.__locks__['field'].notify('get')
             field.lock.notify('get')
             return 43
+
     storage.__values__ = PseudoDict()
 
     assert storage.field == 43
@@ -1759,16 +1761,40 @@ def test_load_from_json(json_config_path):
     assert instance.other_field == 14
 
 
-def test_source_checking_is_under_field_lock_when_its_on():
-    locks: List[LockTraceWrapper] = []
+def test_source_check_is_in_init():
+    keys = []
 
     class PseudoDict:
         def __getitem__(self, key: str) -> Any:
+            keys.append(key)
+            return 1
+
+    class SomeClass(Storage, sources=[MemorySource(PseudoDict())]):
+        field: int = Field(10, read_lock=True)
+        other_field: int = Field(20)
+
+    assert not keys
+
+    instance = SomeClass()
+
+    assert keys == ['field', 'other_field']
+
+    assert instance.field == 1
+    assert instance.other_field == 1
+
+    assert keys == ['field', 'other_field']
+
+
+def test_velue_reading_is_under_field_lock_when_its_on():
+    locks: List[LockTraceWrapper] = []
+
+    class PseudoDict:
+        def get(self, key: str) -> Any:
             for lock in locks:
                 lock.notify('get')
             return 1
 
-    class SomeClass(Storage, sources=[MemorySource(PseudoDict())]):
+    class SomeClass(Storage):
         field: int = Field(10, read_lock=True)
         other_field: int = Field(20)
 
@@ -1777,10 +1803,10 @@ def test_source_checking_is_under_field_lock_when_its_on():
     lock = LockTraceWrapper(instance.__locks__['field'])
     locks.append(lock)
     instance.__locks__['field'] = lock
+    instance.__values__ = PseudoDict()
 
     assert instance.field == 1
 
-    assert lock.trace
     assert lock.was_event_locked('get')
 
 
