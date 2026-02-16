@@ -48,7 +48,7 @@ class TOMLSource(AbstractSource[ExpectedType]):
             for subtable_name in self.table:
                 table = table[subtable_name]
 
-            return table  # type: ignore[no-any-return]
+            return table
 
         except FileNotFoundError:
             if self.allow_non_existent_files:
