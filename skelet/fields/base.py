@@ -15,7 +15,7 @@ from typing import (
 
 # TODO: check, EllipsisType was added to types module in Python 3.10.
 try:
-    from types import EllipsisType  # type: ignore[attr-defined]
+    from types import EllipsisType  # type: ignore[attr-defined, unused-ignore]
 except ImportError:  # pragma: no cover
     EllipsisType = type(...)  # type: ignore[misc, unused-ignore]
 
