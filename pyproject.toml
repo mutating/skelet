@@ -57,5 +57,5 @@ lint.select = ["ERA001", "YTT", "ASYNC", "BLE", "B", "A", "COM", "INP", "PIE", "
 format.quote-style = "single"
 
 [project.urls]
-'Source' = 'https://github.com/pomponchik/skelet'
-'Tracker' = 'https://github.com/pomponchik/skelet/issues'
+'Source' = 'https://github.com/mutating/skelet'
+'Tracker' = 'https://github.com/mutating/skelet/issues'
