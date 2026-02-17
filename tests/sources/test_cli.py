@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import Dict, List
 
 import pytest
 from full_match import match
@@ -23,14 +23,14 @@ def test_defaults_for_libraries():
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([],),
-        (['--kek'],),
-        (['--kek', 'kek'],),
+        [],
+        ['--kek'],
+        ['--kek', 'kek'],
     ],
 )
-def test_there_is_no_that_key(temp_argv):
+def test_there_is_no_that_key(temp_argv):  # noqa: ARG001
     with pytest.raises(KeyError):
         FixedCLISource(named_arguments=['kek'])['lol']
 
@@ -43,12 +43,12 @@ def test_there_is_no_that_key(temp_argv):
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        (['--lol', '123'],),
+        ['--lol', '123'],
     ],
 )
-def test_read_existing_key(temp_argv):
+def test_read_existing_key(temp_argv):  # noqa: ARG001
     assert FixedCLISource(named_arguments=['lol'])['lol'] == '123'
     assert FixedCLISource(named_arguments=['lol']).get('lol') == '123'
     assert FixedCLISource(named_arguments=['lol']).type_awared_get('lol', str) == '123'
@@ -56,12 +56,12 @@ def test_read_existing_key(temp_argv):
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        (['--lol-kek', '123'],),
+        ['--lol-kek', '123'],
     ],
 )
-def test_read_existing_key_with_dash(temp_argv):
+def test_read_existing_key_with_dash(temp_argv):  # noqa: ARG001
     assert FixedCLISource(named_arguments=['lol_kek'])['lol_kek'] == '123'
     assert FixedCLISource(named_arguments=['lol_kek']).get('lol_kek') == '123'
     assert FixedCLISource(named_arguments=['lol_kek']).type_awared_get('lol_kek', str) == '123'
@@ -69,20 +69,12 @@ def test_read_existing_key_with_dash(temp_argv):
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            '--string', 'kek',
-            '--number', '1',
-            '--float-number', '1.0',
-            '--numbers-list', '[1, 2, 3]',
-            '--boolean-yes',
-            '--strings-list', '["1", "2", "3"]',
-            '--strings-dict', '{"lol": "kek"}',
-        ],),
+        ['--string', 'kek', '--number', '1', '--float-number', '1.0', '--numbers-list', '[1, 2, 3]', '--boolean-yes', '--strings-list', '["1", "2", "3"]', '--strings-dict', '{"lol": "kek"}'],
     ],
 )
-def test_type_awared_get(temp_argv):
+def test_type_awared_get(temp_argv):  # noqa: ARG001
     field_names = [
         'string',
         'number',
@@ -133,51 +125,43 @@ def test_pass_not_valid_variable_names():
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            '-o', 'kek',
-        ],),
+        ['-o', 'kek'],
     ],
 )
-def test_one_letter_field_name(temp_argv):
+def test_one_letter_field_name(temp_argv):  # noqa: ARG001
     assert FixedCLISource(named_arguments=['o']).get('o') == 'kek'
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            '--lol', 'kek',
-        ],),
+        ['--lol', 'kek'],
     ],
 )
-def test_bool_variable_with_value(temp_argv):
+def test_bool_variable_with_value(temp_argv):  # noqa: ARG001
     with pytest.raises(CLIFormatError, match=match("You can't pass values for boolean named fields to the CLI.")):
         FixedCLISource(named_arguments=['lol']).type_awared_get('lol', bool)
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            'lol', 'kek',
-        ],),
+        ['lol', 'kek'],
     ],
 )
-def test_get_position_arguments(temp_argv):
+def test_get_position_arguments(temp_argv):  # noqa: ARG001
     assert FixedCLISource(position_arguments=['a', 'b'])['a'] == 'lol'
     assert FixedCLISource(position_arguments=['a', 'b'])['b'] == 'kek'
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            'lol',
-        ],),
+        ['lol'],
     ],
 )
-def test_get_partical_position_arguments(temp_argv):
+def test_get_partical_position_arguments(temp_argv):  # noqa: ARG001
     assert FixedCLISource(position_arguments=['a', 'b'])['a'] == 'lol'
 
     with pytest.raises(KeyError):
@@ -187,14 +171,12 @@ def test_get_partical_position_arguments(temp_argv):
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            '123', 'yes',
-        ],),
+        ['123', 'yes'],
     ],
 )
-def test_get_type_awared_position_arguments(temp_argv):
+def test_get_type_awared_position_arguments(temp_argv):  # noqa: ARG001
     assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('a', int) == 123
     assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('a', str) == '123'
     assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('b', bool) == True
@@ -217,12 +199,10 @@ def test_incorrect_positional_name():
 
 
 @pytest.mark.parametrize(
-    ['argv'],
+    'argv',
     [
-        ([
-            '--help',
-        ],),
+        ['--help'],
     ],
 )
-def test_help_field(temp_argv):
+def test_help_field(temp_argv):  # noqa: ARG001
     assert FixedCLISource(named_arguments=['help']).type_awared_get('help', bool) == True

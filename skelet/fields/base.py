@@ -1,22 +1,35 @@
-from typing import TypeVar, Type, Any, Optional, Generic, Union, Callable, Dict, List, get_type_hints, get_origin, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_origin,
+    get_type_hints,
+)
 
+# TODO: check, EllipsisType was added to types module in Python 3.10.
 try:
-    from types import EllipsisType  # type: ignore[attr-defined]
+    from types import EllipsisType  # type: ignore[attr-defined, unused-ignore]
 except ImportError:  # pragma: no cover
-    EllipsisType = type(...)  # type: ignore[misc]
+    EllipsisType = type(...)  # type: ignore[misc, unused-ignore]
 
-from threading import Lock
 from collections.abc import Sequence
 from sys import version_info
+from threading import Lock
 
+from denial import InnerNoneType
 from locklib import ContextLockProtocol
 from simtypes import check
-from denial import InnerNoneType
 
-from skelet.storage import Storage
-from skelet.sources.abstract import AbstractSource
+from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
-
+from skelet.storage import Storage
 
 ValueType = TypeVar('ValueType')
 
@@ -28,14 +41,14 @@ else:  # pragma: no cover
 sentinel = InnerNoneType()
 
 class Field(Generic[ValueType]):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         default: Union[ValueType, InnerNoneType] = sentinel,
         /,
         default_factory: Optional[Callable[[], ValueType]] = None,
         doc: Optional[str] = None,
         alias: Optional[str] = None,
-        sources: Optional[List[Union[AbstractSource, EllipsisType]]] = None,
+        sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
         read_only: bool = False,
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
@@ -45,7 +58,7 @@ class Field(Generic[ValueType]):
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
         reverse_conflicts: bool = True,
         conversion: Optional[Callable[[ValueType], ValueType]] = None,
-        share_mutex_with: Optional[SequenceWithStrings] = None,
+        share_mutex_with: Optional[SequenceWithStrings] = None,  # type: ignore[type-arg]
     ) -> None:
         if default_factory is not None and default is not sentinel:
             raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
@@ -102,11 +115,11 @@ class Field(Generic[ValueType]):
             self.base_class = owner
 
             if self._default_before_conversion is not sentinel:
-                self.check_type_hints(owner, name, cast(ValueType, self._default_before_conversion))
+                self.check_type_hints(cast(ValueType, self._default_before_conversion))
 
             self.set_field_names(owner, name)
             if self._default is not sentinel:
-                self.check_type_hints(owner, name, cast(ValueType, self._default))
+                self.check_type_hints(cast(ValueType, self._default))
                 if self.validate_default:
                     self.check_value(cast(ValueType, self._default))
 
@@ -123,18 +136,18 @@ class Field(Generic[ValueType]):
         with self.get_field_lock(instance):
             return self.unlocked_get(instance, instance_class)
 
-    def unlocked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
+    def unlocked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:  #noqa: ARG002
         return cast(ValueType, instance.__values__.get(cast(str, self.name)))
 
     def __set__(self, instance: Storage, value: ValueType) -> None:
         if self.read_only:
             raise AttributeError(f'{self.get_field_name_representation()} is read-only.')
 
-        self.check_type_hints(cast(Type[Storage], self.base_class), cast(str, self.name), value, raise_all=True)
+        self.check_type_hints(value, raise_all=True)
 
         if self.conversion is not None:
             value = self.conversion(value)
-            self.check_type_hints(cast(Type[Storage], self.base_class), cast(str, self.name), value, raise_all=True)
+            self.check_type_hints(value, raise_all=True)
 
         self.check_value(value, raise_all=True)
 
@@ -169,20 +182,19 @@ class Field(Generic[ValueType]):
             for parent in owner.__mro__:  # pragma: no branch
                 if parent is owner:
                     continue
-                elif parent is Storage:
+                if parent is Storage:
                     break
-                else:
-                    for field_name in cast(Storage, parent).__field_names__:
-                        if field_name not in known_names:
-                            known_names.add(field_name)
-                            owner.__field_names__.append(field_name)
+                for field_name in cast(Storage, parent).__field_names__:
+                    if field_name not in known_names:
+                        known_names.add(field_name)
+                        owner.__field_names__.append(field_name)
         else:
             known_names = set(owner.__field_names__)
 
         if name not in known_names:  # pragma: no branch
-            owner.__field_names__.append(name)
+            cast(List[str], owner.__field_names__).append(name)
 
-    def check_type_hints(self, owner: Type[Storage], name: str, value: ValueType, strict: bool = False, raise_all: bool = False) -> None:
+    def check_type_hints(self, value: ValueType, strict: bool = False, raise_all: bool = False) -> None:
         if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type]
             origin = get_origin(self.type_hint)
             type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined]
@@ -199,15 +211,14 @@ class Field(Generic[ValueType]):
                 for message, validator in self.validation.items():
                     if not validator(value):
                         self.raise_exception_in_storage(ValueError(message), raise_all)
-            else:
-                if not self.validation(value):
-                    self.raise_exception_in_storage(ValueError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the validation.'), raise_all)
+            elif not self.validation(value):
+                self.raise_exception_in_storage(ValueError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the validation.'), raise_all)
 
     def get_field_lock(self, instance: Storage) -> ContextLockProtocol:
         return instance.__locks__[cast(str, self.name)]
 
     def get_value_representation(self, value: ValueType) -> str:
-        base = '***' if self.secret else f'{repr(value)}'
+        base = '***' if self.secret else f'{value!r}'
         return f'{base} ({type(value).__name__})'
 
     def raise_exception_in_storage(self, exception: BaseException, raising_on: bool) -> None:
@@ -215,7 +226,7 @@ class Field(Generic[ValueType]):
             raise exception
         self.exception = exception
 
-    def get_sources(self, instance: Storage) -> SourcesCollection:
+    def get_sources(self, instance: Storage) -> SourcesCollection[ExpectedType]:
         if self.sources is None:
             return instance.__sources__
 
@@ -231,4 +242,4 @@ class Field(Generic[ValueType]):
         if there_is_ellipsis:
            result.extend(instance.__sources__.sources)
 
-        return SourcesCollection(result)
+        return cast(SourcesCollection[ExpectedType], SourcesCollection(result))

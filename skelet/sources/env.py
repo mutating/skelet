@@ -1,21 +1,19 @@
 import os
 import platform
-from typing import List, Dict, Type, TypeVar, Optional, Any, cast
-from functools import cached_property
 from copy import copy
+from functools import cached_property
+from typing import Dict, List, Optional, Type, cast
 
+from denial import InnerNoneType
 from printo import descript_data_object
 from simtypes import from_string
-from denial import InnerNoneType
 
-from skelet.sources.abstract import AbstractSource
 from skelet.errors import CaseError
+from skelet.sources.abstract import AbstractSource, ExpectedType
 
-
-ExpectedType = TypeVar('ExpectedType')
 sentinel = InnerNoneType()
 
-class EnvSource(AbstractSource):
+class EnvSource(AbstractSource[ExpectedType]):
     def __init__(self, prefix: Optional[str] = '', postfix: Optional[str] = '', case_sensitive: bool = False) -> None:
         if platform.system() == 'Windows' and case_sensitive:
             raise OSError('On Windows, the environment variables are case-independent.')  # pragma: no cover
@@ -24,7 +22,7 @@ class EnvSource(AbstractSource):
         self.postfix = postfix
         self.case_sensitive = case_sensitive
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> str:  # type: ignore[override]
         full_key = f'{self.prefix}{key}{self.postfix}'
         if not self.case_sensitive:  # pragma: no cover
             full_key = full_key.upper()
@@ -51,8 +49,8 @@ class EnvSource(AbstractSource):
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
-        subresult = self.get(key, default)
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
+        subresult = cast(str, self.get(key, default))
 
         if subresult is default:
             if default is not sentinel:
@@ -62,7 +60,7 @@ class EnvSource(AbstractSource):
         return from_string(subresult, hint)
 
     @classmethod
-    def for_library(cls, library_name: str) -> List['EnvSource']:
+    def for_library(cls, library_name: str) -> List['EnvSource[ExpectedType]']:
         if not library_name.isidentifier():
             raise ValueError('The library name can only be a valid Python identifier.')
 

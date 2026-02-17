@@ -1,20 +1,18 @@
 import os
-from typing import List, Type, TypeVar, Optional, Any, cast
 from argparse import ArgumentParser
 from contextlib import redirect_stderr
+from typing import List, Optional, Type, Union, cast
 
-from simtypes import from_string
+from denial import InnerNoneType, SentinelType
 from printo import descript_data_object
-from denial import InnerNoneType
+from simtypes import from_string
 
-from skelet.sources.abstract import AbstractSource
 from skelet.errors import CLIFormatError
+from skelet.sources.abstract import AbstractSource, ExpectedType
 
-
-ExpectedType = TypeVar('ExpectedType')
 sentinel = InnerNoneType()
 
-class FixedCLISource(AbstractSource):
+class FixedCLISource(AbstractSource[ExpectedType]):
     def __init__(self, position_arguments: Optional[List[str]] = None, named_arguments: Optional[List[str]] = None) -> None:
         if named_arguments is None and position_arguments is None:
             raise ValueError("You need to pass a list of named arguments or a list of positional arguments, you haven't passed anything.")
@@ -47,13 +45,13 @@ class FixedCLISource(AbstractSource):
         for parameter in self.position_arguments:
             self.parser.add_argument(parameter, nargs='?', const=None, default=sentinel)
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> str:  # type: ignore[override]
         with open(os.devnull, 'w') as devnull, redirect_stderr(devnull):
             try:
-                result = vars(self.parser.parse_args())[key]
+                result: Union[str, InnerNoneType] = vars(self.parser.parse_args())[key]
                 if result is sentinel:
                     raise KeyError(key)
-                return result
+                return result  # type: ignore[return-value]
             # TODO: from python 3.9 use exit_on_error
             except SystemExit as e:
                 raise KeyError(key) from e  # pragma: no cover
@@ -64,7 +62,7 @@ class FixedCLISource(AbstractSource):
             (),
             {
                 'position_arguments': self.position_arguments,
-                'named_arguments': self.named_arguments
+                'named_arguments': self.named_arguments,
             },
             filters={
                 'position_arguments': lambda x: x,
@@ -72,26 +70,25 @@ class FixedCLISource(AbstractSource):
             },
         )
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Any = sentinel) -> Optional[ExpectedType]:
-        subresult = self.get(key, default)
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
+        subresult = cast(Union[str, SentinelType], self.get(key, default))
 
         if hint is bool and key in self.named_arguments:
             if subresult is None:
                 return cast(ExpectedType, True)
-            elif subresult is sentinel:
+            if subresult is sentinel:
                 return cast(ExpectedType, False)
-            else:
-                raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
+            raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
 
         if subresult is default:
             if default is not sentinel:
                 return default
             return None
 
-        return from_string(subresult, hint)
+        return from_string(cast(str, subresult), hint)
 
     @classmethod
-    def for_library(cls, library_name: str) -> List['FixedCLISource']:
+    def for_library(cls, library_name: str) -> List['FixedCLISource[ExpectedType]']:
         if not library_name.isidentifier():
             raise ValueError('The library name can only be a valid Python identifier.')
 

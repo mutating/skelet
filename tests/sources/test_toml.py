@@ -7,16 +7,9 @@ from skelet import TOMLSource
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'int_top_value': 1,
-            'str_top_value': 'lol',
-            'list_top_value': ['lol', 'kek'],
-            'float_top_value': 1.5,
-            'bool_top_value': True,
-            'dict_top_value': {'another_bool_top_value': True},
-        },),
+        {'int_top_value': 1, 'str_top_value': 'lol', 'list_top_value': ['lol', 'kek'], 'float_top_value': 1.5, 'bool_top_value': True, 'dict_top_value': {'another_bool_top_value': True}},
     ],
 )
 def test_read_simple_values_from_top_level_table(toml_config_path):
@@ -31,9 +24,9 @@ def test_read_simple_values_from_top_level_table(toml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({},),
+        {},
     ],
 )
 def test_read_empty_value_from_top_level_table(toml_config_path):
@@ -44,22 +37,18 @@ def test_read_empty_value_from_top_level_table(toml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'table': {
-                'value': 1,
-            },
-        },),
+        {'table': {'value': 1}},
     ],
 )
 @pytest.mark.parametrize(
-    ['table_name'],
+    'table_name',
     [
-        ([],),
-        (['table'],),
-        ('table',),
-        ('kek',),
+        [],
+        ['table'],
+        'table',
+        'kek',
     ],
 )
 def test_read_empty_value_from_nested_level_table(toml_config_path, table_name):
@@ -70,20 +59,9 @@ def test_read_empty_value_from_nested_level_table(toml_config_path, table_name):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'int_top_value': 1,
-            'str_top_value': 'lol',
-            'table': {
-                'int_value': 3,
-                'str_value': 'kek',
-                'another_table': {
-                    'int_value': 15,
-                    'str_value': 'cheburek',
-                },
-            },
-        },),
+        {'int_top_value': 1, 'str_top_value': 'lol', 'table': {'int_value': 3, 'str_value': 'kek', 'another_table': {'int_value': 15, 'str_value': 'cheburek'}}},
     ],
 )
 def test_read_simple_values_from_users_table_written_as_string(toml_config_path):
@@ -99,24 +77,9 @@ def test_read_simple_values_from_users_table_written_as_string(toml_config_path)
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'int_top_value': 1,
-            'str_top_value': 'lol',
-            'table': {
-                'int_value': 3,
-                'str_value': 'kek',
-                'another_table': {
-                    'int_value': 15,
-                    'str_value': 'cheburek',
-                    'third_table': {
-                        'int_value': 25,
-                        'str_value': 'super_cheburek',
-                    },
-                },
-            },
-        },),
+        {'int_top_value': 1, 'str_top_value': 'lol', 'table': {'int_value': 3, 'str_value': 'kek', 'another_table': {'int_value': 15, 'str_value': 'cheburek', 'third_table': {'int_value': 25, 'str_value': 'super_cheburek'}}}},
     ],
 )
 def test_read_simple_values_from_users_table_written_as_list(toml_config_path):
@@ -147,20 +110,19 @@ def test_read_simple_values_from_users_table_written_as_list(toml_config_path):
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({},),
+        {},
     ],
 )
 @pytest.mark.parametrize(
-    ['wrong_table'],
+    'wrong_table',
     [
-        (':kek',),
-        ([':kek'],),
-        ([':kek'],),
-        ([':kek', 'lol'],),
-        (['lol', ':kek'],),
-        (['lol.:kek'],),
+        ':kek',
+        [':kek'],
+        [':kek', 'lol'],
+        ['lol', ':kek'],
+        ['lol.:kek'],
     ],
 )
 def test_non_python_identifier_as_string(toml_config_path, wrong_table):
@@ -169,10 +131,10 @@ def test_non_python_identifier_as_string(toml_config_path, wrong_table):
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'allow_non_existent_files': True},),
+        {},
+        {'allow_non_existent_files': True},
     ],
 )
 def test_non_existing_files_are_allowed(addictional_parameters):
@@ -222,14 +184,9 @@ def test_repr():
 
 
 @pytest.mark.parametrize(
-    ['data'],
+    'data',
     [
-        ({
-            'string': 'kek',
-            'number': 123,
-            'list_with_numbers': [123, 456],
-            'list_with_strings': ['123', '456'],
-        },),
+        {'string': 'kek', 'number': 123, 'list_with_numbers': [123, 456], 'list_with_strings': ['123', '456']},
     ],
 )
 def test_type_awared_get(toml_config_path):

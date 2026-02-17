@@ -1,6 +1,6 @@
 import os
-from typing import List, Dict
 import platform
+from typing import Dict, List
 
 import pytest
 from full_match import match
@@ -10,11 +10,11 @@ from skelet.errors import CaseError
 
 
 @pytest.mark.parametrize(
-    ['addictional_parameters'],
+    'addictional_parameters',
     [
-        ({},),
-        ({'case_sensitive': True},),
-        ({'case_sensitive': False},),
+        {},
+        {'case_sensitive': True},
+        {'case_sensitive': False},
     ],
 )
 def test_data_is_not_caching_between_instances(addictional_parameters):
@@ -35,7 +35,7 @@ def test_cases_conflict(monkeypatch):
 
     if platform.system() != 'Windows':
         with pytest.raises(CaseError, match=match('There are 2 environment variables that are written the same way when capitalized: "LoL" and "lol".')):
-            EnvSource(case_sensitive=False).data
+            EnvSource(case_sensitive=False).data  # noqa: B018
 
     monkeypatch.setenv("lol", "1")
     monkeypatch.setenv("LoL", "1")

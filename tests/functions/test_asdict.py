@@ -1,7 +1,7 @@
 import pytest
 from full_match import match
 
-from skelet import Storage, Field, MemorySource, asdict
+from skelet import Field, MemorySource, Storage, asdict
 
 
 def test_pass_not_storage_object():
