@@ -13,11 +13,11 @@ from typing import (
     get_type_hints,
 )
 
-# EllipsisType was added to types module in Python 3.10.
+# TODO: check, EllipsisType was added to types module in Python 3.10.
 try:
-    from types import EllipsisType
+    from types import EllipsisType  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover
-    EllipsisType = type(...)  # type: ignore[misc]
+    EllipsisType = type(...)  # type: ignore[misc, unused-ignore]
 
 from collections.abc import Sequence
 from sys import version_info
