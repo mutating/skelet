@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skelet"
-version = "0.0.6"
+version = "0.0.7"
 authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
