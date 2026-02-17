@@ -6,7 +6,7 @@ try:
     # TODO: This appeared in Python 3.11, this condition needs to be removed when there are no earlier versions in CI.
     from tomllib import load  # type: ignore[import-not-found, unused-ignore]
 except ImportError:  # pragma: no cover
-    from tomli import (
+    from tomli import (  # type: ignore[assignment, unused-ignore]
         load,  # type: ignore[assignment, import-not-found, no-redef, unused-ignore]
     )
 
@@ -48,7 +48,7 @@ class TOMLSource(AbstractSource[ExpectedType]):
             for subtable_name in self.table:
                 table = table[subtable_name]
 
-            return table  # type: ignore[no-any-return]
+            return table  # type: ignore[no-any-return, unused-ignore]
 
         except FileNotFoundError:
             if self.allow_non_existent_files:
