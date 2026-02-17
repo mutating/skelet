@@ -6,7 +6,7 @@ try:
     # TODO: This appeared in Python 3.11, this condition needs to be removed when there are no earlier versions in CI.
     from tomllib import load  # type: ignore[import-not-found, unused-ignore]
 except ImportError:  # pragma: no cover
-    from tomli import (  # type: ignore[assignment, unused-ignore]
+    from tomli import (  # type: ignore[import-not-found, no-redef, assignment, unused-ignore]
         load,  # type: ignore[assignment, import-not-found, no-redef, unused-ignore]
     )
 
