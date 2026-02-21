@@ -12,7 +12,7 @@ requires-python = ">=3.8"
 dependencies = [
     'printo>=0.0.12',
     'locklib>=0.0.20',
-    'simtypes>=0.0.10',
+    'simtypes>=0.0.11',
     'tomli==2.3.0 ; python_version <= "3.12"',
     'pyyaml==6.0.3',
     'types-pyyaml==6.0.12.20241230',
