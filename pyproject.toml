@@ -10,7 +10,7 @@ description = 'Collect all the settings in one place'
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    'printo>=0.0.11',
+    'printo>=0.0.12',
     'locklib>=0.0.20',
     'simtypes>=0.0.10',
     'tomli==2.3.0 ; python_version <= "3.12"',
