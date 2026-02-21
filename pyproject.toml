@@ -13,11 +13,11 @@ dependencies = [
     'printo>=0.0.12',
     'locklib>=0.0.20',
     'simtypes>=0.0.11',
+    'denial>=0.0.11',
+    'sigmatch>=0.0.7',
     'tomli==2.3.0 ; python_version <= "3.12"',
     'pyyaml==6.0.3',
     'types-pyyaml==6.0.12.20241230',
-    'denial>=0.0.11',
-    'sigmatch>=0.0.7',
 ]
 classifiers = [
     "Operating System :: OS Independent",
