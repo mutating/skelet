@@ -1,6 +1,5 @@
 import os
 import platform
-from copy import copy
 from functools import cached_property
 from typing import Dict, List, Optional, Type, cast
 
@@ -35,7 +34,7 @@ class EnvSource(AbstractSource[ExpectedType]):
     @cached_property
     def data(self) -> Dict[str, str]:
         if self.case_sensitive:  # pragma: no cover
-            return cast(Dict[str, str], copy(os.environ))
+            return cast(Dict[str, str], os.environ.copy())
 
         result = {}
         seen_keys: Dict[str, str] = {}
