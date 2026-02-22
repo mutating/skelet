@@ -1,4 +1,3 @@
-# noqa: A005
 from functools import cached_property
 from json import load
 from pathlib import Path

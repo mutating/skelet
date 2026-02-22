@@ -4,20 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skelet"
-version = "0.0.7"
+version = "0.0.8"
 authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    'printo>=0.0.10',
+    'printo>=0.0.12',
     'locklib>=0.0.20',
-    'simtypes>=0.0.10',
+    'simtypes>=0.0.11',
+    'denial>=0.0.11',
+    'sigmatch>=0.0.7',
     'tomli==2.3.0 ; python_version <= "3.12"',
     'pyyaml==6.0.3',
     'types-pyyaml==6.0.12.20241230',
-    'denial>=0.0.11',
-    'sigmatch>=0.0.6',
 ]
 classifiers = [
     "Operating System :: OS Independent",
@@ -57,5 +57,5 @@ lint.select = ["ERA001", "YTT", "ASYNC", "BLE", "B", "A", "COM", "INP", "PIE", "
 format.quote-style = "single"
 
 [project.urls]
-'Source' = 'https://github.com/pomponchik/skelet'
-'Tracker' = 'https://github.com/pomponchik/skelet/issues'
+'Source' = 'https://github.com/mutating/skelet'
+'Tracker' = 'https://github.com/mutating/skelet/issues'
