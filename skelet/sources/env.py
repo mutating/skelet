@@ -34,7 +34,7 @@ class EnvSource(AbstractSource[ExpectedType]):
     @cached_property
     def data(self) -> Dict[str, str]:
         if self.case_sensitive:  # pragma: no cover
-            return cast(Dict[str, str], os.environ.copy())
+            return os.environ.copy()
 
         result = {}
         seen_keys: Dict[str, str] = {}
