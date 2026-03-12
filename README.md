@@ -261,7 +261,7 @@ class PatientsCard(Storage):
 
 ## Conflicts between fields
 
-Sometimes, individual field values are [acceptable](#validation-of-values), but certain combinations of them are impossible. For such cases, there is a separate type of value check — conflict checking. This validation is a little more complicated than for individual values. To enable it, you need to pass a dictionary as the `conflicts` parameter, whose keys are the names of other class fields, and whose values are functions that return `bool`, answering the question «is there a conflict with the value of this field?»:
+Sometimes, individual field values are [acceptable](#validation-of-values), but certain combinations of them are impossible. For such cases, there is a separate type of value check — conflict checking. This validation is a little more complicated than for individual values. To enable it, you need to pass a dictionary as the `conflicts` parameter, whose keys are the names of other fields, and whose values are functions that return `bool`, answering the question «is there a conflict with the value of this field?»:
 
 ```python
 class Dossier(Storage):
