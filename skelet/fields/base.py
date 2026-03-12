@@ -54,7 +54,7 @@ class Field(Generic[ValueType]):
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
         secret: bool = False,
-        change_action: Optional[Callable[[ValueType, ValueType, Storage], Any]] = None,
+        action: Optional[Callable[[ValueType, ValueType, Storage], Any]] = None,
         read_lock: bool = False,
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
         reverse_conflicts: bool = True,
@@ -76,7 +76,7 @@ class Field(Generic[ValueType]):
             elif not validation_matcher.match(validation):
                 raise SignatureMismatchError('A function that accepts only one positional argument is expected as a field validator.')
 
-        if change_action is not None and not PossibleCallMatcher('...').match(change_action):
+        if action is not None and not PossibleCallMatcher('...').match(action):
             raise SignatureMismatchError('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')
 
         if conflicts is not None:
@@ -106,7 +106,7 @@ class Field(Generic[ValueType]):
         self.validation = validation
         self.validate_default = validate_default
         self.secret = secret
-        self.change_action = change_action
+        self.change_action = action
         self.conflicts = conflicts
         self.reverse_conflicts_on = reverse_conflicts
         self.conversion = conversion

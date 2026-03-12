@@ -594,7 +594,7 @@ Example:
 
 ```python
 class MyClass(Storage):
-    field: int = Field(0, change_action=lambda old, new, storage: print(f'{old} -> {new}'))
+    field: int = Field(0, action=lambda old, new, storage: print(f'{old} -> {new}'))
 
 storage = MyClass()
 

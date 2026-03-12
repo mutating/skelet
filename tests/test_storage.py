@@ -914,7 +914,7 @@ def test_set_action_for_set():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
+        field: int = Field(10, secret=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -933,7 +933,7 @@ def test_action_doesnt_work_when_new_value_is_same():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
+        field: int = Field(10, secret=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -2635,16 +2635,16 @@ def test_wrong_converter_function():
 def test_wrong_change_action():
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, change_action=lambda: None)
+            field: int = Field(123, action=lambda: None)
 
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, change_action=lambda x: None)
+            field: int = Field(123, action=lambda x: None)
 
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, change_action=lambda x, y: None)
+            field: int = Field(123, action=lambda x, y: None)
 
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, change_action=lambda x, y, z, another: None)
+            field: int = Field(123, action=lambda x, y, z, another: None)
