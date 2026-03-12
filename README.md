@@ -17,7 +17,7 @@
 
 ![logo](https://raw.githubusercontent.com/mutating/skelet/develop/docs/assets/logo_8.svg)
 
-Keep all your project's settings in one place. Ensure type safety, thread safety and safe secret handling, and automatically check types and validate values. Use simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
+Keep all your project's settings in one place. Ensure type safety, thread safety and safe secret handling. Check types and validate values. Use simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
 
 
 ## Table of contents
