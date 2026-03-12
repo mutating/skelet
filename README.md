@@ -505,7 +505,7 @@ Now we can run our script, and the arguments will automatically populate the cor
 
 As you can see, named arguments are passed with two leading hyphens, like this: `--`, and also all the underscores are replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
 
-You do not need to pass a value for a named field with a `bool` type hint. The rest of the fields need it, and they will be interpreted according to their type hints.
+You do not need to pass a value for a named boolean argument. The rest of the fields need it, and they will be interpreted according to their type hints.
 
 All arguments are optional, and if they are not present on the command-line, just the default value will be used. The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command-line argument.
 
