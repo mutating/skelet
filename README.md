@@ -20,6 +20,7 @@
 
 Collect all the settings of your project in one place. Ensure type safety, thread safety and secret handling, and automatically validate all types and values. Use simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
 
+
 ## Table of contents
 
 - [**Quick start**](#quick-start)
