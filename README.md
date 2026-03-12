@@ -489,7 +489,7 @@ from skelet import FixedCLISource
 class MyClass(Storage, sources=[
     FixedCLISource(
         named_arguments=['first_field', 'second_field'],
-        position_arguments=['third_field'],
+        positional_arguments=['third_field'],
     ),
 ]):
     first_field: str = Field('default')
