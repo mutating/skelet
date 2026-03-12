@@ -17,8 +17,7 @@
 
 ![logo](https://raw.githubusercontent.com/mutating/skelet/develop/docs/assets/logo_8.svg)
 
-
-Collect all the settings of your project in one place. Ensure type safety, thread safety and secret handling, and automatically validate all types and values. Use simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
+Keep all your project's settings in one place. Ensure type safety, thread safety and safe secret handling, and automatically check types and validate values. Use simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
 
 
 ## Table of contents
@@ -54,7 +53,7 @@ pip install skelet
 
 You can also quickly try this package and others without installing them via [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define several fields to it — objects of the `Field` class:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define several fields in it — objects of the `Field` class:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
@@ -64,7 +63,7 @@ class ManDescription(Storage):
     age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
-You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, the API is similar, but it is designed specifically for configuration storage.
+You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, the API is similar, but it is designed specifically for configuration management.
 
 So, let's create an object of our class and look at it:
 
@@ -74,7 +73,7 @@ print(description)
 #> ManDescription(name='Evgeniy', age=32)
 ```
 
-The object we created is not just a container for several fields. It can also [validate values](#validation-of-values) and [check types](#type-checking). Let's try assigning an invalid value:
+The object we created is not just a container for fields. It can also [validate values](#validation-of-values) and [check types](#type-checking). Let's try assigning an invalid value:
 
 ```python
 description.age = -5
@@ -90,7 +89,7 @@ That is already useful, but the rest of this guide covers the more advanced feat
 
 ## Default values
 
-A default value is used when no other source provides a value. It will be used until you override it, or if no other value is found in the [data sources](#sources).
+A default value is used when no other source provides one. It will be used until you override it, or if no other value is found in the [data sources](#sources).
 
 You do not have to define a default value, but in this case you need to pass these values when creating the storage object. If you do set a default value, there are 2 ways to do this:
 
