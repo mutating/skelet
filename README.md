@@ -116,7 +116,7 @@ print(UnremarkableSettingsStorage())
 #> UnremarkableSettingsStorage(ordinary_field='I am the lazy default value!')
 ```
 
-This option is preferable if you want to use a mutable object, such as a `list` or `dict`, as the default value. A new object will be created for this field every time a new storage object is created, so the same mutable object will not be shared between instances.
+Use this option when the default value is mutable, such as a `list` or `dict`. A new object will be created for this field every time a new storage object is created, so the same mutable object will not be shared between instances.
 
 
 ## Documenting fields
@@ -326,7 +326,7 @@ So far, we have discussed that fields can have default values, as well as values
 - [Environment variables](#environment-variables).
 - [Command-line arguments](#command-line-arguments).
 
-The effective value of each field is determined by the following precedence order:
+Each field value is resolved in the following order:
 
 ```mermaid
 graph TD;
@@ -459,7 +459,7 @@ class MyClass(Storage, sources=[JSONSource('my_config.json')]):
     ...
 ```
 
-Everything will work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
+This works similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
 
 ## YAML files
