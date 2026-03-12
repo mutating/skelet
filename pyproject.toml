@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skelet"
-version = "0.0.9"
+version = "0.0.10"
 authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
@@ -14,7 +14,7 @@ dependencies = [
     'locklib>=0.0.20',
     'simtypes>=0.0.12',
     'denial>=0.0.11',
-    'sigmatch>=0.0.7',
+    'sigmatch>=0.0.8',
     'tomli==2.3.0 ; python_version <= "3.12"',
     'pyyaml==6.0.3',
     'types-pyyaml==6.0.12.20241230',
@@ -33,6 +33,7 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
     'Programming Language :: Python :: 3.13',
     'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: 3.15',
     'Programming Language :: Python :: Free Threading',
     'Programming Language :: Python :: Free Threading :: 3 - Stable',
     'License :: OSI Approved :: MIT License',

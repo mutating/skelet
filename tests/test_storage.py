@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Union
 import pytest
 from full_match import match
 from locklib import LockTraceWrapper
+from sigmatch import SignatureMismatchError
 
 from skelet import (
     EnvSource,
@@ -913,7 +914,7 @@ def test_set_action_for_set():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
+        field: int = Field(10, secret=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -932,7 +933,7 @@ def test_action_doesnt_work_when_new_value_is_same():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, change_action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
+        field: int = Field(10, secret=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -1116,7 +1117,7 @@ def test_non_existing_conflicting_field_name(addictional_arguments):
 
     with pytest.raises(NameError, match=match(exception_message)):
         class SomeClass(Storage):
-            field: int = Field(10, conflicts={'ather_field': lambda old, new, other: new > other}, **addictional_arguments)  # noqa: ARG005
+            field: int = Field(10, conflicts={'ather_field': lambda old, new, other_old, other_new: new > other_old}, **addictional_arguments)  # noqa: ARG005
             other_field: int = Field(20)
 
 
@@ -2552,3 +2553,98 @@ def test_default_value_is_not_set_but_there_are_per_field_sources():
 
     assert instance.first_field == 4
     assert instance.second_field == 5
+
+
+def test_wrong_default_factories():
+    with pytest.raises(SignatureMismatchError, match=match('The default value factory should not expect any arguments.')):
+        class SomeClass(Storage):
+            field: int = Field(default_factory=lambda x: x)
+
+    with pytest.raises(SignatureMismatchError, match=match('The default value factory should not expect any arguments.')):
+        class SomeClass(Storage):
+            field: int = Field(default_factory=lambda x, y: x + y)
+
+
+def test_wrong_validation_function():
+    with pytest.raises(SignatureMismatchError, match=match('A function that accepts only one positional argument is expected as a field validator.')):
+        class SomeClass(Storage):
+            field: int = Field(123, validation=lambda: False)
+
+    with pytest.raises(SignatureMismatchError, match=match('A function that accepts only one positional argument is expected as a field validator.')):
+        class SomeClass(Storage):
+            field: int = Field(123, validation=lambda x, y: x + y)
+
+    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some message' is incorrect: a function that accepts only one positional argument is expected.")):
+        class SomeClass(Storage):
+            field: int = Field(123, validation={'some message': lambda: False})
+
+    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some message' is incorrect: a function that accepts only one positional argument is expected.")):
+        class SomeClass(Storage):
+            field: int = Field(123, validation={'some message': lambda x, y: x + y})
+
+    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some another message' is incorrect: a function that accepts only one positional argument is expected.")):
+        class SomeClass(Storage):
+            field: int = Field(123, validation={'some message': lambda x: False, 'some another message': lambda: False})  # noqa: ARG005
+
+    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some another message' is incorrect: a function that accepts only one positional argument is expected.")):
+        class SomeClass(Storage):
+            field: int = Field(123, validation={'some message': lambda x: False, 'some another message': lambda x, y: x + y})  # noqa: ARG005
+
+
+def test_wrong_conflict_checker():
+    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
+        class SomeClass(Storage):
+            field: int = Field(123, conflicts={'another_field': lambda: False})
+            another_field: int = Field(123)
+
+    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
+        class SomeClass(Storage):
+            field: int = Field(123, conflicts={'another_field': lambda x: False})  # noqa: ARG005
+            another_field: int = Field(123)
+
+    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
+        class SomeClass(Storage):
+            field: int = Field(123, conflicts={'another_field': lambda x, y: False})  # noqa: ARG005
+            another_field: int = Field(123)
+
+    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
+        class SomeClass(Storage):
+            field: int = Field(123, conflicts={'another_field': lambda x, y, z: False})  # noqa: ARG005
+            another_field: int = Field(123)
+
+    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
+        class SomeClass(Storage):
+            field: int = Field(123, conflicts={'another_field': lambda x, y, z, a, b: False})  # noqa: ARG005
+            another_field: int = Field(123)
+
+
+def test_wrong_converter_function():
+    with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
+        class SomeClass(Storage):
+            field: int = Field(123, conversion=lambda: 456)
+
+    with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
+        class SomeClass(Storage):
+            field: int = Field(123, conversion=lambda x, y: 456)  # noqa: ARG005
+
+    with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
+        class SomeClass(Storage):
+            field: int = Field(123, conversion=lambda x, y, z: 456)  # noqa: ARG005
+
+
+def test_wrong_change_action():
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, action=lambda: None)
+
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, action=lambda x: None)  # noqa: ARG005
+
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, action=lambda x, y: None)  # noqa: ARG005
+
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, action=lambda x, y, z, another: None)  # noqa: ARG005

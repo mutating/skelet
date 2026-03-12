@@ -25,6 +25,7 @@ from threading import Lock
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
+from sigmatch import PossibleCallMatcher, SignatureMismatchError
 from simtypes import check
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
@@ -41,7 +42,7 @@ else:  # pragma: no cover
 sentinel = InnerNoneType()
 
 class Field(Generic[ValueType]):
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0915
         self,
         default: Union[ValueType, InnerNoneType] = sentinel,
         /,
@@ -53,19 +54,46 @@ class Field(Generic[ValueType]):
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
         secret: bool = False,
-        change_action: Optional[Callable[[ValueType, ValueType, Storage], Any]] = None,
+        action: Optional[Callable[[ValueType, ValueType, Storage], Any]] = None,
         read_lock: bool = False,
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
         reverse_conflicts: bool = True,
         conversion: Optional[Callable[[ValueType], ValueType]] = None,
         share_mutex_with: Optional[SequenceWithStrings] = None,  # type: ignore[type-arg]
     ) -> None:
-        if default_factory is not None and default is not sentinel:
-            raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
+        if default_factory is not None:
+            if default is not sentinel:
+                raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
+            if not PossibleCallMatcher().match(default_factory):
+                raise SignatureMismatchError('The default value factory should not expect any arguments.')
 
-        if conversion is not None and default is not sentinel:
-            self._default_before_conversion: Union[ValueType, InnerNoneType] = default
-            self._default: Union[ValueType, InnerNoneType] = conversion(cast(ValueType, default))
+        if validation is not None:
+            validation_matcher = PossibleCallMatcher('.')
+            if isinstance(validation, dict):
+                for validator_message, validator in validation.items():
+                    if not validation_matcher.match(validator):
+                        raise SignatureMismatchError(f'Field validator with message {validator_message!r} is incorrect: a function that accepts only one positional argument is expected.')
+            elif not validation_matcher.match(validation):
+                raise SignatureMismatchError('A function that accepts only one positional argument is expected as a field validator.')
+
+        if action is not None and not PossibleCallMatcher('...').match(action):
+            raise SignatureMismatchError('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')
+
+        if conflicts is not None:
+            conflict_checker_matcher = PossibleCallMatcher('....')
+            for potentially_conflicting_field_name, conflict_checker in conflicts.items():
+                if not conflict_checker_matcher.match(conflict_checker):
+                    raise SignatureMismatchError(f'The function for checking conflicts with field {potentially_conflicting_field_name!r} is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).')
+
+        if conversion is not None:
+            if not PossibleCallMatcher('.').match(conversion):
+                raise SignatureMismatchError('The value converter must accept only one argument: the value before conversion.')
+            if default is not sentinel:
+                self._default_before_conversion: Union[ValueType, InnerNoneType] = default
+                self._default: Union[ValueType, InnerNoneType] = conversion(cast(ValueType, default))
+            else:
+                self._default_before_conversion = sentinel
+                self._default = default
         else:
             self._default_before_conversion = sentinel
             self._default = default
@@ -78,7 +106,7 @@ class Field(Generic[ValueType]):
         self.validation = validation
         self.validate_default = validate_default
         self.secret = secret
-        self.change_action = change_action
+        self.change_action = action
         self.conflicts = conflicts
         self.reverse_conflicts_on = reverse_conflicts
         self.conversion = conversion
