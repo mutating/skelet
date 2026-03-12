@@ -13,24 +13,24 @@ from skelet.sources.abstract import AbstractSource, ExpectedType
 sentinel = InnerNoneType()
 
 class FixedCLISource(AbstractSource[ExpectedType]):
-    def __init__(self, position_arguments: Optional[List[str]] = None, named_arguments: Optional[List[str]] = None) -> None:
-        if named_arguments is None and position_arguments is None:
+    def __init__(self, positional_arguments: Optional[List[str]] = None, named_arguments: Optional[List[str]] = None) -> None:
+        if named_arguments is None and positional_arguments is None:
             raise ValueError("You need to pass a list of named arguments or a list of positional arguments, you haven't passed anything.")
 
         if named_arguments is not None:
             for parameter in named_arguments:
                 if not parameter.isidentifier() or parameter == '_' or '__' in parameter:
                     raise ValueError(f'The "{parameter}" parameter is not valid for use on the command line (most likely, it is also not a valid Python name).')
-        if position_arguments is not None:
-            for parameter in position_arguments:
+        if positional_arguments is not None:
+            for parameter in positional_arguments:
                 if not parameter.isidentifier():
                     raise ValueError(f'The "{parameter}" parameter is not a valid Python identifier.')
 
-        arguments_intersection = set([] if position_arguments is None else position_arguments) & set([] if named_arguments is None else named_arguments)
+        arguments_intersection = set([] if positional_arguments is None else positional_arguments) & set([] if named_arguments is None else named_arguments)
         if arguments_intersection:
             raise ValueError(f"The following parameters overlap among positional and named command line arguments: {', '.join(sorted(arguments_intersection))}")
 
-        self.position_arguments = position_arguments if position_arguments is not None else []
+        self.position_arguments = positional_arguments if positional_arguments is not None else []
         self.named_arguments = named_arguments if named_arguments is not None else []
 
         self.parser = ArgumentParser(add_help=False)
@@ -61,11 +61,11 @@ class FixedCLISource(AbstractSource[ExpectedType]):
             type(self).__name__,
             (),
             {
-                'position_arguments': self.position_arguments,
+                'positional_arguments': self.position_arguments,
                 'named_arguments': self.named_arguments,
             },
             filters={
-                'position_arguments': lambda x: x,
+                'positional_arguments': lambda x: x,
                 'named_arguments': lambda x: x,
             },
         )

@@ -9,8 +9,8 @@ from skelet.errors import CLIFormatError
 
 def test_repr():
     assert repr(FixedCLISource(named_arguments=['a', 'b', 'c'])) == "FixedCLISource(named_arguments=['a', 'b', 'c'])"
-    assert repr(FixedCLISource(position_arguments=['a', 'b', 'c'])) == "FixedCLISource(position_arguments=['a', 'b', 'c'])"
-    assert repr(FixedCLISource(position_arguments=['a', 'b', 'c'], named_arguments=['d', 'f', 'g'])) == "FixedCLISource(position_arguments=['a', 'b', 'c'], named_arguments=['d', 'f', 'g'])"
+    assert repr(FixedCLISource(positional_arguments=['a', 'b', 'c'])) == "FixedCLISource(positional_arguments=['a', 'b', 'c'])"
+    assert repr(FixedCLISource(positional_arguments=['a', 'b', 'c'], named_arguments=['d', 'f', 'g'])) == "FixedCLISource(positional_arguments=['a', 'b', 'c'], named_arguments=['d', 'f', 'g'])"
 
 
 def test_defaults_for_not_allowed_library_name():
@@ -151,8 +151,8 @@ def test_bool_variable_with_value(temp_argv):  # noqa: ARG001
     ],
 )
 def test_get_position_arguments(temp_argv):  # noqa: ARG001
-    assert FixedCLISource(position_arguments=['a', 'b'])['a'] == 'lol'
-    assert FixedCLISource(position_arguments=['a', 'b'])['b'] == 'kek'
+    assert FixedCLISource(positional_arguments=['a', 'b'])['a'] == 'lol'
+    assert FixedCLISource(positional_arguments=['a', 'b'])['b'] == 'kek'
 
 
 @pytest.mark.parametrize(
@@ -162,12 +162,12 @@ def test_get_position_arguments(temp_argv):  # noqa: ARG001
     ],
 )
 def test_get_partical_position_arguments(temp_argv):  # noqa: ARG001
-    assert FixedCLISource(position_arguments=['a', 'b'])['a'] == 'lol'
+    assert FixedCLISource(positional_arguments=['a', 'b'])['a'] == 'lol'
 
     with pytest.raises(KeyError):
-        FixedCLISource(position_arguments=['a', 'b'])['b']
+        FixedCLISource(positional_arguments=['a', 'b'])['b']
 
-    assert FixedCLISource(position_arguments=['a', 'b']).get('b') is None
+    assert FixedCLISource(positional_arguments=['a', 'b']).get('b') is None
 
 
 @pytest.mark.parametrize(
@@ -177,10 +177,10 @@ def test_get_partical_position_arguments(temp_argv):  # noqa: ARG001
     ],
 )
 def test_get_type_awared_position_arguments(temp_argv):  # noqa: ARG001
-    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('a', int) == 123
-    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('a', str) == '123'
-    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('b', bool) == True
-    assert FixedCLISource(position_arguments=['a', 'b']).type_awared_get('b', str) == 'yes'
+    assert FixedCLISource(positional_arguments=['a', 'b']).type_awared_get('a', int) == 123
+    assert FixedCLISource(positional_arguments=['a', 'b']).type_awared_get('a', str) == '123'
+    assert FixedCLISource(positional_arguments=['a', 'b']).type_awared_get('b', bool) == True
+    assert FixedCLISource(positional_arguments=['a', 'b']).type_awared_get('b', str) == 'yes'
 
 
 def test_use_without_arguments():
@@ -190,12 +190,12 @@ def test_use_without_arguments():
 
 def test_arguments_intersection():
     with pytest.raises(ValueError, match=match("The following parameters overlap among positional and named command line arguments: b, c")):
-        FixedCLISource(position_arguments=['a', 'b', 'c'], named_arguments=['b', 'c', 'd'])
+        FixedCLISource(positional_arguments=['a', 'b', 'c'], named_arguments=['b', 'c', 'd'])
 
 
 def test_incorrect_positional_name():
     with pytest.raises(ValueError, match=match('The "*a" parameter is not a valid Python identifier.')):
-        FixedCLISource(position_arguments=['*a'])
+        FixedCLISource(positional_arguments=['*a'])
 
 
 @pytest.mark.parametrize(
