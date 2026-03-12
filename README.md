@@ -266,7 +266,7 @@ Sometimes, individual field values are [acceptable](#validation-of-values), but 
 ```python
 class Dossier(Storage):
     name: str = Field()
-    is_jew: bool | None = Field(None, doc='jews do not eat pork')
+    is_jew: bool | None = Field(None, doc='Jews do not eat pork')
     eats_pork: bool | None = Field(
         None,
         conflicts={'is_jew': lambda old, new, other_old, other_new: new is True and (other_old is True or other_new is True)},
@@ -281,7 +281,7 @@ dossier = Dossier(name='John')
 
 dossier.is_jew = True
 dossier.eats_pork = True
-#> ValueError: The new True (bool) value of the "eats_pork" field conflicts with the True (bool) value of the "is_jew" field (jews do not eat pork).
+#> ValueError: The new True (bool) value of the "eats_pork" field conflicts with the True (bool) value of the "is_jew" field (Jews do not eat pork).
 ```
 
 > ⓘ Conflict checking only happens after [type](#type-checking) and individual [value checking](#validation-of-values). This means that only values that are guaranteed to be individually valid will be passed to your conflict checking function.
@@ -300,7 +300,7 @@ But why can there be two values for the other field? By default, conflict condit
 ```python
 dossier.eats_pork = True
 dossier.is_jew = True
-#> ValueError: The new True (bool) value of the "is_jew" field (jews do not eat pork) conflicts with the True (bool) value of the "eats_pork" field.
+#> ValueError: The new True (bool) value of the "is_jew" field (Jews do not eat pork) conflicts with the True (bool) value of the "eats_pork" field.
 ```
 
 Reverse checks can be disabled by passing `False` as the `reverse_conflicts` parameter:
