@@ -54,7 +54,7 @@ pip install skelet
 
 You can also quickly try this package and others without installing them via [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it — objects of the `Field` class:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define several fields to it — objects of the `Field` class:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
@@ -64,7 +64,7 @@ class ManDescription(Storage):
     age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
-You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better suited specifically to storing settings.
+You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, the API is similar, but it is designed specifically for configuration storage.
 
 So, let's create an object of our class and look at it:
 
@@ -85,14 +85,14 @@ description.name = 3.14
 #> TypeError: The value 3.14 (float) of the "name" field does not match the type str.
 ```
 
-That's not bad! But you will become a real master of storing settings when you read the entire text below.
+That is already useful, but the rest of this guide covers the more advanced features.
 
 
 ## Default values
 
 A default value is used when no other source provides a value. It will be used until you override it, or if no other value is found in the [data sources](#sources).
 
-You may not define a default value, but in this case you need to pass these values when creating the storage object. If you do set a default value, there are 2 ways to do this:
+You do not have to define a default value, but in this case you need to pass these values when creating the storage object. If you do set a default value, there are 2 ways to do this:
 
 - **Ordinary**.
 - **Lazy** (deferred).
@@ -130,7 +130,7 @@ class TheSecretFormula(Storage):
     ...
 ```
 
-Don't do that! It is better to use the `doc` parameter in the field:
+Prefer the `doc` parameter instead:
 
 ```python
 class TheSecretFormula(Storage):
@@ -138,7 +138,8 @@ class TheSecretFormula(Storage):
     ...
 ```
 
-Not only does this make the code self-documenting, you will also receive helpful reminders about this field in all exceptions that the library will raise:
+
+Not only does this make the code self-documenting, the field description will also appear in exception messages:
 
 ```python
 formula = TheSecretFormula(the_secret_ingredient=13)
@@ -148,7 +149,7 @@ formula = TheSecretFormula(the_secret_ingredient=13)
 
 ## Secret fields
 
-Sometimes you do not want to expose the contents of certain fields to others. If such people can read, for example, the logs of your program, you may have problems. Secret fields are designed for such cases:
+Sometimes you do not want to expose the contents of certain fields to others. If someone can read your program logs, exposing such values may become a problem. Secret fields are designed for such cases:
 
 ```python
 class TopStateSecrets(Storage):
@@ -193,7 +194,7 @@ The library supports only a runtime-checkable subset of typing constructs. It is
 - `Optional` (again, both in the old style and in the new one - via `|`) - means that a value of the specified type is expected, or `None`.
 - `Lists`, `dicts`, and `tuples` can be specified with the types they contain. By default, the contents of these containers are not checked, but this is done in relation to external [sources](#sources).
 
-The author deliberately does not try to implement full type checking at runtime. If you need more powerful verification, it's better to rely on static tools like `mypy`.
+The library deliberately does not attempt to implement full runtime type checking. If you need more powerful verification, it's better to rely on static tools like `mypy`.
 
 The library also supports 2 additional types that allow you to narrow down the behavior of the basic int type:
 
@@ -274,7 +275,7 @@ class Dossier(Storage):
     ...
 ```
 
-When we attempt to redefine the value of a field that has conflict conditions defined with another field, these conditions will be checked and, if a conflict is confirmed, the operation will be stopped by throwing an exception:
+When we attempt to redefine the value of a field that has conflict conditions defined with another field, the library checks those conditions and raises an exception if a conflict is found:
 
 ```python
 dossier = Dossier(name='John')
@@ -295,7 +296,7 @@ The function that checks for a conflict with the value of another field takes 4 
 - The old value of the field with which a conflict is possible.
 - The new value of the field with which a conflict is possible.
 
-But why can there be two values for another field? By default, conflict conditions are checked when values are changed not only for the field for which they are set, but also for potentially conflicting fields:
+But why can there be two values for the other field? By default, conflict conditions are checked when values are changed not only for the field for which they are set, but also for potentially conflicting fields:
 
 ```python
 dossier.eats_pork = True
@@ -324,9 +325,9 @@ So far, we have discussed that fields can have default values, as well as values
 
 - Configuration files in various formats ([`TOML`](#toml-files-and-pyprojecttoml), [`YAML`](#yaml-files), and [`JSON`](#json-files)).
 - [Environment variables](#environment-variables).
-- [Command line arguments](#command-line-arguments).
+- [Command-line arguments](#command-line-arguments).
 
-The current value of each class field is determined by the following order:
+The effective value of each field is determined by the following precedence order:
 
 ```mermaid
 graph TD;
@@ -365,7 +366,7 @@ class MyClass(Storage, sources=[TOMLSource('pyproject.toml', table='tool.my_tool
 
 All values from sources are loaded when the config object is created. This means that (theoretically) during program execution, you can, for example, change a configuration file, then create a new storage object, and its contents will be different. The old object will not automatically know that the config file has been changed. Avoid this pattern, as it can lead to subtle bugs.
 
-Each data source is a dictionary-like object from which the values of a specific field are retrieved by the key in the form of the field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed, with sources for a field having higher priority than sources for the class as a whole.
+Each data source behaves like a mapping, and field values are looked up by field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed, with sources for a field having higher priority than sources for the class as a whole.
 
 For any field, you can change the key used to search for its value in the sources using the `alias` parameter:
 
@@ -398,7 +399,7 @@ EnvSource(case_sensitive=True)
 
 > ⚠️ On `Windows`, environment variables are case-insensitive, so this setting will not work.
 
-Sometimes you may also want to “namespace” environment variables, i.e., bind them to your application or library using a prefix. For example, you may want the value for the `field_name` attribute to be searched for using the `prefix_` key. In this case, set the appropriate prefix:
+Sometimes you may also want to “namespace” environment variables, i.e., give them an application-specific prefix. For example, you may want the value for the `field_name` attribute to be searched for using the `prefix_` key. In this case, set the appropriate prefix:
 
 ```python
 EnvSource(prefix='prefix_')  # So, for attribute "field_name", the search will be performed by key "prefix_field_name".
@@ -426,7 +427,7 @@ Environment variables can be used to store values of only certain data types. St
 
 ## TOML files and pyproject.toml
 
-The [`TOML`](https://toml.io/en/) format is currently the preferred file format for storing application settings for Python. It is very easy to map to dictionary-like structures in Python, and it is also minimalistic and easy to read.
+[`TOML`](https://toml.io/en/) is currently the preferred format for storing application settings in Python projects. It is very easy to map to dictionary-like structures in Python, and it is also minimalistic and easy to read.
 
 To read the configuration from a specific file, create a `TOMLSource` object by passing the file name or a [Path-like object](https://docs.python.org/3/library/pathlib.html#basic-use) to the constructor:
 
@@ -478,7 +479,7 @@ Everything will also work similarly to reading [`TOML` files](#toml-files-and-py
 
 ## Command-line arguments
 
-`skelet` can automatically parse command line arguments. To do this, use the `FixedCLISource` object, to which you need to pass a list of positional and/or named command line arguments:
+`skelet` can automatically parse command-line arguments. To do this, use the `FixedCLISource` object, to which you need to pass a list of positional and/or named command-line arguments:
 
 ```python
 #!/usr/bin/env python3
@@ -503,17 +504,16 @@ Now we can run our script, and the arguments will automatically populate the cor
 ./our_script.py --first-field value "positional argument"
 ```
 
-As you can see, names of named arguments require adding two hyphens at the beginning, like this: `--`, and also all the underscores should also be replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
-
+As you can see, named arguments are passed with two leading hyphens, like this: `--`, and also all the underscores are replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
 
 You do not need to pass a value for a named field with a `bool` type hint. The rest of the fields need it, and they will be interpreted according to their type hints.
 
-All arguments are optional, and if they are not present on the command line, just the default value will be used. The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command line argument.
+All arguments are optional, and if they are not present on the command-line, just the default value will be used. The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command-line argument.
 
 
 ## Collecting sources
 
-Often, you may want to connect not one, but several different sources for your settings. For example, you may need to combine settings from [environment variables](#environment-variables) and settings from the [`pyproject.toml` file](#toml-files-and-pyprojecttoml), with environment variables having higher priority. The straightforward way to implement this would be to pass multiple source objects to the class, as discussed [above](#sources). However, there is also a way to configure this automatically using the `for_tool` function:
+Often, you may want to use multiple settings sources together. For example, you may need to combine settings from [environment variables](#environment-variables) and settings from the [`pyproject.toml` file](#toml-files-and-pyprojecttoml), with environment variables having higher priority. The straightforward way to implement this would be to pass multiple source objects to the class, as discussed [above](#sources). However, there is also a way to configure this automatically using the `for_tool` function:
 
 ```python
 from skelet import for_tool
@@ -571,11 +571,11 @@ print(digits.my_favorite_digit)
 
 Thread safety is an important priority in the development of `skelet`.
 
-All write operations are protected by mutexes by default, with individual mutexes used for each field. A primitive form of transactionality is used here: if a value fails type checking or other checks, it is not applied, and other threads cannot read the “incorrect” value at that time: the new value will only become available once all checks have been passed. If you specify conditions for [checking conflicts](#conflicts-between-fields) between two different fields, they start using the same mutex to ensure that there are no races.
+All write operations are protected by mutexes by default, with individual mutexes used for each field. The library provides a limited transactional model: if a value fails type checking or other checks, it is not applied, and other threads cannot read the “incorrect” value at that time: the new value will only become available once all checks have been passed. If you specify conditions for [checking conflicts](#conflicts-between-fields) between two different fields, they start using the same mutex to ensure that there are no races.
 
 According to [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law), the benefits of program parallelization decrease dramatically as the proportion of execution time that occurs under a mutex increases. Therefore, the `skelet` library uses a mutex only for a critical operation: replacing one value with another, but it does not use it, for example, during the value verification phase.
 
-The key parts of thread safety are reliably tested.
+The thread-safety guarantees are covered by dedicated tests.
 
 
 ## Callbacks for changes
@@ -643,4 +643,4 @@ print(data)
 #> {'some_field': 42}
 ```
 
-After that, you can continue to treat the data as a regular `dict`, for example, convert it to `JSON` and send it over the network.
+After that, you can treat the result as a regular `dict`, for example, convert it to `JSON` and send it over the network.
