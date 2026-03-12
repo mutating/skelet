@@ -2630,3 +2630,21 @@ def test_wrong_converter_function():
     with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
         class SomeClass(Storage):
             field: int = Field(123, conversion=lambda x, y, z: 456)  # noqa: ARG005
+
+
+def test_wrong_change_action():
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, change_action=lambda: None)
+
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, change_action=lambda x: None)
+
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, change_action=lambda x, y: None)
+
+    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
+        class SomeClass(Storage):
+            field: int = Field(123, change_action=lambda x, y, z, another: None)
