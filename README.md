@@ -51,7 +51,7 @@ Install it:
 pip install skelet
 ```
 
-You can also quickly try out this and other packages without having to install using [instld](https://github.com/pomponchik/instld).
+You can also quickly try out this and other packages without installing them via [instld](https://github.com/pomponchik/instld).
 
 Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and attach several fields to it — objects of the `Field` class:
 
@@ -63,7 +63,7 @@ class ManDescription(Storage):
     age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
-You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better sharpened specifically for use for storing settings.
+You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, it's very similar, but it's better suited specifically to storing settings.
 
 So, let's create an object of our class and look at it:
 
@@ -155,7 +155,7 @@ class TopStateSecrets(Storage):
     red_buttons_password: str = Field('1234', secret=True)
 
 print(TopStateSecrets())
-#> TopStateSecret(who_killed_kennedy=***, red_buttons_password=***)
+#> TopStateSecrets(who_killed_kennedy=***, red_buttons_password=***)
 ```
 If you mark a field with the `secret` flag, as in this example, its contents will be hidden not only when printing, but also under any exceptions that the library will raise:
 
@@ -245,13 +245,13 @@ numbers.zero = -1
 
 > ⓘ Validation occurs after [type checking](#type-checking), so you can be sure that types match when your validation function is called.
 
-All values are validated, including default values. However, sometimes you may need to disable validation only for default values, for example, if you use some identifiers for the absence of real values ([`None`](https://docs.python.org/3/library/constants.html#None), [`MISSING`](https://docs.python.org/3/library/dataclasses.html#dataclasses.MISSING), [`NaN`](https://docs.python.org/3/library/math.html#math.isnan), an empty string, or something similar). In this case, pass `True` as the `validate_default` argument:
+All values are validated, including default values. However, sometimes you may need to disable validation only for default values, for example, if you use some identifiers for the absence of real values ([`None`](https://docs.python.org/3/library/constants.html#None), [`MISSING`](https://docs.python.org/3/library/dataclasses.html#dataclasses.MISSING), [`NaN`](https://docs.python.org/3/library/math.html#math.isnan), an empty string, or something similar). In this case, pass `False` as the `validate_default` argument:
 
 ```python
 class PatientsCard(Storage):
     had_rubella: bool | None = Field(
         None,
-        validation: lambda x: isinstance(x, bool),
+        validation=lambda x: isinstance(x, bool),
         validate_default=False,  # The default value will not be checked.
         doc='we may not know if a person has had rubella, but if we do, then either yes or no',
     )
@@ -502,7 +502,7 @@ Now we can run our script, and the arguments that we pass will automatically fil
 ./our_script.py --first-field value "positional argument"
 ```
 
-As you can see, names of positional arguments require adding two hyphens at the beginning, like this: `--`, and also all the underscores should also be replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
+As you can see, names of named arguments require adding two hyphens at the beginning, like this: `--`, and also all the underscores should also be replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
 
 If a specific named field has a `bool` type hint, it does not need to pass any value. The rest of the fields need it, and they will be interpreted according to their type hints.
 
@@ -524,7 +524,7 @@ class MyClass(Storage, sources=for_tool('my_tool_name')):
 
 - [Environment variables](#environment-variables) with the prefix `<my_tool_name>_`.
 - Files `<my_tool_name>.toml` and `.<my_tool_name>.toml`.
-- Section `tool.<my_tool_name>` of [`pyproject.toml` file](#toml-files-and-pyprojecttoml) file.
+- Section `tool.<my_tool_name>` of [`pyproject.toml`](#toml-files-and-pyprojecttoml) file.
 - Files `<my_tool_name>.yaml` and `.<my_tool_name>.yaml`.
 - Files `<my_tool_name>.json` and `.<my_tool_name>.json`.
 
@@ -618,7 +618,7 @@ class EternalTruths(Storage):
 storage = EternalTruths()
 
 print(storage.inevitability)
-#> Two things are certain: death and taxe
+#> Two things are certain: death and taxes
 storage.inevitability = 'There are a lot of unavoidable things.'
 #> AttributeError: "inevitability" field is read-only.
 ```
@@ -633,10 +633,10 @@ Application settings are rarely selected «outside»; usually, they do not need 
 ```python
 from skelet import asdict
 
-class FlyingСonfig(Storage):
+class FlyingConfig(Storage):
     some_field: int = Field(42)
 
-data = asdict(FlyingСonfig())
+data = asdict(FlyingConfig())
 print(data)
 #> {'some_field': 42}
 ```
