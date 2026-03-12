@@ -2639,12 +2639,12 @@ def test_wrong_change_action():
 
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, action=lambda x: None)
+            field: int = Field(123, action=lambda x: None)  # noqa: ARG005
 
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, action=lambda x, y: None)
+            field: int = Field(123, action=lambda x, y: None)  # noqa: ARG005
 
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
-            field: int = Field(123, action=lambda x, y, z, another: None)
+            field: int = Field(123, action=lambda x, y, z, another: None)  # noqa: ARG005
