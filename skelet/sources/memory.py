@@ -5,7 +5,7 @@ from printo import repred
 from skelet.sources.abstract import AbstractSource, ExpectedType
 
 
-@repred(prefer_positional=True)
+@repred(prefer_positional=True)  # type: ignore[call-overload]
 class MemorySource(AbstractSource[ExpectedType]):
     def __init__(self, data: Dict[str, ExpectedType]) -> None:
         self.data = data

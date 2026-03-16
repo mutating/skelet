@@ -7,7 +7,7 @@ from skelet.sources.abstract import AbstractSource, ExpectedType
 
 sentinel = InnerNoneType()
 
-@repred(prefer_positional=True)
+@repred(prefer_positional=True)  # type: ignore[call-overload]
 class SourcesCollection(AbstractSource[ExpectedType]):
     def __init__(self, sources: List[AbstractSource[ExpectedType]]) -> None:
         self.sources = sources
