@@ -10,11 +10,12 @@ except ImportError:  # pragma: no cover
         load,  # type: ignore[assignment, import-not-found, no-redef, unused-ignore]
     )
 
-from printo import descript_data_object
+from printo import repred
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
 
 
+@repred(positionals=['path'], filters={'allow_non_existent_files': lambda x: x != True, 'table': lambda x: bool(x)}, getters={'table': lambda x: x.table})
 class TOMLSource(AbstractSource[ExpectedType]):
     def __init__(self, path: Union[str, Path], table: Optional[Union[str, List[str]]] = None, allow_non_existent_files: bool = True) -> None:
         self.path = path
@@ -35,9 +36,6 @@ class TOMLSource(AbstractSource[ExpectedType]):
 
     def __getitem__(self, key: str) -> ExpectedType:
         return self.data[key]
-
-    def __repr__(self) -> str:
-        return descript_data_object(type(self).__name__, (self.path,), {'table': self.table, 'allow_non_existent_files': self.allow_non_existent_files}, filters={'allow_non_existent_files': lambda x: x != True, 'table': lambda x: bool(x)})
 
     @cached_property
     def data(self) -> Dict[str, ExpectedType]:
