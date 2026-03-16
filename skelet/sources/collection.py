@@ -1,12 +1,13 @@
 from typing import Any, List, Optional, Type, cast
 
 from denial import InnerNoneType
-from printo import descript_data_object
+from printo import repred
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
 
 sentinel = InnerNoneType()
 
+@repred(prefer_positional=True)  # type: ignore[call-overload]
 class SourcesCollection(AbstractSource[ExpectedType]):
     def __init__(self, sources: List[AbstractSource[ExpectedType]]) -> None:
         self.sources = sources
@@ -19,9 +20,6 @@ class SourcesCollection(AbstractSource[ExpectedType]):
                 pass
 
         raise KeyError(key)
-
-    def __repr__(self) -> str:
-        return descript_data_object(type(self).__name__, (self.sources,), {})
 
     def get(self, key: str, default: Any = None) -> Any:
         try:

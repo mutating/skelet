@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skelet"
-version = "0.0.11"
+version = "0.0.12"
 authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    'printo>=0.0.12',
+    'printo>=0.0.22',
     'locklib>=0.0.20',
     'simtypes>=0.0.12',
     'denial>=0.0.11',

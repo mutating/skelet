@@ -4,7 +4,7 @@ from contextlib import redirect_stderr
 from typing import List, Optional, Type, Union, cast
 
 from denial import InnerNoneType, SentinelType
-from printo import descript_data_object
+from printo import repred
 from simtypes import from_string
 
 from skelet.errors import CLIFormatError
@@ -12,6 +12,16 @@ from skelet.sources.abstract import AbstractSource, ExpectedType
 
 sentinel = InnerNoneType()
 
+@repred(
+    getters={
+        'positional_arguments': lambda x: x.position_arguments,
+        'named_arguments': lambda x: x.named_arguments,
+    },
+    filters={
+        'positional_arguments': lambda x: x,
+        'named_arguments': lambda x: x,
+    },
+)
 class FixedCLISource(AbstractSource[ExpectedType]):
     def __init__(self, positional_arguments: Optional[List[str]] = None, named_arguments: Optional[List[str]] = None) -> None:
         if named_arguments is None and positional_arguments is None:
@@ -55,20 +65,6 @@ class FixedCLISource(AbstractSource[ExpectedType]):
             # TODO: from python 3.9 use exit_on_error
             except SystemExit as e:
                 raise KeyError(key) from e  # pragma: no cover
-
-    def __repr__(self) -> str:
-        return descript_data_object(
-            type(self).__name__,
-            (),
-            {
-                'positional_arguments': self.position_arguments,
-                'named_arguments': self.named_arguments,
-            },
-            filters={
-                'positional_arguments': lambda x: x,
-                'named_arguments': lambda x: x,
-            },
-        )
 
     def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
         subresult = cast(Union[str, SentinelType], self.get(key, default))
