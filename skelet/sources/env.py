@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import Dict, List, Optional, Type, cast
 
 from denial import InnerNoneType
-from printo import descript_data_object
+from printo import repred
 from simtypes import from_string
 
 from skelet.errors import CaseError
@@ -12,6 +12,7 @@ from skelet.sources.abstract import AbstractSource, ExpectedType
 
 sentinel = InnerNoneType()
 
+@repred(filters={'prefix': lambda x: x != '', 'postfix': lambda x: x != '', 'case_sensitive': lambda x: x != False})
 class EnvSource(AbstractSource[ExpectedType]):
     def __init__(self, prefix: Optional[str] = '', postfix: Optional[str] = '', case_sensitive: bool = False) -> None:
         if platform.system() == 'Windows' and case_sensitive:
@@ -27,9 +28,6 @@ class EnvSource(AbstractSource[ExpectedType]):
             full_key = full_key.upper()
 
         return self.data[full_key]
-
-    def __repr__(self) -> str:
-        return descript_data_object(type(self).__name__, (), {'prefix': self.prefix, 'postfix': self.postfix, 'case_sensitive': self.case_sensitive}, filters={'prefix': lambda x: x != '', 'postfix': lambda x: x != '', 'case_sensitive': lambda x: x != False})
 
     @cached_property
     def data(self) -> Dict[str, str]:
