@@ -13,7 +13,7 @@ dependencies = [
     'printo>=0.0.22',
     'locklib>=0.0.20',
     'simtypes>=0.0.12',
-    'denial>=0.0.11',
+    'denial>=0.0.13',
     'sigmatch>=0.0.8',
     'tomli==2.3.0 ; python_version <= "3.12"',
     'pyyaml==6.0.3',
