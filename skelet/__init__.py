@@ -2,6 +2,7 @@ from simtypes import NaturalNumber as NaturalNumber  # noqa: I001
 from simtypes import NonNegativeInt as NonNegativeInt
 
 from skelet.fields.base import Field as Field
+from skelet.fields.base import FieldDescriptor as FieldDescriptor
 from skelet.functions.asdict import asdict as asdict
 from skelet.sources.cli import FixedCLISource as FixedCLISource
 from skelet.sources.env import EnvSource as EnvSource

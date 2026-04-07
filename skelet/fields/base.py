@@ -35,7 +35,7 @@ else:  # pragma: no cover
 
 sentinel = InnerNoneType()
 
-class Field(Generic[ValueType]):
+class FieldDescriptor(Generic[ValueType]):
     def __init__(  # noqa: PLR0913, PLR0915
         self,
         default: Union[ValueType, InnerNoneType] = sentinel,
@@ -286,3 +286,40 @@ class Field(Generic[ValueType]):
             result.extend(instance.__sources__.sources)
 
         return cast(SourcesCollection[ExpectedType], SourcesCollection(result))
+
+
+def Field(  # noqa: PLR0913, N802
+    default: Any = sentinel,
+    /,
+    default_factory: Optional[Callable[[], Any]] = None,
+    doc: Optional[str] = None,
+    alias: Optional[str] = None,
+    sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
+    read_only: bool = False,
+    validation: Optional[Union[Dict[str, Callable[[Any], bool]], Callable[[Any], bool]]] = None,
+    validate_default: bool = True,
+    secret: bool = False,
+    action: Optional[Callable[[Any, Any, Storage], Any]] = None,
+    read_lock: bool = False,
+    conflicts: Optional[Dict[str, Callable[[Any, Any, Any, Any], bool]]] = None,
+    reverse_conflicts: bool = True,
+    conversion: Optional[Callable[[Any], Any]] = None,
+    share_mutex_with: Optional[SequenceWithStrings] = None,  # type: ignore[type-arg]
+) -> Any:
+    return FieldDescriptor(
+        default,
+        default_factory=default_factory,
+        doc=doc,
+        alias=alias,
+        sources=sources,
+        read_only=read_only,
+        validation=validation,
+        validate_default=validate_default,
+        secret=secret,
+        action=action,
+        read_lock=read_lock,
+        conflicts=conflicts,
+        reverse_conflicts=reverse_conflicts,
+        conversion=conversion,
+        share_mutex_with=share_mutex_with,
+    )
