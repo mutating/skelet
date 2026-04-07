@@ -21,9 +21,8 @@ class Storage:
     __instance_sources__: Optional[Sequence[InstanceSourceItem]]
 
     @staticmethod
-    def _pop_and_validate_instance_sources(kwargs: Dict[str, Any]) -> Optional[Sequence['InstanceSourceItem']]:
-        raw = kwargs.pop('_sources', sentinel)
-        if raw is sentinel:
+    def _validate_instance_sources(raw: Optional[Sequence['InstanceSourceItem']]) -> Optional[Sequence['InstanceSourceItem']]:
+        if raw is None:
             return None
         if not isinstance(raw, (list, tuple)):
             raise TypeError('_sources must be a list or a tuple.')
@@ -32,8 +31,8 @@ class Storage:
                 raise TypeError(f'Each element of _sources must be a source or Ellipsis, got {type(item).__name__}.')
         return raw
 
-    def __init__(self, **kwargs: Any) -> None:
-        self.__instance_sources__ = self._pop_and_validate_instance_sources(kwargs)
+    def __init__(self, *, _sources: Optional[Sequence['InstanceSourceItem']] = None, **kwargs: Any) -> None:
+        self.__instance_sources__ = self._validate_instance_sources(_sources)
 
         self.__values__: Dict[str, Any] = {}
         self.__locks__ = {field_name: Lock() for field_name in self.__field_names__}

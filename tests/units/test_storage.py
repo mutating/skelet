@@ -3024,11 +3024,12 @@ def test_instance_sources_with_read_only(collection_type):
 
 
 def test_instance_sources_explicit_none():
+    """Passing _sources=None explicitly is equivalent to not passing it at all."""
     class SomeClass(Storage):
         field: int = Field(100)
 
-    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
-        SomeClass(_sources=None)
+    instance = SomeClass(_sources=None)
+    assert instance.field == 100
 
 
 @pytest.mark.parametrize('collection_type', [list, tuple])
