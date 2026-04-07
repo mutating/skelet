@@ -1,4 +1,3 @@
-"""Tests for advanced typing scenarios: conflicts, actions, conversions."""
 from typing import Any
 
 import pytest

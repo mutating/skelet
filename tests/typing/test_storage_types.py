@@ -1,4 +1,3 @@
-"""Tests for Storage construction and usage typing."""
 from typing import Optional
 
 import pytest

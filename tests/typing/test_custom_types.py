@@ -1,8 +1,3 @@
-"""Tests for custom types like NaturalNumber and NonNegativeInt.
-
-Note: reveal_type expectations use fully qualified simtypes paths.
-These will break if simtypes reorganizes its internal module structure.
-"""
 import pytest
 
 from skelet import Field, NaturalNumber, NonNegativeInt, Storage

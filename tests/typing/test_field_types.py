@@ -1,4 +1,3 @@
-"""Tests for Field() type inference with mypy."""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -199,7 +198,6 @@ def _str_to_int(x: Any) -> int:
 
 @pytest.mark.mypy_testing
 def test_field_conversion_type_widening() -> None:
-    """Conversion changes type: str input -> int output, annotation must be Union."""
     class Config(Storage):
         value: Union[str, int] = Field('0', conversion=_str_to_int)
 

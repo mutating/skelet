@@ -304,7 +304,7 @@ def Field(  # noqa: PLR0913, N802
     conflicts: Optional[Dict[str, Callable[[Any, Any, Any, Any], bool]]] = None,
     reverse_conflicts: bool = True,
     conversion: Optional[Callable[[Any], Any]] = None,
-    share_mutex_with: Optional[SequenceWithStrings] = None,  # type: ignore[type-arg]
+    share_mutex_with: Optional[Sequence[str]] = None,
 ) -> Any:
     return FieldDescriptor(
         default,

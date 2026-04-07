@@ -1,9 +1,3 @@
-"""Skip runtime execution of negative typing tests.
-
-Tests in test_negative_types.py contain intentional type errors that crash
-at runtime. The [mypy] test items should still run; only the normal pytest
-function items should be skipped.
-"""
 import pytest
 
 

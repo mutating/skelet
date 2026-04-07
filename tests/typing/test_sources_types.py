@@ -1,4 +1,3 @@
-"""Tests for source-related typing."""
 from typing import Any, List, Union
 
 import pytest
@@ -122,7 +121,6 @@ def test_fixed_cli_source_typing() -> None:
 
 @pytest.mark.mypy_testing
 def test_field_sources_with_ellipsis() -> None:
-    """Field-level sources with ... to include class-level sources."""
     field_sources: FieldSources = [MemorySource({'name': 'val'}), ...]
 
     class Config(Storage, sources=for_tool('my_tool')):

@@ -1,4 +1,3 @@
-"""Tests for asdict typing."""
 import pytest
 
 from skelet import Field, Storage, asdict

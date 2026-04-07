@@ -1,8 +1,3 @@
-"""Negative typing tests: mypy should reject incorrect usage.
-
-These tests intentionally contain type errors that mypy should catch.
-Runtime execution is skipped via conftest.py since the code is invalid by design.
-"""
 from __future__ import annotations
 
 from typing import Any, List, Optional, Union
@@ -10,9 +5,6 @@ from typing import Any, List, Optional, Union
 import pytest
 
 from skelet import Field, Storage, asdict
-
-# --- Wrong assignment to fields ---
-
 
 @pytest.mark.mypy_testing
 def test_wrong_assignment_int_field() -> None:
@@ -86,15 +78,9 @@ def test_wrong_assignment_container_none() -> None:
     config.items = None  # E: Incompatible types in assignment (expression has type "None", variable has type "list[int]")  [assignment]
 
 
-# --- Wrong asdict usage ---
-
-
 @pytest.mark.mypy_testing
 def test_asdict_wrong_argument() -> None:
     asdict(123)  # E: Argument 1 to "asdict" has incompatible type "int"; expected "Storage"  [arg-type]
-
-
-# --- Wrong Field() parameter types ---
 
 
 @pytest.mark.mypy_testing
@@ -152,9 +138,6 @@ def test_field_alias_wrong_type() -> None:
     Field(alias=42)  # E: Argument "alias" to "Field" has incompatible type "int"; expected "str | None"  [arg-type]
 
 
-# --- Wrong callback signatures (arity) ---
-
-
 def _zero_arg_validator() -> bool:
     return True
 
@@ -191,9 +174,6 @@ def test_field_conflicts_wrong_arity() -> None:
     Field(conflicts={'a': _two_arg_conflict})  # E: Dict entry 0 has incompatible type "str": "Callable[[Any, Any], bool]"; expected "str": "Callable[[Any, Any, Any, Any], bool]"  [dict-item]
 
 
-# --- Wrong _sources usage ---
-
-
 @pytest.mark.mypy_testing
 def test_sources_wrong_type_str() -> None:
     class Config(Storage):
@@ -216,3 +196,22 @@ def test_sources_wrong_list_element() -> None:
         name: str = Field('default')
 
     Config(_sources=['not_a_source'])  # E: List item 0 has incompatible type "str"; expected "AbstractSource[Any] | EllipsisType"  [list-item]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_dict_to_list() -> None:
+    class Config(Storage):
+        items: List[int] = Field(default_factory=list)
+
+    config = Config()
+    config.items = {'a': 1}  # E: Incompatible types in assignment (expression has type "dict[str, int]", variable has type "list[int]")  [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_field_sources_wrong_element_type() -> None:
+    Field(sources=[42])  # E: Argument "sources" to "Field" has incompatible type "list[int]"; expected "list[AbstractSource[Never] | EllipsisType] | None"  [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_share_mutex_with_wrong_element_type() -> None:
+    Field(share_mutex_with=[42])  # E: List item 0 has incompatible type "int"; expected "str"  [list-item]
