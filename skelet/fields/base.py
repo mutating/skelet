@@ -1,3 +1,6 @@
+from collections.abc import Sequence
+from sys import version_info
+from threading import Lock
 from typing import (
     Any,
     Callable,
@@ -13,16 +16,6 @@ from typing import (
     get_type_hints,
 )
 
-# TODO: check, EllipsisType was added to types module in Python 3.10.
-try:
-    from types import EllipsisType  # type: ignore[attr-defined, unused-ignore]
-except ImportError:  # pragma: no cover
-    EllipsisType = type(...)  # type: ignore[misc, unused-ignore]
-
-from collections.abc import Sequence
-from sys import version_info
-from threading import Lock
-
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
 from sigmatch import PossibleCallMatcher, SignatureMismatchError
@@ -31,6 +24,7 @@ from simtypes import check
 from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 from skelet.storage import Storage
+from skelet.types import EllipsisType
 
 ValueType = TypeVar('ValueType')
 
@@ -255,19 +249,40 @@ class Field(Generic[ValueType]):
         self.exception = exception
 
     def get_sources(self, instance: Storage) -> SourcesCollection[ExpectedType]:
+        instance_sources_raw = instance.__instance_sources__
+
+        if instance_sources_raw is None:
+            return self._get_normal_sources(instance)
+
+        has_ellipsis = False
+        instance_only: List[AbstractSource[ExpectedType]] = []
+        for source in instance_sources_raw:
+            if source is Ellipsis:
+                has_ellipsis = True
+            else:
+                instance_only.append(cast(AbstractSource[ExpectedType], source))
+
+        if not has_ellipsis:
+            return cast(SourcesCollection[ExpectedType], SourcesCollection(instance_only))
+
+        normal_sources: SourcesCollection[ExpectedType] = self._get_normal_sources(instance)
+        combined: List[AbstractSource[ExpectedType]] = list(instance_only) + list(normal_sources.sources)
+        return cast(SourcesCollection[ExpectedType], SourcesCollection(combined))
+
+    def _get_normal_sources(self, instance: Storage) -> SourcesCollection[ExpectedType]:
         if self.sources is None:
             return instance.__sources__
 
-        result = []
+        result: List[AbstractSource[ExpectedType]] = []
         there_is_ellipsis = False
 
         for source in self.sources:
             if source is Ellipsis:
                 there_is_ellipsis = True
             else:
-                result.append(source)
+                result.append(cast(AbstractSource[ExpectedType], source))
 
         if there_is_ellipsis:
-           result.extend(instance.__sources__.sources)
+            result.extend(instance.__sources__.sources)
 
         return cast(SourcesCollection[ExpectedType], SourcesCollection(result))

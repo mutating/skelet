@@ -330,15 +330,16 @@ Each field value is resolved in the following order:
 
 ```mermaid
 graph TD;
-  A[Default values] --> B(Data sources in the order listed) --> C(The values set at runtime)
+  A[Default values] --> B(Class sources) --> C(Field sources) --> D(Instance sources) --> E(The values set at runtime)
 ```
 
 That is, values obtained from sources have higher priority than default values, but can be overwritten (unless you [prohibit it](#read-only-fields)) by other values at runtime.
 
-There are two ways to specify a list of sources:
+There are three ways to specify a list of sources:
 
 - For the **whole class**.
 - For a **specific field**.
+- For a **specific instance**.
 
 To specify a list of sources for the entire class, pass it to the class constructor:
 
@@ -363,9 +364,37 @@ class MyClass(Storage, sources=[TOMLSource('pyproject.toml', table='tool.my_tool
     some_field = Field('some_value', sources=[TOMLSource('config_for_this_field.toml'), ...])
 ```
 
+Finally, you can specify a list of sources for a specific instance by passing it as the `_sources` argument when creating the object:
+
+```python
+instance = MyClass(_sources=[TOMLSource('instance_config.toml')])
+```
+
+Without an ellipsis, instance-level sources completely replace both class-level and field-level sources. If you want instance-level sources to have the highest priority while still falling back to other sources, use an ellipsis:
+
+```python
+instance = MyClass(_sources=[TOMLSource('instance_config.toml'), ...])
+```
+
+In this case, instance sources are checked first, and if a value is not found, the lookup falls back to the sources that the field would normally use without `_sources`. The fallback rules are:
+
+- If a field has no `sources` parameter → fallback to class-level sources directly.
+- If a field has `sources` without `...` → fallback to field-level sources only (class-level sources are **not** included).
+- If a field has `sources` with `...` → fallback to field-level sources, then class-level sources.
+
+> ⚠️ This means that `...` in `_sources` does **not** always reach class-level sources. If a field defines its own `sources` without `...`, class-level sources are excluded for that field even when instance-level `_sources` contains `...`:
+>
+> ```python
+> class MyClass(Storage, sources=[EnvSource()]):
+>     # This field's sources do not include ..., so EnvSource() is unreachable for it:
+>     some_field = Field('default', sources=[TOMLSource('field_config.toml')])
+> ```
+
+Only `list` and `tuple` are accepted as the `_sources` collection type.
+
 All values from sources are loaded when the config object is created. This means that (theoretically) during program execution, you can, for example, change a configuration file, then create a new storage object, and its contents will be different. The old object will not automatically know that the config file has been changed. Avoid this pattern, as it can lead to subtle bugs.
 
-Each data source behaves like a mapping, and field values are looked up by field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed, with sources for a field having higher priority than sources for the class as a whole.
+Each data source behaves like a mapping, and field values are looked up by field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed. When multiple levels of sources are combined via ellipsis, instance-level sources have the highest priority, followed by field-level sources, and then class-level sources.
 
 For any field, you can change the key used to search for its value in the sources using the `alias` parameter:
 

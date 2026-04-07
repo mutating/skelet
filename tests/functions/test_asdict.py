@@ -41,3 +41,36 @@ def test_memory_source_values_as_dict():
         second_field = Field()
 
     assert asdict(SomeClass()) == {'field': 42, 'second_field': 43}
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_source_values_as_dict(collection_type):
+    class SomeClass(Storage):
+        field = Field(0)
+        second_field = Field(0)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42, 'second_field': 43})]))
+
+    assert asdict(instance) == {'field': 42, 'second_field': 43}
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_source_with_ellipsis_hierarchy_as_dict(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'class_field': 30})]):
+        instance_field = Field(0)
+        field_field = Field(0, sources=[MemorySource({'field_field': 20}), ...])
+        class_field = Field(0)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'instance_field': 10}), ...]))
+
+    assert asdict(instance) == {'instance_field': 10, 'field_field': 20, 'class_field': 30}
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_source_ellipsis_does_not_reach_class_when_field_has_no_ellipsis_as_dict(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 99})]):
+        field = Field(0, sources=[MemorySource({'other': 1})])
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'other': 2}), ...]))
+
+    assert asdict(instance) == {'field': 0}
