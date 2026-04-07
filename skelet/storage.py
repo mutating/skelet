@@ -1,7 +1,6 @@
 from collections import defaultdict
-from collections.abc import Sequence
 from threading import Lock
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
