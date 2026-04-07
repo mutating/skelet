@@ -6,6 +6,7 @@ import pytest
 
 from skelet import Field, Storage, asdict
 
+
 @pytest.mark.mypy_testing
 def test_wrong_assignment_int_field() -> None:
     class Config(Storage):
