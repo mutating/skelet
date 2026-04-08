@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from sys import version_info
 from threading import Lock
 from typing import (
@@ -8,6 +7,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
