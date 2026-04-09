@@ -336,6 +336,7 @@ def test_stress_many_threads_read_and_write_field_with_read_lock():
     while not read_values.empty():
         collected_reads.append(read_values.get_nowait())
 
+    assert len(collected_reads) == num_readers * iterations
     assert set(collected_reads).issubset({0, 1, 2, 3, 4, 5})
 
 

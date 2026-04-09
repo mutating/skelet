@@ -18,14 +18,22 @@ def test_share_mutex_with_is_transitive():
 
 
 def test_share_mutex_with_and_conflicts_merge_into_one_group():
+    def fields_conflict(
+        _old_first: int,
+        new_first: int,
+        _old_third: int,
+        new_third: int,
+    ) -> bool:
+        return new_first > 0 and new_third > 0
+
     class SomeClass(Storage):
         first_field = Field(
-            1,
+            0,
             share_mutex_with=['second_field'],
-            conflicts={'third_field': lambda *_: False},
+            conflicts={'third_field': fields_conflict},
         )
-        second_field = Field(2)
-        third_field = Field(3)
+        second_field = Field(0)
+        third_field = Field(0)
 
     instance = SomeClass()
 

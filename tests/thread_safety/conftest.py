@@ -55,7 +55,10 @@ class LocklibDeadlockDetectingLock:
             self._owner_thread_id = thread_id
 
     def release(self) -> None:
+        thread_id = get_ident()
         with self._state_lock:
+            if self._owner_thread_id != thread_id:
+                raise RuntimeError('Release from a non-owner thread was detected.')
             self._owner_thread_id = None
         self._lock.release()
 
@@ -110,7 +113,10 @@ def make_gate_callback(
         entered_event.set()
         if exception is not None:
             raise exception
-        release_event.wait()
+        if not release_event.wait(DEFAULT_THREAD_TIMEOUT):
+            raise TimeoutError(
+                f'Gate callback "{label}" was not released within {DEFAULT_THREAD_TIMEOUT} seconds.',
+            )
         event_log.append(f'{label}:exit')
 
     return callback
@@ -121,14 +127,26 @@ def replace_field_lock_with_locklib_lock(
     field_name: str,
     expected_group_fields: List[str],
 ) -> LocklibDeadlockDetectingLock:
+    if field_name not in instance.__locks__:
+        raise RuntimeError(f'The "{field_name}" field is missing from instance.__locks__.')
+
     old_lock = instance.__locks__[field_name]
     new_lock = LocklibDeadlockDetectingLock()
+    replaced_fields = []
 
     for current_field_name, current_lock in list(instance.__locks__.items()):
         if current_lock is old_lock:
             instance.__locks__[current_field_name] = new_lock
+            replaced_fields.append(current_field_name)
+
+    if not replaced_fields:
+        raise RuntimeError(f'No fields were rebound for the "{field_name}" lock group.')
 
     for expected_field_name in expected_group_fields:
+        if expected_field_name not in instance.__locks__:
+            raise RuntimeError(
+                f'The expected field "{expected_field_name}" is missing from instance.__locks__.',
+            )
         if instance.__locks__[expected_field_name] is not new_lock:
             raise RuntimeError(
                 f'The "{expected_field_name}" field was not rebound to the expected lock group.',
