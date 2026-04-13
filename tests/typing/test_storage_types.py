@@ -1,6 +1,7 @@
 from typing import Optional
 
 import pytest
+from typing_extensions import assert_type
 
 from skelet import Field, Storage
 
@@ -25,8 +26,8 @@ def test_storage_inheritance() -> None:
         age: int = Field(0)
 
     config = ExtendedConfig()
-    reveal_type(config.name)  # R: builtins.str
-    reveal_type(config.age)  # R: builtins.int
+    assert_type(config.name, str)
+    assert_type(config.age, int)
 
 
 @pytest.mark.mypy_testing
@@ -35,7 +36,7 @@ def test_storage_repr() -> None:
         name: str = Field('default')
 
     config = Config()
-    reveal_type(repr(config))  # R: builtins.str
+    assert_type(repr(config), str)
 
 
 @pytest.mark.mypy_testing
@@ -44,7 +45,7 @@ def test_storage_optional_field() -> None:
         host: Optional[str] = Field(None)
 
     config = Config()
-    reveal_type(config.host)  # R: Union[builtins.str, None]
+    assert_type(config.host, Optional[str])
     config.host = None
     config.host = 'localhost'
 
@@ -55,4 +56,4 @@ def test_storage_with_validate_default_false() -> None:
         count: int = Field(0, validate_default=False)
 
     config = Config()
-    reveal_type(config.count)  # R: builtins.int
+    assert_type(config.count, int)

@@ -1,4 +1,5 @@
 import pytest
+from typing_extensions import assert_type
 
 from skelet import Field, NaturalNumber, NonNegativeInt, Storage
 
@@ -9,7 +10,7 @@ def test_natural_number_field() -> None:
         count: NaturalNumber = Field(1)
 
     config = Config()
-    reveal_type(config.count)  # R: simtypes.types.ints.natural.NaturalNumber
+    assert_type(config.count, NaturalNumber)
 
 
 @pytest.mark.mypy_testing
@@ -18,4 +19,4 @@ def test_non_negative_int_field() -> None:
         count: NonNegativeInt = Field(0)
 
     config = Config()
-    reveal_type(config.count)  # R: simtypes.types.ints.non_negative.NonNegativeInt
+    assert_type(config.count, NonNegativeInt)

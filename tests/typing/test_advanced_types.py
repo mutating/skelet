@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from typing_extensions import assert_type
 
 from skelet import Field, Storage
 
@@ -14,7 +15,7 @@ def test_field_with_action() -> None:
         name: str = Field('default', action=on_change)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -27,8 +28,8 @@ def test_field_with_conflicts() -> None:
         b: int = Field(2, conflicts={'a': check_conflict})
 
     config = Config()
-    reveal_type(config.a)  # R: builtins.int
-    reveal_type(config.b)  # R: builtins.int
+    assert_type(config.a, int)
+    assert_type(config.b, int)
 
 
 @pytest.mark.mypy_testing
@@ -41,7 +42,7 @@ def test_field_with_conversion_and_validation() -> None:
         )
 
     config = Config()
-    reveal_type(config.value)  # R: builtins.int
+    assert_type(config.value, int)
 
 
 @pytest.mark.mypy_testing
@@ -51,8 +52,8 @@ def test_field_share_mutex_with() -> None:
         b: int = Field(2)
 
     config = Config()
-    reveal_type(config.a)  # R: builtins.int
-    reveal_type(config.b)  # R: builtins.int
+    assert_type(config.a, int)
+    assert_type(config.b, int)
 
 
 @pytest.mark.mypy_testing
@@ -61,7 +62,7 @@ def test_field_read_lock() -> None:
         value: int = Field(0, read_lock=True)
 
     config = Config()
-    reveal_type(config.value)  # R: builtins.int
+    assert_type(config.value, int)
 
 
 @pytest.mark.mypy_testing
@@ -78,5 +79,5 @@ def test_field_reverse_conflicts_false() -> None:
         )
 
     config = Config()
-    reveal_type(config.a)  # R: builtins.int
-    reveal_type(config.b)  # R: builtins.int
+    assert_type(config.a, int)
+    assert_type(config.b, int)

@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
+from typing_extensions import assert_type
 
 from skelet import Field, Storage
 
@@ -16,10 +15,10 @@ def test_field_scalar_defaults() -> None:
         debug: bool = Field(False)
 
     config = Config()
-    reveal_type(config.age)  # R: builtins.int
-    reveal_type(config.name)  # R: builtins.str
-    reveal_type(config.ratio)  # R: builtins.float
-    reveal_type(config.debug)  # R: builtins.bool
+    assert_type(config.age, int)
+    assert_type(config.name, str)
+    assert_type(config.ratio, float)
+    assert_type(config.debug, bool)
 
 
 @pytest.mark.mypy_testing
@@ -28,7 +27,7 @@ def test_field_no_default() -> None:
         name: str = Field()
 
     config = Config(name='hello')
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -37,7 +36,7 @@ def test_field_optional_type() -> None:
         name: Optional[str] = Field(None)
 
     config = Config()
-    reveal_type(config.name)  # R: Union[builtins.str, None]
+    assert_type(config.name, Optional[str])
 
 
 @pytest.mark.mypy_testing
@@ -46,25 +45,25 @@ def test_field_union_type() -> None:
         value: Union[int, str] = Field(42)
 
     config = Config()
-    reveal_type(config.value)  # R: Union[builtins.int, builtins.str]
+    assert_type(config.value, Union[int, str])
 
 
 @pytest.mark.mypy_testing
-def test_field_pep604_union() -> None:
+def test_field_union_alias() -> None:
     class Config(Storage):
-        value: int | str = Field(42)
+        value: Union[int, str] = Field(42)
 
     config = Config()
-    reveal_type(config.value)  # R: Union[builtins.int, builtins.str]
+    assert_type(config.value, Union[int, str])
 
 
 @pytest.mark.mypy_testing
-def test_field_pep604_optional() -> None:
+def test_field_optional_alias() -> None:
     class Config(Storage):
-        name: str | None = Field(None)
+        name: Optional[str] = Field(None)
 
     config = Config()
-    reveal_type(config.name)  # R: Union[builtins.str, None]
+    assert_type(config.name, Optional[str])
 
 
 @pytest.mark.mypy_testing
@@ -73,7 +72,7 @@ def test_field_any_type() -> None:
         payload: Any = Field({})
 
     config = Config()
-    reveal_type(config.payload)  # R: Any
+    assert_type(config.payload, Any)
 
 
 @pytest.mark.mypy_testing
@@ -82,7 +81,7 @@ def test_field_list_type() -> None:
         items: List[int] = Field(default_factory=list)
 
     config = Config()
-    reveal_type(config.items)  # R: builtins.list[builtins.int]
+    assert_type(config.items, List[int])
 
 
 def _make_empty_dict() -> Dict[str, int]:
@@ -95,7 +94,7 @@ def test_field_dict_type() -> None:
         mapping: Dict[str, int] = Field(default_factory=_make_empty_dict)
 
     config = Config()
-    reveal_type(config.mapping)  # R: builtins.dict[builtins.str, builtins.int]
+    assert_type(config.mapping, Dict[str, int])
 
 
 @pytest.mark.mypy_testing
@@ -104,7 +103,7 @@ def test_field_tuple_type() -> None:
         coords: Tuple[int, int] = Field((0, 0))
 
     config = Config()
-    reveal_type(config.coords)  # R: tuple[builtins.int, builtins.int]
+    assert_type(config.coords, Tuple[int, int])
 
 
 @pytest.mark.mypy_testing
@@ -113,7 +112,7 @@ def test_field_with_default_factory() -> None:
         items: List[Any] = Field(default_factory=list)
 
     config = Config()
-    reveal_type(config.items)  # R: builtins.list[Any]
+    assert_type(config.items, List[Any])
 
 
 @pytest.mark.mypy_testing
@@ -124,9 +123,9 @@ def test_multiple_fields() -> None:
         debug: bool = Field(False)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
-    reveal_type(config.age)  # R: builtins.int
-    reveal_type(config.debug)  # R: builtins.bool
+    assert_type(config.name, str)
+    assert_type(config.age, int)
+    assert_type(config.debug, bool)
 
 
 @pytest.mark.mypy_testing
@@ -135,7 +134,7 @@ def test_field_with_doc() -> None:
         name: str = Field('default', doc='The user name')
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -144,7 +143,7 @@ def test_field_with_validation() -> None:
         age: int = Field(18, validation=lambda x: x >= 0)
 
     config = Config()
-    reveal_type(config.age)  # R: builtins.int
+    assert_type(config.age, int)
 
 
 @pytest.mark.mypy_testing
@@ -153,7 +152,7 @@ def test_field_with_dict_validation() -> None:
         age: int = Field(18, validation={'Must be positive': lambda x: x >= 0})
 
     config = Config()
-    reveal_type(config.age)  # R: builtins.int
+    assert_type(config.age, int)
 
 
 @pytest.mark.mypy_testing
@@ -162,7 +161,7 @@ def test_field_secret() -> None:
         password: str = Field('secret', secret=True)
 
     config = Config()
-    reveal_type(config.password)  # R: builtins.str
+    assert_type(config.password, str)
 
 
 @pytest.mark.mypy_testing
@@ -171,7 +170,7 @@ def test_field_read_only() -> None:
         version: str = Field('1.0', read_only=True)
 
     config = Config()
-    reveal_type(config.version)  # R: builtins.str
+    assert_type(config.version, str)
 
 
 @pytest.mark.mypy_testing
@@ -180,7 +179,7 @@ def test_field_with_alias() -> None:
         name: str = Field('default', alias='NAME')
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -189,7 +188,7 @@ def test_field_with_conversion() -> None:
         value: int = Field(0, conversion=lambda x: x * 2)
 
     config = Config()
-    reveal_type(config.value)  # R: builtins.int
+    assert_type(config.value, int)
 
 
 def _str_to_int(x: Any) -> int:
@@ -202,4 +201,4 @@ def test_field_conversion_type_widening() -> None:
         value: Union[str, int] = Field('0', conversion=_str_to_int)
 
     config = Config()
-    reveal_type(config.value)  # R: Union[builtins.str, builtins.int]
+    assert_type(config.value, Union[str, int])

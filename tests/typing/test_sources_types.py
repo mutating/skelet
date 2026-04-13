@@ -1,6 +1,7 @@
 from typing import Any, List, Union
 
 import pytest
+from typing_extensions import assert_type
 
 from skelet import (
     EnvSource,
@@ -25,7 +26,7 @@ def test_class_level_sources_for_tool() -> None:
         name: str = Field('default')
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -36,7 +37,7 @@ def test_field_level_sources_memory() -> None:
         name: str = Field('default', sources=sources)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -45,7 +46,7 @@ def test_instance_sources_list() -> None:
         name: str = Field('default')
 
     config = Config(_sources=[MemorySource({'name': 'from_memory'})])
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -54,7 +55,7 @@ def test_instance_sources_tuple() -> None:
         name: str = Field('default')
 
     config = Config(_sources=(MemorySource({'name': 'from_memory'}),))
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -63,7 +64,7 @@ def test_instance_sources_with_ellipsis() -> None:
         name: str = Field('default')
 
     config = Config(_sources=[MemorySource({'name': 'from_memory'}), ...])
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -72,7 +73,7 @@ def test_env_source_typing() -> None:
         name: str = Field('default')
 
     config = Config(_sources=[EnvSource()])
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -83,7 +84,7 @@ def test_toml_source_typing() -> None:
         name: str = Field('default', sources=sources)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -94,7 +95,7 @@ def test_json_source_typing() -> None:
         name: str = Field('default', sources=sources)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -105,7 +106,7 @@ def test_yaml_source_typing() -> None:
         name: str = Field('default', sources=sources)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -116,7 +117,7 @@ def test_fixed_cli_source_typing() -> None:
         name: str = Field('default', sources=sources)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
 
 
 @pytest.mark.mypy_testing
@@ -127,4 +128,4 @@ def test_field_sources_with_ellipsis() -> None:
         name: str = Field('default', sources=field_sources)
 
     config = Config()
-    reveal_type(config.name)  # R: builtins.str
+    assert_type(config.name, str)
