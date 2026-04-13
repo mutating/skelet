@@ -15,7 +15,7 @@ from printo import repred
 from skelet.sources.abstract import AbstractSource, ExpectedType
 
 
-@repred(positionals=['path'], filters={'allow_non_existent_files': lambda x: x != True, 'table': lambda x: bool(x)}, getters={'table': lambda x: x.table})
+@repred(positionals=['path'], filters={'allow_non_existent_files': lambda x: x != True, 'table': lambda x: bool(x)}, getters={'table': lambda x: x.table})  # noqa: PLW0108
 class TOMLSource(AbstractSource[ExpectedType]):
     def __init__(self, path: Union[str, Path], table: Optional[Union[str, List[str]]] = None, allow_non_existent_files: bool = True) -> None:
         self.path = path
