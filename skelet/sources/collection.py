@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Type, cast
+from typing import Any, List, Optional, Type, Union, cast
 
 from denial import InnerNoneType
 from printo import repred
@@ -27,13 +27,13 @@ class SourcesCollection(AbstractSource[ExpectedType]):
         except KeyError:
             return default
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Union[ExpectedType, InnerNoneType] = sentinel) -> Optional[ExpectedType]:
         for source in self.sources:
             maybe_result = source.type_awared_get(key, hint, default=default)
             if maybe_result is not default:
                 return maybe_result
 
         if default is not sentinel:
-            return default
+            return cast(ExpectedType, default)
 
         return None
