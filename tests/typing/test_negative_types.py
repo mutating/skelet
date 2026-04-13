@@ -146,6 +146,10 @@ def _one_arg_action(x: Any) -> Any:
     return x
 
 
+def _wrong_storage_action(_old_value: Any, _new_value: Any, _storage: int) -> None:
+    pass
+
+
 def _zero_arg_conversion() -> int:
     return 42
 
@@ -162,6 +166,11 @@ def test_field_validation_wrong_arity() -> None:
 @pytest.mark.mypy_testing
 def test_field_action_wrong_arity() -> None:
     Field(action=_one_arg_action)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_action_wrong_storage_type() -> None:
+    Field(action=_wrong_storage_action)  # E: [type-var]
 
 
 @pytest.mark.mypy_testing

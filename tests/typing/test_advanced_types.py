@@ -8,8 +8,10 @@ from skelet import Field, Storage
 
 @pytest.mark.mypy_testing
 def test_field_with_action() -> None:
-    def on_change(old: str, new: str, storage: Storage) -> None:
-        pass
+    def on_change(old: str, new: str, storage: 'Config') -> None:
+        assert_type(old, str)
+        assert_type(new, str)
+        assert_type(storage.name, str)
 
     class Config(Storage):
         name: str = Field('default', action=on_change)

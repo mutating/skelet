@@ -223,13 +223,13 @@ def test_callback_exception_releases_lock(event_log):
 
 
 def test_callback_reading_same_field_with_read_lock_raises_locklib_error():
-    def read_same_field(_old_value: int, _new_value: int, storage: Storage) -> int:
+    def read_same_field(_old_value: int, _new_value: int, storage: 'CallbackReadsSameFieldStorage') -> int:
         return storage.field
 
-    class SomeClass(Storage):
-        field = Field(0, read_lock=True, action=read_same_field)
+    class CallbackReadsSameFieldStorage(Storage):
+        field: int = Field(0, read_lock=True, action=read_same_field)
 
-    instance = SomeClass()
+    instance = CallbackReadsSameFieldStorage()
     replace_field_lock_with_locklib_lock(instance, 'field', ['field'])
 
     with pytest.raises(DeadLockError, match='repeated acquire attempt'):
@@ -237,14 +237,14 @@ def test_callback_reading_same_field_with_read_lock_raises_locklib_error():
 
 
 def test_callback_writing_same_field_raises_locklib_error():
-    def write_same_field(_old_value: int, new_value: int, storage: Storage) -> None:
+    def write_same_field(_old_value: int, new_value: int, storage: 'CallbackWritesSameFieldStorage') -> None:
         if new_value == 1:
             storage.field = 2
 
-    class SomeClass(Storage):
-        field = Field(0, action=write_same_field)
+    class CallbackWritesSameFieldStorage(Storage):
+        field: int = Field(0, action=write_same_field)
 
-    instance = SomeClass()
+    instance = CallbackWritesSameFieldStorage()
     replace_field_lock_with_locklib_lock(instance, 'field', ['field'])
 
     with pytest.raises(DeadLockError, match='repeated acquire attempt'):
@@ -252,14 +252,14 @@ def test_callback_writing_same_field_raises_locklib_error():
 
 
 def test_callback_accessing_shared_mutex_field_raises_locklib_error():
-    def read_shared_field(_old_value: int, _new_value: int, storage: Storage) -> int:
+    def read_shared_field(_old_value: int, _new_value: int, storage: 'CallbackReadsSharedFieldStorage') -> int:
         return storage.b
 
-    class SomeClass(Storage):
-        a = Field(0, share_mutex_with=['b'], action=read_shared_field)
-        b = Field(0, read_lock=True)
+    class CallbackReadsSharedFieldStorage(Storage):
+        a: int = Field(0, share_mutex_with=['b'], action=read_shared_field)
+        b: int = Field(0, read_lock=True)
 
-    instance = SomeClass()
+    instance = CallbackReadsSharedFieldStorage()
     replace_field_lock_with_locklib_lock(instance, 'a', ['a', 'b'])
 
     with pytest.raises(DeadLockError, match='repeated acquire attempt'):
@@ -267,14 +267,14 @@ def test_callback_accessing_shared_mutex_field_raises_locklib_error():
 
 
 def test_callback_accessing_conflicting_field_raises_locklib_error():
-    def read_conflicting_field(_old_value: int, _new_value: int, storage: Storage) -> int:
+    def read_conflicting_field(_old_value: int, _new_value: int, storage: 'CallbackReadsConflictingFieldStorage') -> int:
         return storage.b
 
-    class SomeClass(Storage):
-        a = Field(0, conflicts={'b': lambda *_: False}, action=read_conflicting_field)
-        b = Field(0, read_lock=True)
+    class CallbackReadsConflictingFieldStorage(Storage):
+        a: int = Field(0, conflicts={'b': lambda *_: False}, action=read_conflicting_field)
+        b: int = Field(0, read_lock=True)
 
-    instance = SomeClass()
+    instance = CallbackReadsConflictingFieldStorage()
     replace_field_lock_with_locklib_lock(instance, 'a', ['a', 'b'])
 
     with pytest.raises(DeadLockError, match='repeated acquire attempt'):

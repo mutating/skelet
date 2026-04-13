@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TypeVar,
     Union,
     cast,
     get_origin,
@@ -24,9 +23,7 @@ from simtypes import check
 from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 from skelet.storage import Storage
-from skelet.types import EllipsisType
-
-ValueType = TypeVar('ValueType')
+from skelet.types import ChangeAction, EllipsisType, StorageType, ValueType
 
 if version_info < (3, 9):  # pragma: no cover
     SequenceWithStrings = Sequence
@@ -35,7 +32,7 @@ else:  # pragma: no cover
 
 sentinel = InnerNoneType()
 
-class FieldDescriptor(Generic[ValueType]):
+class FieldDescriptor(Generic[ValueType, StorageType]):
     def __init__(  # noqa: PLR0913, PLR0915
         self,
         default: Union[ValueType, InnerNoneType] = sentinel,
@@ -48,7 +45,7 @@ class FieldDescriptor(Generic[ValueType]):
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
         secret: bool = False,
-        action: Optional[Callable[[ValueType, ValueType, Storage], Any]] = None,
+        action: Optional[ChangeAction[ValueType, StorageType]] = None,
         read_lock: bool = False,
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
         reverse_conflicts: bool = True,
@@ -100,7 +97,7 @@ class FieldDescriptor(Generic[ValueType]):
         self.validation = validation
         self.validate_default = validate_default
         self.secret = secret
-        self.change_action = action
+        self.change_action: Optional[ChangeAction[ValueType, StorageType]] = action
         self.conflicts = conflicts
         self.reverse_conflicts_on = reverse_conflicts
         self.conversion = conversion
@@ -161,7 +158,7 @@ class FieldDescriptor(Generic[ValueType]):
     def unlocked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:  #noqa: ARG002
         return cast(ValueType, instance.__values__.get(cast(str, self.name)))
 
-    def __set__(self, instance: Storage, value: ValueType) -> None:
+    def __set__(self, instance: StorageType, value: ValueType) -> None:
         if self.read_only:
             raise AttributeError(f'{self.get_field_name_representation()} is read-only.')
 
@@ -217,9 +214,9 @@ class FieldDescriptor(Generic[ValueType]):
             cast(List[str], owner.__field_names__).append(name)
 
     def check_type_hints(self, value: ValueType, strict: bool = False, raise_all: bool = False) -> None:
-        if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type]
+        if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type, unused-ignore]
             origin = get_origin(self.type_hint)
-            type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined]
+            type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined, unused-ignore]
             self.raise_exception_in_storage(TypeError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the type {type_hint_name}.'), raise_all)
 
     def get_field_name_representation(self) -> str:
@@ -299,7 +296,7 @@ def Field(  # noqa: PLR0913, N802
     validation: Optional[Union[Dict[str, Callable[[Any], bool]], Callable[[Any], bool]]] = None,
     validate_default: bool = True,
     secret: bool = False,
-    action: Optional[Callable[[Any, Any, Storage], Any]] = None,
+    action: Optional[ChangeAction[Any, StorageType]] = None,
     read_lock: bool = False,
     conflicts: Optional[Dict[str, Callable[[Any, Any, Any, Any], bool]]] = None,
     reverse_conflicts: bool = True,
