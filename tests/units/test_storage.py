@@ -9,6 +9,7 @@ from sigmatch import SignatureMismatchError
 from skelet import (
     EnvSource,
     Field,
+    FieldDescriptor,
     JSONSource,
     MemorySource,
     NaturalNumber,
@@ -23,7 +24,7 @@ def test_try_to_get_descriptor_object_from_class_inherited_from_storage():
     class SomeClass(Storage):
         field = Field(42)
 
-    assert isinstance(SomeClass.field, Field)
+    assert isinstance(SomeClass.field, FieldDescriptor)
 
 
 def test_try_to_use_field_outside_storage():
@@ -2648,3 +2649,481 @@ def test_wrong_change_action():
     with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
         class SomeClass(Storage):
             field: int = Field(123, action=lambda x, y, z, another: None)  # noqa: ARG005
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_basic(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+
+    assert instance.field == 42
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_override_class_sources(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1})]):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 2})]))
+
+    assert instance.field == 2
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_override_field_sources(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100, sources=[MemorySource({'field': 1})])
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 2})]))
+
+    assert instance.field == 2
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_override_both_class_and_field_sources(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1, 'other': 10})]):
+        field: int = Field(100, sources=[MemorySource({'field': 3})])
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 5, 'other': 50})]))
+
+    assert instance.field == 5
+    assert instance.other == 50
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_without_ellipsis_ignores_class_and_field(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1, 'other': 10})]):
+        field: int = Field(100, sources=[MemorySource({'field': 3})])
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 5})]))
+
+    assert instance.field == 5
+    assert instance.other == 200
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_fallback_to_default(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+
+    assert instance.field == 42
+    assert instance.other == 200
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_ellipsis_only(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1})]):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([...]))
+
+    assert instance.field == 1
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_ellipsis_only_with_field_sources(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100, sources=[MemorySource({'field': 7})])
+
+    instance = SomeClass(_sources=collection_type([...]))
+
+    assert instance.field == 7
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_ellipsis_priority_over_class(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1, 'other': 10})]):
+        field: int = Field(100)
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 2}), ...]))
+
+    assert instance.field == 2
+    assert instance.other == 10
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_ellipsis_priority_over_field(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100, sources=[MemorySource({'field': 7})])
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 2}), ...]))
+
+    assert instance.field == 2
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_ellipsis_falls_through_to_field(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100, sources=[MemorySource({'field': 7})])
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'other': 50}), ...]))
+
+    assert instance.field == 7
+    assert instance.other == 50
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_full_three_tier_chain(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'class_field': 30})]):
+        instance_field: int = Field(100)
+        field_field: int = Field(200, sources=[MemorySource({'field_field': 20}), ...])
+        class_field: int = Field(300)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'instance_field': 10}), ...]))
+
+    assert instance.instance_field == 10
+    assert instance.field_field == 20
+    assert instance.class_field == 30
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_ellipsis_field_without_ellipsis(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1, 'other': 10})]):
+        field: int = Field(100, sources=[MemorySource({'field': 7})])
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'other': 50}), ...]))
+
+    assert instance.field == 7
+    assert instance.other == 50
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_multiple_sources_ordering(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 1}), MemorySource({'field': 2})]))
+
+    assert instance.field == 1
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_kwargs_override(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]), field=99)
+
+    assert instance.field == 99
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_runtime_assignment_overrides(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+    instance.field = 99
+
+    assert instance.field == 99
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_value_resolution_order(collection_type):
+    class SomeClass(Storage):
+        from_source: int = Field(100)
+        from_factory: int = Field(default_factory=lambda: 200)
+        from_default: int = Field(300)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'from_source': 1})]))
+
+    assert instance.from_source == 1
+    assert instance.from_factory == 200
+    assert instance.from_default == 300
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_empty_collection(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 1})]):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([]))
+
+    assert instance.field == 100
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_type_check(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError):
+        SomeClass(_sources=collection_type([MemorySource({'field': 'not_an_int'})]))
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_validation(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100, validation=lambda x: x > 0)
+
+    with pytest.raises(ValueError, match='does not match the validation'):
+        SomeClass(_sources=collection_type([MemorySource({'field': -5})]))
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_conflicts(collection_type):
+    class SomeClass(Storage):
+        a: int = Field(default_factory=lambda: 100, conflicts={'b': lambda old, new, other_old, other_new: new > other_old})  # noqa: ARG005
+        b: int = Field(10)
+
+    with pytest.raises(ValueError, match='conflicts with'):
+        SomeClass(_sources=collection_type([MemorySource({'a': 100})]))
+
+
+def test_instance_sources_invalid_type_dict():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
+        SomeClass(_sources={'field': 1})
+
+
+def test_instance_sources_invalid_type_int():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
+        SomeClass(_sources=42)
+
+
+def test_instance_sources_invalid_type_string():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
+        SomeClass(_sources='bad')
+
+
+def test_instance_sources_invalid_element():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('Each element of _sources must be a source or Ellipsis, got int.')):
+        SomeClass(_sources=[42])
+
+
+def test_instance_sources_invalid_element_string():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('Each element of _sources must be a source or Ellipsis, got str.')):
+        SomeClass(_sources=['bad'])
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_alias(collection_type):
+    class SomeClass(Storage):
+        my_field: int = Field(100, alias='custom_key')
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'custom_key': 42})]))
+
+    assert instance.my_field == 42
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_alias_and_ellipsis(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'other_key': 10})]):
+        my_field: int = Field(100, alias='custom_key')
+        other_field: int = Field(200, alias='other_key')
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'custom_key': 42}), ...]))
+
+    assert instance.my_field == 42
+    assert instance.other_field == 10
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_conversion(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(10, conversion=lambda x: x * 2)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 15})]))
+
+    assert instance.field == 30
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_inheritance(collection_type):
+    class ParentClass(Storage):
+        parent_field: int = Field(100)
+
+    class ChildClass(ParentClass):
+        child_field: int = Field(200)
+
+    instance = ChildClass(_sources=collection_type([MemorySource({'parent_field': 1, 'child_field': 2})]))
+
+    assert instance.parent_field == 1
+    assert instance.child_field == 2
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_inheritance_and_ellipsis(collection_type):
+    class ParentClass(Storage):
+        parent_field: int = Field(100)
+
+    class ChildClass(ParentClass, sources=[MemorySource({'parent_field': 10})]):
+        child_field: int = Field(200)
+
+    instance = ChildClass(_sources=collection_type([MemorySource({'child_field': 2}), ...]))
+
+    assert instance.parent_field == 10
+    assert instance.child_field == 2
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_no_default_and_missing_key(collection_type):
+    class SomeClass(Storage):
+        field: int = Field()
+
+    with pytest.raises(ValueError, match=match('The value for the "field" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass(_sources=collection_type([MemorySource({'other': 1})]))
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_no_default_but_key_present(collection_type):
+    class SomeClass(Storage):
+        field: int = Field()
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+
+    assert instance.field == 42
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_repr(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+        secret_field: int = Field(200, secret=True)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42, 'secret_field': 99})]))
+
+    assert repr(instance) == 'SomeClass(field=42, secret_field=***)'
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_read_only(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100, read_only=True)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+
+    assert instance.field == 42
+
+    with pytest.raises(AttributeError, match=match('"field" field is read-only.')):
+        instance.field = 99
+
+
+def test_instance_sources_explicit_none():
+    """Passing _sources=None explicitly is equivalent to not passing it at all."""
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=None)
+    assert instance.field == 100
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_ellipsis_does_not_reach_class_when_field_has_no_ellipsis(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 99})]):
+        field: int = Field(100, sources=[MemorySource({'other': 1})])
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'other': 2}), ...]))
+
+    assert instance.field == 100
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_multiple_ellipses(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 10})]):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([..., ...]))
+
+    assert instance.field == 10
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_ellipsis_not_at_end(collection_type):
+    class SomeClass(Storage, sources=[MemorySource({'field': 10, 'other': 20})]):
+        field: int = Field(100)
+        other: int = Field(200)
+
+    instance = SomeClass(_sources=collection_type([..., MemorySource({'field': 42})]))
+
+    assert instance.field == 42
+    assert instance.other == 20
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        {'field': 77},
+    ],
+)
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_with_json_source(collection_type, json_config_path):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    instance = SomeClass(_sources=collection_type([JSONSource(json_config_path)]))
+
+    assert instance.field == 77
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_isolation_between_instances(collection_type):
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    first = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+    second = SomeClass()
+
+    assert first.field == 42
+    assert second.field == 100
+
+
+def test_instance_sources_invalid_type_set():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
+        SomeClass(_sources={MemorySource({'field': 1})})
+
+
+def test_instance_sources_invalid_type_frozenset():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
+        SomeClass(_sources=frozenset([]))
+
+
+def test_instance_sources_invalid_type_generator():
+    class SomeClass(Storage):
+        field: int = Field(100)
+
+    with pytest.raises(TypeError, match=match('_sources must be a list or a tuple.')):
+        SomeClass(_sources=(x for x in [MemorySource({'field': 1})]))
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_instance_sources_change_action_not_called(collection_type):
+    calls = []
+
+    class SomeClass(Storage):
+        field: int = Field(100, action=lambda old, new, storage: calls.append((old, new)))  # noqa: ARG005
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 42})]))
+
+    assert instance.field == 42
+    assert calls == []

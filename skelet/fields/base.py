@@ -1,3 +1,5 @@
+from sys import version_info
+from threading import Lock
 from typing import (
     Any,
     Callable,
@@ -5,23 +7,13 @@ from typing import (
     Generic,
     List,
     Optional,
+    Sequence,
     Type,
-    TypeVar,
     Union,
     cast,
     get_origin,
     get_type_hints,
 )
-
-# TODO: check, EllipsisType was added to types module in Python 3.10.
-try:
-    from types import EllipsisType  # type: ignore[attr-defined, unused-ignore]
-except ImportError:  # pragma: no cover
-    EllipsisType = type(...)  # type: ignore[misc, unused-ignore]
-
-from collections.abc import Sequence
-from sys import version_info
-from threading import Lock
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
@@ -31,8 +23,7 @@ from simtypes import check
 from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 from skelet.storage import Storage
-
-ValueType = TypeVar('ValueType')
+from skelet.types import ChangeAction, EllipsisType, StorageType, ValueType
 
 if version_info < (3, 9):  # pragma: no cover
     SequenceWithStrings = Sequence
@@ -41,7 +32,7 @@ else:  # pragma: no cover
 
 sentinel = InnerNoneType()
 
-class Field(Generic[ValueType]):
+class FieldDescriptor(Generic[ValueType, StorageType]):
     def __init__(  # noqa: PLR0913, PLR0915
         self,
         default: Union[ValueType, InnerNoneType] = sentinel,
@@ -54,7 +45,7 @@ class Field(Generic[ValueType]):
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
         secret: bool = False,
-        action: Optional[Callable[[ValueType, ValueType, Storage], Any]] = None,
+        action: Optional[ChangeAction[ValueType, StorageType]] = None,
         read_lock: bool = False,
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
         reverse_conflicts: bool = True,
@@ -106,7 +97,7 @@ class Field(Generic[ValueType]):
         self.validation = validation
         self.validate_default = validate_default
         self.secret = secret
-        self.change_action = action
+        self.change_action: Optional[ChangeAction[ValueType, StorageType]] = action
         self.conflicts = conflicts
         self.reverse_conflicts_on = reverse_conflicts
         self.conversion = conversion
@@ -167,7 +158,7 @@ class Field(Generic[ValueType]):
     def unlocked_get(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:  #noqa: ARG002
         return cast(ValueType, instance.__values__.get(cast(str, self.name)))
 
-    def __set__(self, instance: Storage, value: ValueType) -> None:
+    def __set__(self, instance: StorageType, value: ValueType) -> None:
         if self.read_only:
             raise AttributeError(f'{self.get_field_name_representation()} is read-only.')
 
@@ -223,9 +214,9 @@ class Field(Generic[ValueType]):
             cast(List[str], owner.__field_names__).append(name)
 
     def check_type_hints(self, value: ValueType, strict: bool = False, raise_all: bool = False) -> None:
-        if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type]
+        if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type, unused-ignore]
             origin = get_origin(self.type_hint)
-            type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined]
+            type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined, unused-ignore]
             self.raise_exception_in_storage(TypeError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the type {type_hint_name}.'), raise_all)
 
     def get_field_name_representation(self) -> str:
@@ -255,19 +246,77 @@ class Field(Generic[ValueType]):
         self.exception = exception
 
     def get_sources(self, instance: Storage) -> SourcesCollection[ExpectedType]:
+        instance_sources_raw = instance.__instance_sources__
+
+        if instance_sources_raw is None:
+            return self._get_normal_sources(instance)
+
+        has_ellipsis = False
+        instance_only: List[AbstractSource[ExpectedType]] = []
+        for source in instance_sources_raw:
+            if source is Ellipsis:
+                has_ellipsis = True
+            else:
+                instance_only.append(cast(AbstractSource[ExpectedType], source))
+
+        if not has_ellipsis:
+            return cast(SourcesCollection[ExpectedType], SourcesCollection(instance_only))
+
+        normal_sources: SourcesCollection[ExpectedType] = self._get_normal_sources(instance)
+        combined: List[AbstractSource[ExpectedType]] = list(instance_only) + list(normal_sources.sources)
+        return cast(SourcesCollection[ExpectedType], SourcesCollection(combined))
+
+    def _get_normal_sources(self, instance: Storage) -> SourcesCollection[ExpectedType]:
         if self.sources is None:
             return instance.__sources__
 
-        result = []
+        result: List[AbstractSource[ExpectedType]] = []
         there_is_ellipsis = False
 
         for source in self.sources:
             if source is Ellipsis:
                 there_is_ellipsis = True
             else:
-                result.append(source)
+                result.append(cast(AbstractSource[ExpectedType], source))
 
         if there_is_ellipsis:
-           result.extend(instance.__sources__.sources)
+            result.extend(instance.__sources__.sources)
 
         return cast(SourcesCollection[ExpectedType], SourcesCollection(result))
+
+
+def Field(  # noqa: PLR0913, N802
+    default: Any = sentinel,
+    /,
+    default_factory: Optional[Callable[[], Any]] = None,
+    doc: Optional[str] = None,
+    alias: Optional[str] = None,
+    sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
+    read_only: bool = False,
+    validation: Optional[Union[Dict[str, Callable[[Any], bool]], Callable[[Any], bool]]] = None,
+    validate_default: bool = True,
+    secret: bool = False,
+    action: Optional[ChangeAction[Any, StorageType]] = None,
+    read_lock: bool = False,
+    conflicts: Optional[Dict[str, Callable[[Any, Any, Any, Any], bool]]] = None,
+    reverse_conflicts: bool = True,
+    conversion: Optional[Callable[[Any], Any]] = None,
+    share_mutex_with: Optional[Sequence[str]] = None,
+) -> Any:
+    return FieldDescriptor(
+        default,
+        default_factory=default_factory,
+        doc=doc,
+        alias=alias,
+        sources=sources,
+        read_only=read_only,
+        validation=validation,
+        validate_default=validate_default,
+        secret=secret,
+        action=action,
+        read_lock=read_lock,
+        conflicts=conflicts,
+        reverse_conflicts=reverse_conflicts,
+        conversion=conversion,
+        share_mutex_with=share_mutex_with,
+    )

@@ -66,7 +66,7 @@ class FixedCLISource(AbstractSource[ExpectedType]):
             except SystemExit as e:
                 raise KeyError(key) from e  # pragma: no cover
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Union[ExpectedType, InnerNoneType] = sentinel) -> Optional[ExpectedType]:
         subresult = cast(Union[str, SentinelType], self.get(key, default))
 
         if hint is bool and key in self.named_arguments:
@@ -77,9 +77,9 @@ class FixedCLISource(AbstractSource[ExpectedType]):
             raise CLIFormatError("You can't pass values for boolean named fields to the CLI.")
 
         if subresult is default:
-            if default is not sentinel:
-                return default
-            return None
+            if default is sentinel:
+                return None
+            return cast(ExpectedType, default)
 
         return from_string(cast(str, subresult), hint)
 

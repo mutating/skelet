@@ -1,7 +1,7 @@
 import os
 import platform
 from functools import cached_property
-from typing import Dict, List, Optional, Type, cast
+from typing import Dict, List, Optional, Type, Union, cast
 
 from denial import InnerNoneType
 from printo import repred
@@ -46,15 +46,15 @@ class EnvSource(AbstractSource[ExpectedType]):
 
         return result
 
-    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: ExpectedType = cast(ExpectedType, sentinel)) -> Optional[ExpectedType]:  # noqa: B008
-        subresult = cast(str, self.get(key, default))
+    def type_awared_get(self, key: str, hint: Type[ExpectedType], default: Union[ExpectedType, InnerNoneType] = sentinel) -> Optional[ExpectedType]:
+        subresult = self.get(key, default)
 
         if subresult is default:
-            if default is not sentinel:
-                return default
-            return None
+            if default is sentinel:
+                return None
+            return cast(ExpectedType, default)
 
-        return from_string(subresult, hint)
+        return from_string(cast(str, subresult), hint)
 
     @classmethod
     def for_library(cls, library_name: str) -> List['EnvSource[ExpectedType]']:

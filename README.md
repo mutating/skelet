@@ -17,7 +17,7 @@
 
 ![logo](https://raw.githubusercontent.com/mutating/skelet/develop/docs/assets/logo_8.svg)
 
-Keep all your project's settings in one place. Ensure type safety, thread safety and safe secret handling. Check types and validate values. Use simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
+Keep all your project's settings in one place. Ensure type safety, thread safety and safe secret handling. Validate values with simple and elegant Pythonic syntax. Automatically load values from config files and environment variables.
 
 
 ## Table of contents
@@ -53,7 +53,7 @@ pip install skelet
 
 You can also quickly try this package and others without installing them via [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define several fields in it — objects of the `Field` class:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define fields using `Field`:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
@@ -63,7 +63,7 @@ class ManDescription(Storage):
     age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
-You can immediately notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, the API is similar, but it is designed specifically for configuration management.
+You may notice that this is very similar to [dataclasses](https://docs.python.org/3/library/dataclasses.html) or [models from Pydantic](https://docs.pydantic.dev/latest/api/base_model/). Yes, the API is similar, but it is designed specifically for configuration management.
 
 So, let's create an object of our class and look at it:
 
@@ -84,14 +84,14 @@ description.name = 3.14
 #> TypeError: The value 3.14 (float) of the "name" field does not match the type str.
 ```
 
-That is already useful, but the rest of this guide covers the more advanced features.
+That is already useful, but the rest of this guide covers more advanced features.
 
 
 ## Default values
 
-A default value is used when no other source provides one. It will be used until you override it, or if no other value is found in the [data sources](#sources).
+A default value is used when no other source provides one. It will be used until you override it.
 
-You do not have to define a default value, but in this case you need to pass these values when creating the storage object. If you do set a default value, there are 2 ways to do this:
+You do not have to define a default value, but in this case you need to pass the value when creating the storage object. If you do set a default value, there are two ways to do this:
 
 - **Ordinary**.
 - **Lazy** (deferred).
@@ -106,7 +106,7 @@ print(UnremarkableSettingsStorage())
 #> UnremarkableSettingsStorage(ordinary_field='I am the ordinary default value!')
 ```
 
-But you can also pass a function that returns the default value: it will be called every time a new object is created. This is called a lazy default value:
+You can also pass a factory function via `default_factory` — it will be called each time a new object is created:
 
 ```python
 class UnremarkableSettingsStorage(Storage):
@@ -121,7 +121,7 @@ Use this option when the default value is mutable, such as a `list` or `dict`. A
 
 ## Documenting fields
 
-Sometimes, in order not to forget what a particular field in the storage means, you may be tempted to accompany it with a comment:
+You might be tempted to document a field with a comment:
 
 ```python
 class TheSecretFormula(Storage):
@@ -148,7 +148,7 @@ formula = TheSecretFormula(the_secret_ingredient=13)
 
 ## Secret fields
 
-Sometimes you do not want to expose the contents of certain fields to others. If someone can read your program logs, exposing such values may become a problem. Secret fields are designed for such cases:
+Some field values should not appear in logs or string representations. Secret fields are designed for such cases:
 
 ```python
 class TopStateSecrets(Storage):
@@ -159,7 +159,7 @@ print(TopStateSecrets())
 #> TopStateSecrets(who_killed_kennedy=***, red_buttons_password=***)
 ```
 
-If you mark a field with the `secret` flag, as in this example, its contents will be hidden both in string representations and in exception messages that the library will raise:
+If you mark a field with the `secret` flag, as in this example, its contents will be hidden in string representations and exception messages:
 
 ```python
 secrets = TopStateSecrets()
@@ -173,7 +173,7 @@ In all other respects, "secret" fields behave the same as regular ones, you can 
 
 ## Type checking
 
-You can specify a type hint for each field of your class. This is not necessary, but if you do, all values of this field will be automatically checked against the specified type, and if they do not match, a `TypeError` exception will be raised:
+Type hints are optional. When specified, all values are checked against the hint, and a `TypeError` is raised on mismatch:
 
 ```python
 class HumanMeasurements(Storage):
@@ -186,21 +186,21 @@ measurements.number_of_legs = 'two'
 #> TypeError: The value 'two' (str) of the "number_of_legs" field does not match the type int.
 ```
 
-The library supports only a runtime-checkable subset of typing constructs. It is based on a simple type matching check via [`isinstance`](https://docs.python.org/3/library/functions.html#isinstance). A minimum number of additional annotations is also supported:
+The library supports only a runtime-checkable subset of typing constructs. Checks are based on [`isinstance`](https://docs.python.org/3/library/functions.html#isinstance). A few additional annotations are also supported:
 
-- `Any` - means the same thing as the absence of an annotation.
-- `Union` (in the old style or in the new one, using the `|` operator) - means logical OR between types.
-- `Optional` (again, both in the old style and in the new one - via `|`) - means that a value of the specified type is expected, or `None`.
-- `Lists`, `dicts`, and `tuples` can be specified with the types they contain. By default, the contents of these containers are not checked, but this is done in relation to external [sources](#sources).
+- `Any` — means the same thing as the absence of an annotation.
+- `Union` (in the old style or in the new one, using the `|` operator) — means logical OR between types.
+- `Optional` (again, both in the old style and in the new one — via `|`) — means that a value of the specified type is expected, or `None`.
+- `list`, `dict`, and `tuple` can be specified with the types they contain. By default, the contents of these containers are not checked, but this is done in relation to external [sources](#sources).
 
 The library deliberately does not attempt to implement full runtime type checking. If you need more powerful verification, it's better to rely on static tools like `mypy`.
 
-The library also supports 2 additional types that allow you to narrow down the behavior of the basic int type:
+The library also supports two additional types that allow you to narrow down the behavior of the basic int type:
 
 - `NaturalNumber` — as the name implies, only objects of type `int` greater than zero will be checked for this type.
 - `NonNegativeInt` — the same as `NaturalNumber`, but `0` is also a valid value.
 
-Please note these constraints are checked only at runtime.
+Please note that these constraints are checked only at runtime.
 
 
 ## Validation of values
@@ -245,7 +245,7 @@ numbers.zero = -1
 
 > ⓘ Validation occurs after [type checking](#type-checking), so you can be sure that types match when your validation function is called.
 
-All values are validated, including default values. However, sometimes you may need to disable validation only for default values, for example, if you use some identifiers for the absence of real values ([`None`](https://docs.python.org/3/library/constants.html#None), [`MISSING`](https://docs.python.org/3/library/dataclasses.html#dataclasses.MISSING), [`NaN`](https://docs.python.org/3/library/math.html#math.isnan), an empty string, or something similar). In this case, pass `False` as the `validate_default` argument:
+All values are validated, including default values. However, sometimes you may need to disable validation for default values — for example, when using sentinel values like [`None`](https://docs.python.org/3/library/constants.html#None), [`MISSING`](https://docs.python.org/3/library/dataclasses.html#dataclasses.MISSING), [`NaN`](https://docs.python.org/3/library/math.html#math.isnan), or an empty string. In this case, pass `False` as the `validate_default` argument:
 
 ```python
 class PatientsCard(Storage):
@@ -261,7 +261,7 @@ class PatientsCard(Storage):
 
 ## Conflicts between fields
 
-Sometimes, individual field values are [acceptable](#validation-of-values), but certain combinations of them are impossible. For such cases, there is a separate type of value check — conflict checking. This validation is a little more complicated than for individual values. To enable it, you need to pass a dictionary as the `conflicts` parameter, whose keys are the names of other fields, and whose values are functions that return `bool`, answering the question «is there a conflict with the value of this field?»:
+Sometimes, individual field values are [acceptable](#validation-of-values), but certain combinations of them are impossible. For such cases, there is a separate type of value check — conflict checking. To enable it, pass a dictionary as the `conflicts` parameter, whose keys are the names of other fields, and whose values are functions that return `bool`, answering the question «is there a conflict with the value of this field?»:
 
 ```python
 class Dossier(Storage):
@@ -274,7 +274,7 @@ class Dossier(Storage):
     ...
 ```
 
-When we attempt to redefine the value of a field that has conflict conditions defined with another field, the library checks those conditions and raises an exception if a conflict is found:
+When a field value changes, the library checks conflict conditions and raises an exception if a conflict is found:
 
 ```python
 dossier = Dossier(name='John')
@@ -291,7 +291,7 @@ dossier.eats_pork = True
 The function that checks for a conflict with the value of another field takes 4 positional arguments:
 
 - The old value of the current field.
-- New value of the current field.
+- The new value of the current field.
 - The old value of the field with which a conflict is possible.
 - The new value of the field with which a conflict is possible.
 
@@ -315,7 +315,7 @@ Reverse checks can be disabled by passing `False` as the `reverse_conflicts` par
     ...
 ```
 
-However, I do not recommend disabling reverse checks - they ensure that the contents of the fields are consistent with each other.
+However, I do not recommend disabling reverse checks — they ensure that the contents of the fields are consistent with each other.
 
 
 ## Sources
@@ -330,15 +330,16 @@ Each field value is resolved in the following order:
 
 ```mermaid
 graph TD;
-  A[Default values] --> B(Data sources in the order listed) --> C(The values set at runtime)
+  A[Default values] --> B(Class sources) --> C(Field sources) --> D(Instance sources) --> E(The values set at runtime)
 ```
 
 That is, values obtained from sources have higher priority than default values, but can be overwritten (unless you [prohibit it](#read-only-fields)) by other values at runtime.
 
-There are two ways to specify a list of sources:
+There are three ways to specify a list of sources:
 
 - For the **whole class**.
 - For a **specific field**.
+- For a **specific instance**.
 
 To specify a list of sources for the entire class, pass it to the class constructor:
 
@@ -363,9 +364,37 @@ class MyClass(Storage, sources=[TOMLSource('pyproject.toml', table='tool.my_tool
     some_field = Field('some_value', sources=[TOMLSource('config_for_this_field.toml'), ...])
 ```
 
-All values from sources are loaded when the config object is created. This means that (theoretically) during program execution, you can, for example, change a configuration file, then create a new storage object, and its contents will be different. The old object will not automatically know that the config file has been changed. Avoid this pattern, as it can lead to subtle bugs.
+Finally, you can specify a list of sources for a specific instance by passing it as the `_sources` argument when creating the object:
 
-Each data source behaves like a mapping, and field values are looked up by field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed, with sources for a field having higher priority than sources for the class as a whole.
+```python
+instance = MyClass(_sources=[TOMLSource('instance_config.toml')])
+```
+
+Without an ellipsis, instance-level sources completely replace both class-level and field-level sources. If you want instance-level sources to have the highest priority while still falling back to other sources, use an ellipsis:
+
+```python
+instance = MyClass(_sources=[TOMLSource('instance_config.toml'), ...])
+```
+
+In this case, instance sources are checked first, and if a value is not found, the lookup falls back to the sources that the field would normally use without `_sources`. The fallback rules are:
+
+- If a field has no `sources` parameter → fallback to class-level sources directly.
+- If a field has `sources` without `...` → fallback to field-level sources only (class-level sources are **not** included).
+- If a field has `sources` with `...` → fallback to field-level sources, then class-level sources.
+
+> ⚠️ This means that `...` in `_sources` does **not** always reach class-level sources. If a field defines its own `sources` without `...`, class-level sources are excluded for that field even when instance-level `_sources` contains `...`:
+>
+> ```python
+> class MyClass(Storage, sources=[EnvSource()]):
+>     # This field's sources do not include ..., so EnvSource() is unreachable for it:
+>     some_field = Field('default', sources=[TOMLSource('field_config.toml')])
+> ```
+
+Only `list` and `tuple` are accepted as the `_sources` collection type.
+
+All values from sources are loaded when the config object is created. If a configuration file changes after the object is created, only newly created objects will reflect the change. Existing objects will retain the old values.
+
+Each data source behaves like a mapping, and field values are looked up by field name. If no value is found in any of the sources, only then will the default value be used. The order in which the contents of the sources are checked corresponds to the order in which the sources themselves are listed. When multiple levels of sources are combined via ellipsis, instance-level sources have the highest priority, followed by field-level sources, and then class-level sources.
 
 For any field, you can change the key used to search for its value in the sources using the `alias` parameter:
 
@@ -379,9 +408,9 @@ Values obtained from sources are validated in the same way as all others. Howeve
 Read more about the available types of sources below.
 
 
-## Environment variables
+### Environment variables
 
-[Environment variables](https://en.wikipedia.org/wiki/Environment_variable) are a common way to [provide application settings](#sources). To connect it to your class or class field, use the `EnvSource` class:
+[Environment variables](https://en.wikipedia.org/wiki/Environment_variable) are a common way to provide application settings. To connect them to your class or class field, use the `EnvSource` class:
 
 ```python
 from skelet import EnvSource
@@ -414,19 +443,19 @@ EnvSource(postfix='_postfix')  # For attribute "field_name", the search will be 
 
 Environment variables can be used to store values of only certain data types. Strings are converted to typed values based on type hints for specific fields. Here are the supported options:
 
-- `str` - any string can be interpreted as a `str` type. If you used the `Any` annotation for the field or did not specify annotations at all, the value will also be interpreted as a string.
-- `int` - any integers.
-- `float` - any floating-point numbers, including infinities and [`NaN`](https://en.wikipedia.org/wiki/NaN).
-- `bool` - the strings `"yes"`, `"True"`, and `"true"` are interpreted as `True`, while `"no"`, `"False"`, or `"false"` are interpreted as `False`.
-- `date` or `datetime` - strings representing, respectively, dates or dates + time in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
-- `list` - lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
-- `tuple` - lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
-- `dict` - dicts in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
+- `str` — any string can be interpreted as a `str` type. If you used the `Any` annotation for the field or did not specify annotations at all, the value will also be interpreted as a string.
+- `int` — any integers.
+- `float` — any floating-point numbers, including infinities and [`NaN`](https://en.wikipedia.org/wiki/NaN).
+- `bool` — the strings `"yes"`, `"True"`, and `"true"` are interpreted as `True`, while `"no"`, `"False"`, or `"false"` are interpreted as `False`.
+- `date` or `datetime` — strings representing, respectively, dates or dates + time in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
+- `list` — lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
+- `tuple` — lists in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
+- `dict` — dicts in [`json`](https://en.wikipedia.org/wiki/JSON) format are expected.
 
 
-## TOML files and pyproject.toml
+### TOML files and pyproject.toml
 
-[`TOML`](https://toml.io/en/) is currently the preferred format for storing application settings in Python projects. It is very easy to map to dictionary-like structures in Python, and it is also minimalistic and easy to read.
+[`TOML`](https://toml.io/en/) is currently the preferred format for storing application settings in Python projects.
 
 To read the configuration from a specific file, create a `TOMLSource` object by passing the file name or a [Path-like object](https://docs.python.org/3/library/pathlib.html#basic-use) to the constructor:
 
@@ -437,10 +466,10 @@ class MyClass(Storage, sources=[TOMLSource('my_config.toml')]):
     ...
 ```
 
-The `TOML` format supports so-called “[tables](https://toml.io/en/v1.0.0#table)” — sections of the configuration that are converted into nested dictionaries when read. By default, we read the top-level table, but we can also read one of the nested tables. To do this, use the `table` parameter:
+The `TOML` format supports so-called “[tables](https://toml.io/en/v1.0.0#table)” — sections of the configuration that are converted into nested dictionaries when read. By default, the top-level table is read, but you can also read one of the nested tables. To do this, use the `table` parameter:
 
 ```python
-TOMLSource('my_config.toml', table='first_level.second_level')  # Instead of a dot-delimited string, you can also pass a list of strings.
+TOMLSource('my_config.toml', table='first_level.second_level')  # You can also pass a list of strings instead of a dot-delimited path.
 ```
 
 > ⓘ If you are writing your own library and allowing users to configure it via a [`pyproject.toml`](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/) file, it is generally recommended to use table `tool.<your library name>` for this purpose.
@@ -448,9 +477,9 @@ TOMLSource('my_config.toml', table='first_level.second_level')  # Instead of a d
 > ⓘ All file contents are cached after the first value is read.
 
 
-## JSON files
+### JSON files
 
-If you need config files, I recommend using the [`TOML`](#toml-files-and-pyprojecttoml) format. However, if for some reason you are using [`JSON`](https://en.wikipedia.org/wiki/JSON), it can also be connected as a [source](#sources) using class `JSONSource`:
+[`JSON`](https://en.wikipedia.org/wiki/JSON) can also be connected as a [source](#sources) using the `JSONSource` class:
 
 ```python
 from skelet import JSONSource
@@ -462,9 +491,9 @@ class MyClass(Storage, sources=[JSONSource('my_config.json')]):
 This works similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
 
-## YAML files
+### YAML files
 
-[YAML](https://en.wikipedia.org/wiki/YAML) is a popular format for storing configurations. I recommend choosing [`TOML`](#toml-files-and-pyprojecttoml) if you have the option, but if not, use the `YAMLSource` class:
+[YAML](https://en.wikipedia.org/wiki/YAML) is a popular format for storing configurations. Use the `YAMLSource` class:
 
 ```python
 from skelet import YAMLSource
@@ -476,7 +505,7 @@ class MyClass(Storage, sources=[YAMLSource('my_config.yaml')]):
 Everything will also work similarly to reading [`TOML` files](#toml-files-and-pyprojecttoml), except that tables are not supported here.
 
 
-## Command-line arguments
+### Command-line arguments
 
 `skelet` can automatically parse command-line arguments. To do this, use the `FixedCLISource` object, to which you need to pass a list of positional and/or named command-line arguments:
 
@@ -503,16 +532,16 @@ Now we can run our script, and the arguments will automatically populate the cor
 ./our_script.py --first-field value "positional argument"
 ```
 
-As you can see, named arguments are passed with two leading hyphens, like this: `--`, and also all the underscores are replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
+As you can see, named arguments are passed with two leading hyphens, like this: `--`, and all underscores are replaced with hyphens. If the field name consists of 1 character, only 1 hyphen should be added at the beginning.
 
-You do not need to pass a value for a named boolean argument. The rest of the fields need it, and they will be interpreted according to their type hints.
+You do not need to pass a value for a named boolean argument. Other argument types require a value, and they will be interpreted according to their type hints.
 
 All arguments are optional, and if they are not present on the command-line, just the default value will be used. The positional arguments are filled in exactly in the order in which you listed them, and if any of them is missing, it will be interpreted as if the last one is missing. For this reason, I do not recommend defining more than one positional command-line argument.
 
 
-## Collecting sources
+### Collecting sources
 
-Often, you may want to use multiple settings sources together. For example, you may need to combine settings from [environment variables](#environment-variables) and settings from the [`pyproject.toml` file](#toml-files-and-pyprojecttoml), with environment variables having higher priority. The straightforward way to implement this would be to pass multiple source objects to the class, as discussed [above](#sources). However, there is also a way to configure this automatically using the `for_tool` function:
+Often, you may want to use multiple settings sources together. For example, you may need to combine settings from [environment variables](#environment-variables) and settings from the [`pyproject.toml` file](#toml-files-and-pyprojecttoml), with environment variables having higher priority. You can pass multiple sources manually, or use `for_tool` to configure them automatically:
 
 ```python
 from skelet import for_tool
@@ -529,12 +558,12 @@ class MyClass(Storage, sources=for_tool('my_tool_name')):
 - Files `<my_tool_name>.yaml` and `.<my_tool_name>.yaml`.
 - Files `<my_tool_name>.json` and `.<my_tool_name>.json`.
 
-If the file does not exist, it will simply be ignored.
+If any of these files do not exist, they will simply be ignored.
 
 
 ## Converting values
 
-Sometimes you may need to store data in a format other than the one the user code is trying to save it in. In this case, pass the converter function as argument `conversion`:
+Sometimes you need to transform values before storing them. In this case, pass the converter function as the `conversion` argument:
 
 ```python
 class Digits(Storage):
@@ -568,11 +597,9 @@ print(digits.my_favorite_digit)
 
 ## Thread safety
 
-Thread safety is an important priority in the development of `skelet`.
-
 All write operations are protected by mutexes by default, with individual mutexes used for each field. The library provides a limited transactional model: if a value fails type checking or other checks, it is not applied, and other threads cannot read the “incorrect” value at that time: the new value will only become available once all checks have been passed. If you specify conditions for [checking conflicts](#conflicts-between-fields) between two different fields, they start using the same mutex to ensure that there are no races.
 
-According to [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law), the benefits of program parallelization decrease dramatically as the proportion of execution time that occurs under a mutex increases. Therefore, the `skelet` library uses a mutex only for a critical operation: replacing one value with another, but it does not use it, for example, during the value verification phase.
+According to [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law), the benefits of program parallelization decrease dramatically as the proportion of execution time that occurs under a mutex increases. Therefore, `skelet` uses a mutex only for the critical operation of replacing one value with another, not for validation.
 
 The thread-safety guarantees are covered by dedicated tests.
 
@@ -629,7 +656,7 @@ storage.inevitability = 'There are a lot of unavoidable things.'
 
 ## Serialization
 
-Application settings are rarely used outside the application itself, so in most cases there is no need to send them over the network or serialize them separately. When needed, you can use `asdict()` to convert the object to a standard Python dictionary, [`dict`](https://docs.python.org/3/library/stdtypes.html#typesmapping).
+You can use `asdict()` to convert a storage object to a standard Python dictionary, [`dict`](https://docs.python.org/3/library/stdtypes.html#typesmapping).
 
 ```python
 from skelet import asdict

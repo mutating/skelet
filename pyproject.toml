@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skelet"
-version = "0.0.15"
+version = "0.0.16"
 authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
@@ -50,12 +50,13 @@ paths_to_mutate = "skelet"
 runner = "pytest"
 
 [tool.pytest.ini_options]
-markers = ["mypy_testing"]
+markers = ["mypy_testing", "thread_safety"]
 
 [tool.ruff]
 lint.ignore = ['E501', 'E712', 'PTH123', 'PTH118', 'PLR2004', 'PTH107', 'SIM105', 'SIM102', 'RET503', 'PLR0912', 'C901']
 lint.select = ["ERA001", "YTT", "ASYNC", "BLE", "B", "A", "COM", "INP", "PIE", "T20", "PT", "RSE", "RET", "SIM", "SLOT", "TID252", "ARG", "PTH", "I", "C90", "N", "E", "W", "D201", "D202", "D419", "F", "PL", "PLE", "PLR", "PLW", "RUF", "TRY201", "TRY400", "TRY401"]
 format.quote-style = "single"
+lint.per-file-ignores."tests/typing/**" = ["F821", "ARG001", "ARG005"]
 
 [project.urls]
 'Source' = 'https://github.com/mutating/skelet'

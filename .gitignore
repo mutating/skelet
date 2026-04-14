@@ -17,3 +17,6 @@ uv.lock
 .ropeproject
 node_modules
 mutants
+CLAUDE.md
+AGENTS.md
+.qwen

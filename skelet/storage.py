@@ -1,13 +1,14 @@
 from collections import defaultdict
 from threading import Lock
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
-from printo import descript_data_object
+from printo import describe_data_object
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
+from skelet.types import InstanceSourceItem
 
 sentinel = InnerNoneType()
 
@@ -17,8 +18,22 @@ class Storage:
     __field_names__: Union[List[str], Tuple[str, ...]] = ()
     __reverse_conflicts__: Dict[str, List[str]]
     __sources__: SourcesCollection  # type: ignore[type-arg]
+    __instance_sources__: Optional[Sequence[InstanceSourceItem]]
 
-    def __init__(self, **kwargs: Any) -> None:
+    @staticmethod
+    def _validate_instance_sources(raw: Optional[Sequence['InstanceSourceItem']]) -> Optional[Sequence['InstanceSourceItem']]:
+        if raw is None:
+            return None
+        if not isinstance(raw, (list, tuple)):
+            raise TypeError('_sources must be a list or a tuple.')
+        for item in raw:
+            if item is not Ellipsis and not isinstance(item, AbstractSource):
+                raise TypeError(f'Each element of _sources must be a source or Ellipsis, got {type(item).__name__}.')
+        return raw
+
+    def __init__(self, *, _sources: Optional[Sequence['InstanceSourceItem']] = None, **kwargs: Any) -> None:
+        self.__instance_sources__ = self._validate_instance_sources(_sources)
+
         self.__values__: Dict[str, Any] = {}
         self.__locks__ = {field_name: Lock() for field_name in self.__field_names__}
         deduplicated_fields = set(self.__field_names__)
@@ -132,4 +147,4 @@ class Storage:
             if getattr(type(self), field_name).secret:
                 secrets[field_name] = '***'
 
-        return descript_data_object(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
+        return describe_data_object(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
