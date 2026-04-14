@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
-from printo import descript_data_object
+from printo import describe_data_object
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
@@ -147,4 +147,4 @@ class Storage:
             if getattr(type(self), field_name).secret:
                 secrets[field_name] = '***'
 
-        return descript_data_object(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
+        return describe_data_object(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
