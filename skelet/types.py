@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
 
 from skelet.sources.abstract import AbstractSource
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from skelet.storage import Storage
 
 __all__ = ['ChangeAction', 'EllipsisType', 'InstanceSourceItem', 'StorageType', 'ValueType']
