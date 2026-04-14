@@ -2209,18 +2209,18 @@ def test_value_check_for_set_is_after_conversion():
 def test_type_check_for_defaults_is_before_conversion():
     with pytest.raises(TypeError, match=match('The value 5 (int) of the "field" field does not match the type str.')):
         class SomeClass(Storage):
-            field: str = Field(5, conversion=lambda x: str(x))  # noqa: PLW0108
+            field: str = Field(5, conversion=lambda x: str(x))
 
 
 def test_type_check_for_defaults_is_after_conversion():
     with pytest.raises(TypeError, match=match('The value \'5\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage):
-            field: int = Field(5, conversion=lambda x: str(x))  # noqa: PLW0108
+            field: int = Field(5, conversion=lambda x: str(x))
 
 
 def test_type_check_for_set_is_before_conversion():
     class SomeClass(Storage):
-        field: Union[int, str] = Field(5, conversion=lambda x: str(x))  # noqa: PLW0108
+        field: Union[int, str] = Field(5, conversion=lambda x: str(x))
 
     instance = SomeClass()
 
@@ -2291,7 +2291,7 @@ def test_conversion_for_source(toml_config_path, json_config_path, yaml_config_p
 )
 def test_type_check_before_conversion_for_toml_source(toml_config_path):
     class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
-        field: str = Field('kek', conversion=lambda x: str(x))  # noqa: PLW0108
+        field: str = Field('kek', conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value of the "field" field did not pass the type check.')):
         SomeClass()
@@ -2305,7 +2305,7 @@ def test_type_check_before_conversion_for_toml_source(toml_config_path):
 )
 def test_type_check_before_conversion_for_yaml_source(yaml_config_path):
     class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
-        field: str = Field('kek', conversion=lambda x: str(x))  # noqa: PLW0108
+        field: str = Field('kek', conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value of the "field" field did not pass the type check.')):
         SomeClass()
@@ -2319,7 +2319,7 @@ def test_type_check_before_conversion_for_yaml_source(yaml_config_path):
 )
 def test_type_check_before_conversion_for_json_source(json_config_path):
     class SomeClass(Storage, sources=[JSONSource(json_config_path)]):
-        field: str = Field('kek', conversion=lambda x: str(x))  # noqa: PLW0108
+        field: str = Field('kek', conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value of the "field" field did not pass the type check.')):
         SomeClass()
@@ -2334,15 +2334,15 @@ def test_type_check_before_conversion_for_json_source(json_config_path):
 def test_type_check_after_conversion_for_source(toml_config_path, json_config_path, yaml_config_path):
     with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[TOMLSource(toml_config_path)]):
-            field: int = Field(10, conversion=lambda x: str(x))  # noqa: PLW0108
+            field: int = Field(10, conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[JSONSource(json_config_path)]):
-            field: int = Field(10, conversion=lambda x: str(x))  # noqa: PLW0108
+            field: int = Field(10, conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage, sources=[YAMLSource(yaml_config_path)]):
-            field: int = Field(10, conversion=lambda x: str(x))  # noqa: PLW0108
+            field: int = Field(10, conversion=lambda x: str(x))
 
 
 def test_conversion_for_default_factory():
@@ -2354,7 +2354,7 @@ def test_conversion_for_default_factory():
 
 def test_type_check_is_before_conversion_for_default_factory():
     class SomeClass(Storage):
-        field: str = Field(default_factory=lambda: 10, conversion=lambda x: str(x))  # noqa: PLW0108
+        field: str = Field(default_factory=lambda: 10, conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value 10 (int) of the "field" field does not match the type str.')):
         SomeClass()
@@ -2362,7 +2362,7 @@ def test_type_check_is_before_conversion_for_default_factory():
 
 def test_type_check_is_after_conversion_for_default_factory():
     class SomeClass(Storage):
-        field: int = Field(default_factory=lambda: 10, conversion=lambda x: str(x))  # noqa: PLW0108
+        field: int = Field(default_factory=lambda: 10, conversion=lambda x: str(x))
 
     with pytest.raises(TypeError, match=match('The value \'10\' (str) of the "field" field does not match the type int.')):
         SomeClass()
