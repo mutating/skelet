@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union
+from typing import Any, Callable, TypeVar, Union
 
 from skelet.sources.abstract import AbstractSource
-
-if TYPE_CHECKING:
-    from skelet.storage import Storage
+from skelet.storage import Storage
 
 __all__ = ['ChangeAction', 'EllipsisType', 'InstanceSourceItem', 'StorageType', 'ValueType']
 
