@@ -801,6 +801,12 @@ def test_validation_function_failed_when_default_with_doc(wrong_value, secret):
             field: int = Field(-15, validation=lambda value: value > 0, doc='some doc', secret=secret)
 
 
+def test_validation_functions_dict_failed_when_default():
+    with pytest.raises(ValueError, match=match('some message')):
+        class SomeClass(Storage):
+            field: int = Field(-15, validation={'some message': lambda value: value > 0})
+
+
 @pytest.mark.parametrize(
     'addictional_parameters',
     [
@@ -2170,6 +2176,536 @@ def test_conversion_is_not_under_field_lock():
     assert lock.trace
 
 
+def test_validation_runs_before_and_after_conversion_for_assignment():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(0, conversion=conversion, validation=validation, validate_default=False)
+
+    instance = SomeClass()
+    events.clear()
+
+    instance.field = 1
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+def test_validation_runs_before_and_after_conversion_for_init_kwargs():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(0, conversion=conversion, validation=validation, validate_default=False)
+
+    events.clear()
+
+    instance = SomeClass(field=1)
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+def test_validation_runs_before_and_after_conversion_for_literal_default():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation)
+
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+    assert SomeClass().field == 2
+
+
+def test_validation_runs_before_and_after_conversion_for_default_factory():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(default_factory=lambda: 1, conversion=conversion, validation=validation)
+
+    instance = SomeClass()
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+def test_validation_runs_before_and_after_conversion_for_class_source():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage, sources=[MemorySource({'field': 1})]):
+        field: int = Field(conversion=conversion, validation=validation)
+
+    instance = SomeClass()
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_validation_runs_before_and_after_conversion_for_instance_source(collection_type):
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(conversion=conversion, validation=validation)
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 1})]))
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+def test_validation_without_conversion_runs_once_when_set():
+    events = []
+
+    def validation(value):
+        events.append(value)
+        return True
+
+    class SomeClass(Storage):
+        field: int = Field(0, validation=validation, validate_default=False)
+
+    instance = SomeClass()
+
+    instance.field = 1
+
+    assert instance.field == 1
+    assert events == [1]
+
+
+def test_identity_conversion_still_validates_before_and_after_conversion():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return True
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value
+
+    class SomeClass(Storage):
+        field: int = Field(0, conversion=conversion, validation=validation, validate_default=False)
+
+    instance = SomeClass()
+    events.clear()
+
+    instance.field = 1
+
+    assert instance.field == 1
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 1)]
+
+
+def test_failed_raw_type_check_is_transactional_before_conversion():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return True
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return 100
+
+    def conflict(*args):
+        events.append(('conflict', args))
+        return False
+
+    def action(old, new, storage):
+        events.append(('action', old, new, storage))
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation, action=action, conflicts={'other_field': conflict})
+        other_field: int = Field(1000)
+
+    instance = SomeClass()
+    assert instance.field == 100
+    events.clear()
+
+    with pytest.raises(TypeError, match=match('The value \'bad\' (str) of the "field" field does not match the type int.')):
+        instance.field = 'bad'
+
+    assert instance.field == 100
+    assert events == []
+
+
+def test_failed_raw_validation_is_transactional_before_conversion():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value >= 0
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return abs(value)
+
+    def conflict(*args):
+        events.append(('conflict', args))
+        return False
+
+    def action(old, new, storage):
+        events.append(('action', old, new, storage))
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation, action=action, conflicts={'other_field': conflict})
+        other_field: int = Field(1000)
+
+    instance = SomeClass()
+    assert instance.field == 1
+    events.clear()
+
+    with pytest.raises(ValueError, match=match('The value -5 (int) of the "field" field does not match the validation.')):
+        instance.field = -5
+
+    assert instance.field == 1
+    assert events == [('validation', -5)]
+
+
+def test_conversion_exception_is_transactional():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return True
+
+    def conversion(value):
+        events.append(('conversion', value))
+        if value == 5:
+            raise RuntimeError('conversion failed')
+        return value
+
+    def conflict(*args):
+        events.append(('conflict', args))
+        return False
+
+    def action(old, new, storage):
+        events.append(('action', old, new, storage))
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation, action=action, conflicts={'other_field': conflict})
+        other_field: int = Field(1000)
+
+    instance = SomeClass()
+    events.clear()
+
+    with pytest.raises(RuntimeError, match=match('conversion failed')):
+        instance.field = 5
+
+    assert instance.field == 1
+    assert events == [('validation', 5), ('conversion', 5)]
+
+
+def test_literal_default_conversion_exception_is_raised_from_storage_subclass():
+    def conversion(_value):
+        raise RuntimeError('conversion failed')
+
+    with pytest.raises(RuntimeError, match=match('conversion failed')):
+        class SomeClass(Storage):
+            field: int = Field(1, conversion=conversion)
+
+
+def test_failed_converted_type_check_is_transactional_before_post_validation():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return True
+
+    def conversion(value):
+        events.append(('conversion', value))
+        if value == 5:
+            return 'bad'
+        return value
+
+    def conflict(*args):
+        events.append(('conflict', args))
+        return False
+
+    def action(old, new, storage):
+        events.append(('action', old, new, storage))
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation, action=action, conflicts={'other_field': conflict})
+        other_field: int = Field(1000)
+
+    instance = SomeClass()
+    events.clear()
+
+    with pytest.raises(TypeError, match=match('The value \'bad\' (str) of the "field" field does not match the type int.')):
+        instance.field = 5
+
+    assert instance.field == 1
+    assert events == [('validation', 5), ('conversion', 5)]
+
+
+def test_failed_converted_validation_is_transactional():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value < 5
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value * 2
+
+    def conflict(*args):
+        events.append(('conflict', args))
+        return False
+
+    def action(old, new, storage):
+        events.append(('action', old, new, storage))
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation, action=action, conflicts={'other_field': conflict})
+        other_field: int = Field(1000)
+
+    instance = SomeClass()
+    assert instance.field == 2
+    events.clear()
+
+    with pytest.raises(ValueError, match=match('The value 8 (int) of the "field" field does not match the validation.')):
+        instance.field = 4
+
+    assert instance.field == 2
+    assert events == [('validation', 4), ('conversion', 4), ('validation', 8)]
+
+
+def test_failed_conflict_check_is_transactional_after_conversion():
+    events = []
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value * 2
+
+    def conflict(old, new, other_old, other_new):
+        events.append(('conflict', old, new, other_old, other_new))
+        return new == 10
+
+    def action(old, new, storage):
+        events.append(('action', old, new, storage))
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=lambda _value: True, action=action, conflicts={'other_field': conflict})
+        other_field: int = Field(1000)
+
+    instance = SomeClass()
+    assert instance.field == 2
+    events.clear()
+
+    with pytest.raises(ValueError, match='conflicts with'):
+        instance.field = 5
+
+    assert instance.field == 2
+    assert events == [('conversion', 5), ('conflict', 2, 10, 1000, 1000)]
+
+
+def test_validate_default_false_skips_both_validation_phases_for_literal_default():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return False
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation, validate_default=False)
+
+    assert SomeClass().field == 2
+    assert events == [('conversion', 1)]
+
+
+def test_validate_default_false_skips_both_validation_phases_for_default_factory():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return False
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(default_factory=lambda: 1, conversion=conversion, validation=validation, validate_default=False)
+
+    assert SomeClass().field == 2
+    assert events == [('conversion', 1)]
+
+
+@pytest.mark.parametrize('collection_type', [list, tuple])
+def test_sources_validate_before_and_after_conversion_even_when_validate_default_false(collection_type):
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(0, conversion=conversion, validation=validation, validate_default=False)
+
+    events.clear()
+
+    instance = SomeClass(_sources=collection_type([MemorySource({'field': 1})]))
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+def test_init_kwargs_validate_before_and_after_conversion_when_validate_default_false():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return value in (1, 2)
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(0, conversion=conversion, validation=validation, validate_default=False)
+
+    events.clear()
+
+    instance = SomeClass(field=1)
+
+    assert instance.field == 2
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+
+
+def test_secret_value_is_masked_for_all_conversion_failure_phases():
+    class RawTypeFailure(Storage):
+        field: int = Field(1, conversion=lambda value: value, validation=lambda _value: True, secret=True)
+
+    with pytest.raises(TypeError, match=match('The value *** (str) of the "field" field does not match the type int.')):
+        RawTypeFailure().field = 'bad'
+
+    class RawValidationFailure(Storage):
+        field: int = Field(1, conversion=abs, validation=lambda value: value >= 0, secret=True)
+
+    with pytest.raises(ValueError, match=match('The value *** (int) of the "field" field does not match the validation.')):
+        RawValidationFailure().field = -1
+
+    class ConvertedTypeFailure(Storage):
+        field: int = Field(0, conversion=lambda value: 'bad' if value == 1 else value, validation=lambda _value: True, secret=True)
+
+    with pytest.raises(TypeError, match=match('The value *** (str) of the "field" field does not match the type int.')):
+        ConvertedTypeFailure().field = 1
+
+    class ConvertedValidationFailure(Storage):
+        field: int = Field(0, conversion=lambda value: -value, validation=lambda value: value >= 0, secret=True)
+
+    with pytest.raises(ValueError, match=match('The value *** (int) of the "field" field does not match the validation.')):
+        ConvertedValidationFailure().field = 1
+
+
+def test_dict_validation_messages_and_order_before_and_after_conversion():
+    events = []
+
+    def first(value):
+        events.append(('first', value))
+        return value != -1
+
+    def second(value):
+        events.append(('second', value))
+        return value != 2
+
+    class SomeClass(Storage):
+        field: int = Field(0, conversion=lambda value: value + 1, validation={'first message': first, 'second message': second}, validate_default=False)
+
+    instance = SomeClass()
+    events.clear()
+
+    with pytest.raises(ValueError, match=match('first message')):
+        instance.field = -1
+
+    assert instance.field == 1
+    assert events == [('first', -1)]
+
+    events.clear()
+
+    with pytest.raises(ValueError, match=match('second message')):
+        instance.field = 1
+
+    assert instance.field == 1
+    assert events == [('first', 1), ('second', 1), ('first', 2), ('second', 2)]
+
+
+def test_literal_default_is_converted_once_for_all_instances_and_accesses():
+    events = []
+
+    def conversion(value):
+        events.append(value)
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=lambda _value: True)
+
+    assert events == [1]
+
+    first = SomeClass()
+    second = SomeClass()
+
+    assert first.field == 2
+    assert first.field == 2
+    assert second.field == 2
+    assert events == [1]
+
+
 def test_conflicts_check_on_set_is_after_conversion():
     class SomeClass(Storage):
         field: int = Field(5, conversion=lambda x: x * 2, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new})  # noqa: ARG005
@@ -2197,7 +2733,7 @@ def test_value_check_for_defaults_is_after_conversion():
 
 def test_value_check_for_set_is_after_conversion():
     class SomeClass(Storage):
-        field: int = Field(5, conversion=lambda x: x * 2, validation=lambda x: x == 10)
+        field: int = Field(10, conversion=lambda x: x * 2, validation=lambda x: x == 10, validate_default=False)
         other_field: int = Field(10)
 
     instance = SomeClass()

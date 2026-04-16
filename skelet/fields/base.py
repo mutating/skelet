@@ -81,7 +81,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
                 raise SignatureMismatchError('The value converter must accept only one argument: the value before conversion.')
             if default is not sentinel:
                 self._default_before_conversion: Union[ValueType, InnerNoneType] = default
-                self._default: Union[ValueType, InnerNoneType] = conversion(cast(ValueType, default))
+                self._default: Union[ValueType, InnerNoneType] = sentinel
             else:
                 self._default_before_conversion = sentinel
                 self._default = default
@@ -133,14 +133,23 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
 
             self.base_class = owner
 
-            if self._default_before_conversion is not sentinel:
-                self.check_type_hints(cast(ValueType, self._default_before_conversion))
-
             self.set_field_names(owner, name)
-            if self._default is not sentinel:
-                self.check_type_hints(cast(ValueType, self._default))
-                if self.validate_default:
-                    self.check_value(cast(ValueType, self._default))
+            if self._default_before_conversion is not sentinel:
+                raw_default = self._default_before_conversion
+            else:
+                raw_default = self._default
+
+            if raw_default is not sentinel:
+                try:
+                    exception_before = self.exception
+                    prepared_default = self.prepare_value(cast(ValueType, raw_default), strict=False, validate=self.validate_default, raise_all=False)
+                    if self.exception is not exception_before:
+                        self._default = sentinel
+                    else:
+                        self._default = prepared_default
+                except Exception as e:  # noqa: BLE001
+                    self.exception = e
+                    self._default = sentinel
 
     def __get__(self, instance: Storage, instance_class: Type[Storage]) -> ValueType:
         if instance is None:
@@ -162,13 +171,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         if self.read_only:
             raise AttributeError(f'{self.get_field_name_representation()} is read-only.')
 
-        self.check_type_hints(value, raise_all=True)
-
-        if self.conversion is not None:
-            value = self.conversion(value)
-            self.check_type_hints(value, raise_all=True)
-
-        self.check_value(value, raise_all=True)
+        value = self.prepare_value(value, strict=False, validate=True, raise_all=True)
 
         with self.get_field_lock(instance):
             old_value = self.unlocked_get(instance, type(instance))
@@ -213,25 +216,59 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         if name not in known_names:  # pragma: no branch
             cast(List[str], owner.__field_names__).append(name)
 
-    def check_type_hints(self, value: ValueType, strict: bool = False, raise_all: bool = False) -> None:
+    def prepare_value(self, value: ValueType, strict: bool = False, validate: bool = True, raise_all: bool = False) -> ValueType:
+        if strict:
+            raw_type_check_passed = self.check_type_hints(value, strict=True, raise_all=raise_all)
+        else:
+            raw_type_check_passed = self.check_type_hints(value, raise_all=raise_all)
+
+        if not raw_type_check_passed:
+            return value
+
+        if validate and not self.check_value(value, raise_all=raise_all):
+            return value
+
+        if self.conversion is None:
+            return value
+
+        value = self.conversion(value)
+        if strict:
+            converted_type_check_passed = self.check_type_hints(value, strict=True, raise_all=raise_all)
+        else:
+            converted_type_check_passed = self.check_type_hints(value, raise_all=raise_all)
+
+        if not converted_type_check_passed:
+            return value
+
+        if validate:
+            self.check_value(value, raise_all=raise_all)
+
+        return value
+
+    def check_type_hints(self, value: ValueType, strict: bool = False, raise_all: bool = False) -> bool:
         if not check(value, self.type_hint, strict=strict):  # type: ignore[arg-type, unused-ignore]
             origin = get_origin(self.type_hint)
             type_hint_name = self.type_hint.__name__ if origin is None else origin.__name__ if hasattr(origin, '__name__') else repr(origin)  # type: ignore[attr-defined, unused-ignore]
             self.raise_exception_in_storage(TypeError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the type {type_hint_name}.'), raise_all)
+            return False
+        return True
 
     def get_field_name_representation(self) -> str:
         if self.doc is None:
             return f'"{self.name}" field'
         return f'"{self.name}" field ({self.doc})'
 
-    def check_value(self, value: ValueType, raise_all: bool = False) -> None:
+    def check_value(self, value: ValueType, raise_all: bool = False) -> bool:
         if self.validation is not None:
             if isinstance(self.validation, dict):
                 for message, validator in self.validation.items():
                     if not validator(value):
                         self.raise_exception_in_storage(ValueError(message), raise_all)
+                        return False
             elif not self.validation(value):
                 self.raise_exception_in_storage(ValueError(f'The value {self.get_value_representation(value)} of the {self.get_field_name_representation()} does not match the validation.'), raise_all)
+                return False
+        return True
 
     def get_field_lock(self, instance: Storage) -> ContextLockProtocol:
         return instance.__locks__[cast(str, self.name)]
