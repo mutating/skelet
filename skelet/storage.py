@@ -51,24 +51,13 @@ class Storage:
         for field_name in self.__field_names__:
             field = getattr(type(self), field_name)
             content = field.get_sources(self).type_awared_get(field.alias, field.type_hint, sentinel)
-            it_is_not_default = True
             if content is not sentinel:
-                field.check_type_hints(content, strict=True, raise_all=True)
-                field.check_value(content, raise_all=True)
+                content = field.prepare_value(content, strict=True, validate=True, raise_all=True)
             elif field._default_factory is not None:
                 content = field._default_factory()
-                field.check_type_hints(content, strict=True, raise_all=True)
-                if field.validate_default:
-                    field.check_value(content, raise_all=True)
+                content = field.prepare_value(content, strict=True, validate=field.validate_default, raise_all=True)
             else:
-                it_is_not_default = False
                 content = field._default
-
-            if field.conversion is not None and it_is_not_default:
-                content = field.conversion(content)
-                field.check_type_hints(content, strict=True, raise_all=True)
-                if field.validate_default:
-                    field.check_value(content, raise_all=True)
 
             self.__values__[field_name] = content
 
