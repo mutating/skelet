@@ -3355,8 +3355,8 @@ def test_callback_signature_error_handles_none_callable_metadata():
 @pytest.mark.parametrize(
     ('field_kwargs', 'expected_message'),
     [
-        ({'validation': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message('validation[<unrepresentable BadKeyRepr: ValueError>]', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')),
-        ({'conflicts': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message('conflicts[<unrepresentable BadKeyRepr: ValueError>]', CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback')),
+        ({'validation': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message("validation[<BadKeyRepr's object>]", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')),
+        ({'conflicts': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message("conflicts[<BadKeyRepr's object>]", CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback')),
     ],
 )
 def test_callback_signature_error_does_not_call_dict_key_repr(field_kwargs, expected_message):
@@ -3364,8 +3364,8 @@ def test_callback_signature_error_does_not_call_dict_key_repr(field_kwargs, expe
         _field_for_signature_check(**field_kwargs)
 
 
-def test_callback_signature_error_truncates_long_dict_key_repr():
-    expected_key = f'<{"x" * 196}...'
+def test_callback_signature_error_keeps_long_dict_key_repr_from_superrepr():
+    expected_key = f'<{"x" * 300}>'
     expected_message = _callback_signature_message(f'validation[{expected_key}]', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')
 
     with pytest.raises(SignatureMismatchError, match=match(expected_message)):

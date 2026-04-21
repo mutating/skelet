@@ -329,17 +329,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
             raise SignatureMismatchError(f'Callback parameter {parameter_path} is invalid: skelet calls it {call_description}, but {superrepr(callback)} cannot be called in that form.') from exception
 
     def get_callback_path_representation(self, parameter_name: str, key: Any) -> str:
-        return f'{parameter_name}[{self.get_object_representation(key)}]'
-
-    def get_object_representation(self, value: Any, max_length: int = 200) -> str:
-        try:
-            result = repr(value)
-        except Exception as exception:  # noqa: BLE001
-            return f'<unrepresentable {type(value).__name__}: {type(exception).__name__}>'
-
-        if len(result) > max_length:
-            return f'{result[:max_length - 3]}...'
-        return result
+        return f'{parameter_name}[{superrepr(key)}]'
 
 
 @overload
