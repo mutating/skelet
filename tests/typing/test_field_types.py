@@ -84,14 +84,13 @@ def test_field_list_type() -> None:
     assert_type(config.items, List[int])
 
 
-def _make_empty_dict() -> Dict[str, int]:
-    return {}
-
-
 @pytest.mark.mypy_testing
 def test_field_dict_type() -> None:
+    def make_empty_dict() -> Dict[str, int]:
+        return {}
+
     class Config(Storage):
-        mapping: Dict[str, int] = Field(default_factory=_make_empty_dict)
+        mapping: Dict[str, int] = Field(default_factory=make_empty_dict)
 
     config = Config()
     assert_type(config.mapping, Dict[str, int])
@@ -113,6 +112,18 @@ def test_field_with_default_factory() -> None:
 
     config = Config()
     assert_type(config.items, List[Any])
+
+
+@pytest.mark.mypy_testing
+def test_field_with_typed_default_factory() -> None:
+    def make_default_age() -> int:
+        return 18
+
+    class Config(Storage):
+        age: int = Field(default_factory=make_default_age)
+
+    config = Config()
+    assert_type(config.age, int)
 
 
 @pytest.mark.mypy_testing
@@ -141,6 +152,18 @@ def test_field_with_doc() -> None:
 def test_field_with_validation() -> None:
     class Config(Storage):
         age: int = Field(18, validation=lambda x: x >= 0)
+
+    config = Config()
+    assert_type(config.age, int)
+
+
+@pytest.mark.mypy_testing
+def test_field_with_variadic_validation() -> None:
+    def variadic_validator(*args: Any) -> bool:
+        return bool(args)
+
+    class Config(Storage):
+        age: int = Field(18, validation=variadic_validator)
 
     config = Config()
     assert_type(config.age, int)
@@ -191,14 +214,28 @@ def test_field_with_conversion() -> None:
     assert_type(config.value, int)
 
 
-def _str_to_int(x: Any) -> int:
-    return int(x)
+@pytest.mark.mypy_testing
+def test_field_with_typed_conversion() -> None:
+    def double(value: int) -> int:
+        return value * 2
+
+    class Config(Storage):
+        value: int = Field(0, conversion=double)
+
+    config = Config()
+    assert_type(config.value, int)
 
 
 @pytest.mark.mypy_testing
 def test_field_conversion_type_widening() -> None:
+    def make_raw_value() -> Union[str, int]:
+        return '0'
+
+    def normalize(value: Union[str, int]) -> Union[str, int]:
+        return int(value)
+
     class Config(Storage):
-        value: Union[str, int] = Field('0', conversion=_str_to_int)
+        value: Union[str, int] = Field(default_factory=make_raw_value, conversion=normalize)
 
     config = Config()
     assert_type(config.value, Union[str, int])

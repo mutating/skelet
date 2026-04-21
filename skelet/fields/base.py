@@ -13,11 +13,13 @@ from typing import (
     cast,
     get_origin,
     get_type_hints,
+    overload,
 )
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
-from sigmatch import PossibleCallMatcher, SignatureMismatchError
+from printo import superrepr
+from sigmatch import PossibleCallMatcher, SignatureError, SignatureMismatchError
 from simtypes import check
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
@@ -32,8 +34,9 @@ else:  # pragma: no cover
 
 sentinel = InnerNoneType()
 
+
 class FieldDescriptor(Generic[ValueType, StorageType]):
-    def __init__(  # noqa: PLR0913, PLR0915
+    def __init__(  # noqa: PLR0913
         self,
         default: Union[ValueType, InnerNoneType] = sentinel,
         /,
@@ -55,30 +58,26 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         if default_factory is not None:
             if default is not sentinel:
                 raise ValueError('You can define a default value or a factory for default values, but not all at the same time.')
-            if not PossibleCallMatcher().match(default_factory):
-                raise SignatureMismatchError('The default value factory should not expect any arguments.')
+            self.check_callback_signature(default_factory, PossibleCallMatcher(), 'default_factory', 'with no arguments')
 
         if validation is not None:
             validation_matcher = PossibleCallMatcher('.')
             if isinstance(validation, dict):
                 for validator_message, validator in validation.items():
-                    if not validation_matcher.match(validator):
-                        raise SignatureMismatchError(f'Field validator with message {validator_message!r} is incorrect: a function that accepts only one positional argument is expected.')
-            elif not validation_matcher.match(validation):
-                raise SignatureMismatchError('A function that accepts only one positional argument is expected as a field validator.')
+                    self.check_callback_signature(validator, validation_matcher, f'validation item with key {superrepr(validator_message)}', 'with one positional argument: value is the field value being validated')
+            else:
+                self.check_callback_signature(validation, validation_matcher, 'validation', 'with one positional argument: value is the field value being validated')
 
-        if action is not None and not PossibleCallMatcher('...').match(action):
-            raise SignatureMismatchError('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')
+        if action is not None:
+            self.check_callback_signature(action, PossibleCallMatcher('...'), 'action', 'with three positional arguments: old_value is the previous field value, new_value is the assigned field value, and storage is the Storage instance')
 
         if conflicts is not None:
             conflict_checker_matcher = PossibleCallMatcher('....')
             for potentially_conflicting_field_name, conflict_checker in conflicts.items():
-                if not conflict_checker_matcher.match(conflict_checker):
-                    raise SignatureMismatchError(f'The function for checking conflicts with field {potentially_conflicting_field_name!r} is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).')
+                self.check_callback_signature(conflict_checker, conflict_checker_matcher, f'conflicts item for field {superrepr(potentially_conflicting_field_name)}', "with four positional arguments: old is this field's previous value, new is this field's candidate value, other_old is the conflicting field's previous value, and other_new is the conflicting field's candidate value")
 
         if conversion is not None:
-            if not PossibleCallMatcher('.').match(conversion):
-                raise SignatureMismatchError('The value converter must accept only one argument: the value before conversion.')
+            self.check_callback_signature(conversion, PossibleCallMatcher('.'), 'conversion', 'with one positional argument: value is the raw field value before conversion')
             if default is not sentinel:
                 self._default_before_conversion: Union[ValueType, InnerNoneType] = default
                 self._default: Union[ValueType, InnerNoneType] = sentinel
@@ -321,9 +320,60 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
 
         return cast(SourcesCollection[ExpectedType], SourcesCollection(result))
 
+    def check_callback_signature(self, callback: Callable[..., Any], matcher: PossibleCallMatcher, callback_setting: str, call_description: str) -> None:
+        try:
+            matcher.match(callback, raise_exception=True)
+        except (SignatureError, ValueError, RuntimeError) as exception:
+            raise SignatureMismatchError(f'Callback configured in {callback_setting} is invalid: skelet calls it {call_description}, but {superrepr(callback)} cannot be called in that form.') from exception
+
+
+@overload
+def Field(
+    default: Union[ValueType, InnerNoneType] = sentinel,
+    /,
+    default_factory: Optional[Callable[[], ValueType]] = None,
+    doc: Optional[str] = None,
+    alias: Optional[str] = None,
+    sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
+    read_only: bool = False,
+    validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
+    validate_default: bool = True,
+    secret: bool = False,
+    action: Optional[ChangeAction[ValueType, StorageType]] = None,
+    read_lock: bool = False,
+    conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
+    reverse_conflicts: bool = True,
+    conversion: None = None,
+    share_mutex_with: Optional[Sequence[str]] = None,
+) -> ValueType:
+    ...  # pragma: no cover
+
+
+@overload
+def Field(
+    default: Union[ValueType, InnerNoneType] = sentinel,
+    /,
+    default_factory: Optional[Callable[[], ValueType]] = None,
+    doc: Optional[str] = None,
+    alias: Optional[str] = None,
+    sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
+    read_only: bool = False,
+    validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
+    validate_default: bool = True,
+    secret: bool = False,
+    action: Optional[ChangeAction[ValueType, StorageType]] = None,
+    read_lock: bool = False,
+    conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
+    reverse_conflicts: bool = True,
+    *,
+    conversion: Callable[[ValueType], ValueType],
+    share_mutex_with: Optional[Sequence[str]] = None,
+) -> ValueType:
+    ...  # pragma: no cover
+
 
 def Field(  # noqa: PLR0913, N802
-    default: Any = sentinel,
+    default: Union[Any, InnerNoneType] = sentinel,
     /,
     default_factory: Optional[Callable[[], Any]] = None,
     doc: Optional[str] = None,

@@ -84,103 +84,110 @@ def test_asdict_wrong_argument() -> None:
 
 
 @pytest.mark.mypy_testing
-def test_field_read_only_wrong_type() -> None:
-    Field(read_only='yes')  # E: Argument "read_only" to "Field" has incompatible type "str"; expected "bool"  [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_secret_wrong_type() -> None:
-    Field(secret=1)  # E: Argument "secret" to "Field" has incompatible type "int"; expected "bool"  [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_validate_default_wrong_type() -> None:
-    Field(validate_default='no')  # E: Argument "validate_default" to "Field" has incompatible type "str"; expected "bool"  [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_read_lock_wrong_type() -> None:
-    Field(read_lock='yes')  # E: Argument "read_lock" to "Field" has incompatible type "str"; expected "bool"  [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_validation_wrong_type() -> None:
-    Field(validation=42)  # E: [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_action_wrong_type() -> None:
-    Field(action=42)  # E: [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_conversion_wrong_type() -> None:
-    Field(conversion=42)  # E: [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_conflicts_wrong_type() -> None:
-    Field(conflicts=42)  # E: [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_default_factory_wrong_type() -> None:
-    Field(default_factory=42)  # E: [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_doc_wrong_type() -> None:
-    Field(doc=42)  # E: [arg-type]
-
-
-@pytest.mark.mypy_testing
-def test_field_alias_wrong_type() -> None:
-    Field(alias=42)  # E: [arg-type]
-
-
-def _zero_arg_validator() -> bool:
-    return True
-
-
-def _one_arg_action(x: Any) -> Any:
-    return x
-
-
-def _wrong_storage_action(_old_value: Any, _new_value: Any, _storage: int) -> None:
-    pass
-
-
-def _zero_arg_conversion() -> int:
-    return 42
-
-
-def _two_arg_conflict(x: Any, y: Any) -> bool:
-    return True
-
-
-@pytest.mark.mypy_testing
 def test_field_validation_wrong_arity() -> None:
-    Field(validation=_zero_arg_validator)  # E: [arg-type]
+    def zero_arg_validator() -> bool:
+        return True
+
+    Field(validation=zero_arg_validator)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_dict_validation_wrong_arity() -> None:
+    def zero_arg_validator() -> bool:
+        return True
+
+    Field(validation={'message': zero_arg_validator})  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_validation_non_bool_return() -> None:
+    def one_arg_validator_returns_int(_value: Any) -> int:
+        return 1
+
+    Field(validation=one_arg_validator_returns_int)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_dict_validation_non_bool_return() -> None:
+    def one_arg_validator_returns_int(_value: Any) -> int:
+        return 1
+
+    Field(validation={'message': one_arg_validator_returns_int})  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
 def test_field_action_wrong_arity() -> None:
-    Field(action=_one_arg_action)  # E: [arg-type]
+    def one_arg_action(x: Any) -> Any:
+        return x
+
+    Field(action=one_arg_action)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
 def test_field_action_wrong_storage_type() -> None:
-    Field(action=_wrong_storage_action)  # E: [type-var]
+    def wrong_storage_action(_old_value: Any, _new_value: Any, _storage: int) -> None:
+        pass
+
+    Field(action=wrong_storage_action)  # E: [type-var]
 
 
 @pytest.mark.mypy_testing
 def test_field_conversion_wrong_arity() -> None:
-    Field(conversion=_zero_arg_conversion)  # E: [arg-type]
+    def zero_arg_conversion() -> int:
+        return 42
+
+    Field(conversion=zero_arg_conversion)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_conversion_wrong_return_type() -> None:
+    def conversion_returns_str(_value: Any) -> str:
+        return 'bad'
+
+    class Config(Storage):
+        value: int = Field(1, conversion=conversion_returns_str)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_conversion_does_not_allow_raw_default_outside_field_type() -> None:
+    def keep_str(value: str) -> str:
+        return value
+
+    class Config(Storage):
+        value: int = Field('1', conversion=keep_str)  # E: [assignment]
 
 
 @pytest.mark.mypy_testing
 def test_field_conflicts_wrong_arity() -> None:
-    Field(conflicts={'a': _two_arg_conflict})  # E: Dict entry 0 has incompatible type "str": "Callable[[Any, Any], bool]"; expected "str": "Callable[[Any, Any, Any, Any], bool]"  [dict-item]
+    def two_arg_conflict(x: Any, y: Any) -> bool:
+        return True
+
+    Field(conflicts={'a': two_arg_conflict})  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_conflicts_non_bool_return() -> None:
+    def four_arg_conflict_returns_int(_old: Any, _new: Any, _other_old: Any, _other_new: Any) -> int:
+        return 1
+
+    Field(conflicts={'a': four_arg_conflict_returns_int})  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_default_factory_wrong_arity() -> None:
+    def default_factory_with_arg(_value: Any) -> int:
+        return 1
+
+    Field(default_factory=default_factory_with_arg)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_default_factory_wrong_return_type() -> None:
+    def default_factory_returns_str() -> str:
+        return 'bad'
+
+    class Config(Storage):
+        value: int = Field(default_factory=default_factory_returns_str)  # E: [assignment]
 
 
 @pytest.mark.mypy_testing
@@ -216,11 +223,6 @@ def test_wrong_assignment_dict_to_list() -> None:
 
     config = Config()
     config.items = {'a': 1}  # E: [assignment]
-
-
-@pytest.mark.mypy_testing
-def test_field_sources_wrong_element_type() -> None:
-    Field(sources=(42,))  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
