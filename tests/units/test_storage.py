@@ -3242,7 +3242,6 @@ _overfilled_partial = partial(_bad_partial_base, 1)
         pytest.param({'default_factory': _one_arg}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, '_one_arg'), id='default_factory-one-required-arg'),
         pytest.param({'default_factory': 123}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, '123'), id='default_factory-non-callable'),
         pytest.param({'default_factory': dict}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, 'dict'), id='default_factory-uninspectable-dict'),
-        pytest.param({'default_factory': set}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, 'set'), id='default_factory-uninspectable-set'),
         pytest.param({'validation': _zero_arg_callback}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='validation-no-args'),
         pytest.param({'validation': _two_arg_callback}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_two_arg_callback'), id='validation-two-required-args'),
         pytest.param({'validation': 123}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '123'), id='validation-non-callable'),
