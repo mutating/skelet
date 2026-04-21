@@ -66,7 +66,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
             validation_matcher = PossibleCallMatcher('.')
             if isinstance(validation, dict):
                 for validator_message, validator in validation.items():
-                    self.check_callback_signature(validator, validation_matcher, self.get_callback_path_representation('validation', validator_message), 'with one positional argument: value is the field value being validated')
+                    self.check_callback_signature(validator, validation_matcher, f'validation item with key {superrepr(validator_message)}', 'with one positional argument: value is the field value being validated')
             else:
                 self.check_callback_signature(validation, validation_matcher, 'validation', 'with one positional argument: value is the field value being validated')
 
@@ -76,7 +76,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         if conflicts is not None:
             conflict_checker_matcher = PossibleCallMatcher('....')
             for potentially_conflicting_field_name, conflict_checker in conflicts.items():
-                self.check_callback_signature(conflict_checker, conflict_checker_matcher, self.get_callback_path_representation('conflicts', potentially_conflicting_field_name), "with four positional arguments: old is this field's previous value, new is this field's candidate value, other_old is the conflicting field's previous value, and other_new is the conflicting field's candidate value")
+                self.check_callback_signature(conflict_checker, conflict_checker_matcher, f'conflicts item for field {superrepr(potentially_conflicting_field_name)}', "with four positional arguments: old is this field's previous value, new is this field's candidate value, other_old is the conflicting field's previous value, and other_new is the conflicting field's candidate value")
 
         if conversion is not None:
             self.check_callback_signature(conversion, PossibleCallMatcher('.'), 'conversion', 'with one positional argument: value is the raw field value before conversion')
@@ -322,14 +322,11 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
 
         return cast(SourcesCollection[ExpectedType], SourcesCollection(result))
 
-    def check_callback_signature(self, callback: Any, matcher: PossibleCallMatcher, parameter_path: str, call_description: str) -> None:
+    def check_callback_signature(self, callback: Callable[..., Any], matcher: PossibleCallMatcher, callback_setting: str, call_description: str) -> None:
         try:
             matcher.match(callback, raise_exception=True)
         except (SignatureError, ValueError, RuntimeError) as exception:
-            raise SignatureMismatchError(f'Callback parameter {parameter_path} is invalid: skelet calls it {call_description}, but {superrepr(callback)} cannot be called in that form.') from exception
-
-    def get_callback_path_representation(self, parameter_name: str, key: Any) -> str:
-        return f'{parameter_name}[{superrepr(key)}]'
+            raise SignatureMismatchError(f'Callback configured in {callback_setting} is invalid: skelet calls it {call_description}, but {superrepr(callback)} cannot be called in that form.') from exception
 
 
 @overload

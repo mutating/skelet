@@ -3106,8 +3106,8 @@ def _bad_partial_base(value):
     return bool(value)
 
 
-def _callback_signature_message(parameter_path, call_description, callback_representation):
-    return f'Callback parameter {parameter_path} is invalid: skelet calls it {call_description}, but {callback_representation} cannot be called in that form.'
+def _callback_signature_message(callback_location, call_description, callback_representation):
+    return f'Callback configured in {callback_location} is invalid: skelet calls it {call_description}, but {callback_representation} cannot be called in that form.'
 
 
 DEFAULT_FACTORY_CALL_DESCRIPTION = 'with no arguments'
@@ -3249,15 +3249,15 @@ _overfilled_partial = partial(_bad_partial_base, 1)
         pytest.param({'validation': _pure_kwargs}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_pure_kwargs'), id='validation-pure-kwargs'),
         pytest.param({'validation': _overfilled_partial}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, 'functools.partial(_bad_partial_base, 1)'), id='validation-overfilled-partial'),
         pytest.param({'validation': next}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '<built-in function next>'), id='validation-rejected-builtin'),
-        pytest.param({'validation': {'some message': _zero_arg_callback}}, _callback_signature_message("validation['some message']", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='dict-validation-first-bad'),
-        pytest.param({'validation': {'some message': _one_arg, 'some another message': _zero_arg_callback}}, _callback_signature_message("validation['some another message']", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='dict-validation-second-bad'),
-        pytest.param({'conflicts': {'another_field': _zero_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback'), id='conflict-no-args'),
-        pytest.param({'conflicts': {'another_field': _one_arg}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_one_arg'), id='conflict-one-required-arg'),
-        pytest.param({'conflicts': {'another_field': _two_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_two_arg_callback'), id='conflict-two-required-args'),
-        pytest.param({'conflicts': {'another_field': _three_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_three_arg_callback'), id='conflict-three-required-args'),
-        pytest.param({'conflicts': {'another_field': _five_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_five_arg_callback'), id='conflict-five-required-args'),
-        pytest.param({'conflicts': {'another_field': _pure_kwargs}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_pure_kwargs'), id='conflict-pure-kwargs'),
-        pytest.param({'conflicts': {'another_field': 123}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '123'), id='conflict-non-callable'),
+        pytest.param({'validation': {'some message': _zero_arg_callback}}, _callback_signature_message("validation item with key 'some message'", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='dict-validation-first-bad'),
+        pytest.param({'validation': {'some message': _one_arg, 'some another message': _zero_arg_callback}}, _callback_signature_message("validation item with key 'some another message'", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='dict-validation-second-bad'),
+        pytest.param({'conflicts': {'another_field': _zero_arg_callback}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback'), id='conflict-no-args'),
+        pytest.param({'conflicts': {'another_field': _one_arg}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '_one_arg'), id='conflict-one-required-arg'),
+        pytest.param({'conflicts': {'another_field': _two_arg_callback}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '_two_arg_callback'), id='conflict-two-required-args'),
+        pytest.param({'conflicts': {'another_field': _three_arg_callback}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '_three_arg_callback'), id='conflict-three-required-args'),
+        pytest.param({'conflicts': {'another_field': _five_arg_callback}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '_five_arg_callback'), id='conflict-five-required-args'),
+        pytest.param({'conflicts': {'another_field': _pure_kwargs}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '_pure_kwargs'), id='conflict-pure-kwargs'),
+        pytest.param({'conflicts': {'another_field': 123}}, _callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, '123'), id='conflict-non-callable'),
         pytest.param({'conversion': _zero_arg_callback}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_zero_arg_callback'), id='conversion-no-args'),
         pytest.param({'conversion': _two_arg_callback}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_two_arg_callback'), id='conversion-two-required-args'),
         pytest.param({'conversion': _three_arg_callback}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_three_arg_callback'), id='conversion-three-required-args'),
@@ -3296,7 +3296,7 @@ def test_callback_signature_error_handles_broken_action_callback_repr():
 
 
 def test_callback_signature_error_handles_broken_conflict_callback_repr():
-    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, "<BadCallableRepr's object>"))):
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message("conflicts item for field 'another_field'", CONFLICT_CALL_DESCRIPTION, "<BadCallableRepr's object>"))):
         Field(123, conflicts={'another_field': BadCallableRepr()})
 
 
@@ -3355,8 +3355,8 @@ def test_callback_signature_error_handles_none_callable_metadata():
 @pytest.mark.parametrize(
     ('field_kwargs', 'expected_message'),
     [
-        ({'validation': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message("validation[<BadKeyRepr's object>]", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')),
-        ({'conflicts': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message("conflicts[<BadKeyRepr's object>]", CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback')),
+        ({'validation': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message("validation item with key <BadKeyRepr's object>", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')),
+        ({'conflicts': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message("conflicts item for field <BadKeyRepr's object>", CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback')),
     ],
 )
 def test_callback_signature_error_does_not_call_dict_key_repr(field_kwargs, expected_message):
@@ -3366,7 +3366,7 @@ def test_callback_signature_error_does_not_call_dict_key_repr(field_kwargs, expe
 
 def test_callback_signature_error_keeps_long_dict_key_repr_from_superrepr():
     expected_key = f'<{"x" * 300}>'
-    expected_message = _callback_signature_message(f'validation[{expected_key}]', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')
+    expected_message = _callback_signature_message(f'validation item with key {expected_key}', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')
 
     with pytest.raises(SignatureMismatchError, match=match(expected_message)):
         Field(123, validation={LongBadCallableRepr(): _zero_arg_callback})
