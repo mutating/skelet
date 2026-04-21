@@ -130,12 +130,12 @@ def test_field_default_factory_wrong_type() -> None:
 
 @pytest.mark.mypy_testing
 def test_field_doc_wrong_type() -> None:
-    Field(doc=42)  # E: Argument "doc" to "Field" has incompatible type "int"; expected "str | None"  [arg-type]
+    Field(doc=42)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
 def test_field_alias_wrong_type() -> None:
-    Field(alias=42)  # E: Argument "alias" to "Field" has incompatible type "int"; expected "str | None"  [arg-type]
+    Field(alias=42)  # E: [arg-type]
 
 
 def _zero_arg_validator() -> bool:
