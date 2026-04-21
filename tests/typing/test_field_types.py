@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import assert_type
@@ -228,11 +228,14 @@ def test_field_with_typed_conversion() -> None:
 
 @pytest.mark.mypy_testing
 def test_field_conversion_type_widening() -> None:
-    def str_to_int(x: Union[str, int]) -> Union[str, int]:
-        return int(x)
+    def make_raw_value() -> Union[str, int]:
+        return '0'
+
+    def normalize(value: Union[str, int]) -> Union[str, int]:
+        return int(value)
 
     class Config(Storage):
-        value: Union[str, int] = Field(cast(Union[str, int], '0'), conversion=str_to_int)
+        value: Union[str, int] = Field(default_factory=make_raw_value, conversion=normalize)
 
     config = Config()
     assert_type(config.value, Union[str, int])

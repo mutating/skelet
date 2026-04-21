@@ -145,7 +145,16 @@ def test_field_conversion_wrong_return_type() -> None:
         return 'bad'
 
     class Config(Storage):
-        value: int = Field(1, conversion=conversion_returns_str)  # E: [assignment]
+        value: int = Field(1, conversion=conversion_returns_str)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_field_conversion_does_not_allow_raw_default_outside_field_type() -> None:
+    def keep_str(value: str) -> str:
+        return value
+
+    class Config(Storage):
+        value: int = Field('1', conversion=keep_str)  # E: [assignment]
 
 
 @pytest.mark.mypy_testing

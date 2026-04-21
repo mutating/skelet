@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TypeVar,
     Union,
     cast,
     get_origin,
@@ -34,7 +33,6 @@ else:  # pragma: no cover
     SequenceWithStrings = Sequence[str]  # type: ignore[misc, assignment]
 
 sentinel = InnerNoneType()
-RawValueType = TypeVar('RawValueType')
 
 
 class FieldDescriptor(Generic[ValueType, StorageType]):
@@ -353,9 +351,9 @@ def Field(
 
 @overload
 def Field(
-    default: Union[RawValueType, InnerNoneType] = sentinel,
+    default: Union[ValueType, InnerNoneType] = sentinel,
     /,
-    default_factory: Optional[Callable[[], RawValueType]] = None,
+    default_factory: Optional[Callable[[], ValueType]] = None,
     doc: Optional[str] = None,
     alias: Optional[str] = None,
     sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
@@ -368,7 +366,7 @@ def Field(
     conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
     reverse_conflicts: bool = True,
     *,
-    conversion: Callable[[RawValueType], ValueType],
+    conversion: Callable[[ValueType], ValueType],
     share_mutex_with: Optional[Sequence[str]] = None,
 ) -> ValueType:
     ...  # pragma: no cover
