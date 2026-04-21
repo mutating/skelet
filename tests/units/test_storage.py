@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Union
 import pytest
 from full_match import match
 from locklib import LockTraceWrapper
-from sigmatch import PossibleCallMatcher, SignatureMismatchError
+from sigmatch import SignatureMismatchError
 
 from skelet import (
     EnvSource,
@@ -3376,23 +3376,6 @@ def test_callback_signature_error_keeps_long_callback_repr_from_superrepr():
     expected_representation = f'<{"x" * 300}>'
     with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, expected_representation))):
         Field(validation=LongBadCallableRepr())
-
-
-def test_callback_signature_error_handles_false_matcher_result(monkeypatch):
-    callback = _one_arg
-    original_match = PossibleCallMatcher.match
-
-    def fake_match(self, checked_callback, raise_exception=False):
-        if checked_callback is callback:
-            return False
-        return original_match(self, checked_callback, raise_exception=raise_exception)
-
-    monkeypatch.setattr(PossibleCallMatcher, 'match', fake_match)
-
-    with pytest.raises(SignatureMismatchError) as exc_info:
-        Field(validation=callback)
-
-    assert str(exc_info.value) == _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_one_arg')
 
 
 def _one_arg_with_default(value, extra=False):

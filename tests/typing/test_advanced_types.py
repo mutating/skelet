@@ -20,14 +20,13 @@ def test_field_with_action() -> None:
     assert_type(config.name, str)
 
 
-def _variadic_action(*args: Any) -> None:
-    pass
-
-
 @pytest.mark.mypy_testing
 def test_field_with_variadic_action() -> None:
+    def variadic_action(*args: Any) -> None:
+        pass
+
     class Config(Storage):
-        name: str = Field('default', action=_variadic_action)
+        name: str = Field('default', action=variadic_action)
 
     config = Config()
     assert_type(config.name, str)
@@ -47,15 +46,14 @@ def test_field_with_conflicts() -> None:
     assert_type(config.b, int)
 
 
-def _variadic_conflict(*args: Any) -> bool:
-    return False
-
-
 @pytest.mark.mypy_testing
 def test_field_with_variadic_conflicts() -> None:
+    def variadic_conflict(*args: Any) -> bool:
+        return False
+
     class Config(Storage):
         a: int = Field(1)
-        b: int = Field(2, conflicts={'a': _variadic_conflict})
+        b: int = Field(2, conflicts={'a': variadic_conflict})
 
     config = Config()
     assert_type(config.a, int)

@@ -9,16 +9,18 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     Union,
     cast,
     get_origin,
     get_type_hints,
+    overload,
 )
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
 from printo import superrepr
-from sigmatch import PossibleCallMatcher, SignatureMismatchError
+from sigmatch import PossibleCallMatcher, SignatureError, SignatureMismatchError
 from simtypes import check
 
 from skelet.sources.abstract import AbstractSource, ExpectedType
@@ -32,6 +34,7 @@ else:  # pragma: no cover
     SequenceWithStrings = Sequence[str]  # type: ignore[misc, assignment]
 
 sentinel = InnerNoneType()
+RawValueType = TypeVar('RawValueType')
 
 
 class FieldDescriptor(Generic[ValueType, StorageType]):
@@ -321,15 +324,9 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
 
     def check_callback_signature(self, callback: Any, matcher: PossibleCallMatcher, parameter_path: str, call_description: str) -> None:
         try:
-            if matcher.match(callback, raise_exception=True):
-                return
-        except Exception as exception:
-            raise self.get_callback_signature_error(callback, parameter_path, call_description) from exception
-
-        raise self.get_callback_signature_error(callback, parameter_path, call_description)
-
-    def get_callback_signature_error(self, callback: Any, parameter_path: str, call_description: str) -> SignatureMismatchError:
-        return SignatureMismatchError(f'Callback parameter {parameter_path} is invalid: skelet calls it {call_description}, but {superrepr(callback)} cannot be called in that form.')
+            matcher.match(callback, raise_exception=True)
+        except (SignatureError, ValueError, RuntimeError) as exception:
+            raise SignatureMismatchError(f'Callback parameter {parameter_path} is invalid: skelet calls it {call_description}, but {superrepr(callback)} cannot be called in that form.') from exception
 
     def get_callback_path_representation(self, parameter_name: str, key: Any) -> str:
         return f'{parameter_name}[{self.get_object_representation(key)}]'
@@ -345,8 +342,9 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         return result
 
 
-def Field(  # noqa: PLR0913, N802
-    default: ValueType = sentinel,  # type: ignore[assignment]
+@overload
+def Field(
+    default: Union[ValueType, InnerNoneType] = sentinel,
     /,
     default_factory: Optional[Callable[[], ValueType]] = None,
     doc: Optional[str] = None,
@@ -360,10 +358,54 @@ def Field(  # noqa: PLR0913, N802
     read_lock: bool = False,
     conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
     reverse_conflicts: bool = True,
-    conversion: Optional[Callable[[ValueType], ValueType]] = None,
+    conversion: None = None,
     share_mutex_with: Optional[Sequence[str]] = None,
 ) -> ValueType:
-    return cast(ValueType, FieldDescriptor(
+    ...  # pragma: no cover
+
+
+@overload
+def Field(
+    default: Union[RawValueType, InnerNoneType] = sentinel,
+    /,
+    default_factory: Optional[Callable[[], RawValueType]] = None,
+    doc: Optional[str] = None,
+    alias: Optional[str] = None,
+    sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
+    read_only: bool = False,
+    validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
+    validate_default: bool = True,
+    secret: bool = False,
+    action: Optional[ChangeAction[ValueType, StorageType]] = None,
+    read_lock: bool = False,
+    conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
+    reverse_conflicts: bool = True,
+    *,
+    conversion: Callable[[RawValueType], ValueType],
+    share_mutex_with: Optional[Sequence[str]] = None,
+) -> ValueType:
+    ...  # pragma: no cover
+
+
+def Field(  # noqa: PLR0913, N802
+    default: Union[Any, InnerNoneType] = sentinel,
+    /,
+    default_factory: Optional[Callable[[], Any]] = None,
+    doc: Optional[str] = None,
+    alias: Optional[str] = None,
+    sources: Optional[List[Union[AbstractSource[ExpectedType], EllipsisType]]] = None,
+    read_only: bool = False,
+    validation: Optional[Union[Dict[str, Callable[[Any], bool]], Callable[[Any], bool]]] = None,
+    validate_default: bool = True,
+    secret: bool = False,
+    action: Optional[ChangeAction[Any, StorageType]] = None,
+    read_lock: bool = False,
+    conflicts: Optional[Dict[str, Callable[[Any, Any, Any, Any], bool]]] = None,
+    reverse_conflicts: bool = True,
+    conversion: Optional[Callable[[Any], Any]] = None,
+    share_mutex_with: Optional[Sequence[str]] = None,
+) -> Any:
+    return FieldDescriptor(
         default,
         default_factory=default_factory,
         doc=doc,
@@ -379,4 +421,4 @@ def Field(  # noqa: PLR0913, N802
         reverse_conflicts=reverse_conflicts,
         conversion=conversion,
         share_mutex_with=share_mutex_with,
-    ))
+    )
