@@ -1,10 +1,12 @@
 import sys
+from functools import partial
+from types import FunctionType
 from typing import Any, List, Optional, Union
 
 import pytest
 from full_match import match
 from locklib import LockTraceWrapper
-from sigmatch import SignatureMismatchError
+from sigmatch import PossibleCallMatcher, SignatureMismatchError
 
 from skelet import (
     EnvSource,
@@ -3092,99 +3094,431 @@ def test_default_value_is_not_set_but_there_are_per_field_sources():
     assert instance.second_field == 5
 
 
-def test_wrong_default_factories():
-    with pytest.raises(SignatureMismatchError, match=match('The default value factory should not expect any arguments.')):
-        class SomeClass(Storage):
-            field: int = Field(default_factory=lambda x: x)
-
-    with pytest.raises(SignatureMismatchError, match=match('The default value factory should not expect any arguments.')):
-        class SomeClass(Storage):
-            field: int = Field(default_factory=lambda x, y: x + y)
+def _required_keyword_only(*, value):
+    return bool(value)
 
 
-def test_wrong_validation_function():
-    with pytest.raises(SignatureMismatchError, match=match('A function that accepts only one positional argument is expected as a field validator.')):
-        class SomeClass(Storage):
-            field: int = Field(123, validation=lambda: False)
-
-    with pytest.raises(SignatureMismatchError, match=match('A function that accepts only one positional argument is expected as a field validator.')):
-        class SomeClass(Storage):
-            field: int = Field(123, validation=lambda x, y: x + y)
-
-    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some message' is incorrect: a function that accepts only one positional argument is expected.")):
-        class SomeClass(Storage):
-            field: int = Field(123, validation={'some message': lambda: False})
-
-    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some message' is incorrect: a function that accepts only one positional argument is expected.")):
-        class SomeClass(Storage):
-            field: int = Field(123, validation={'some message': lambda x, y: x + y})
-
-    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some another message' is incorrect: a function that accepts only one positional argument is expected.")):
-        class SomeClass(Storage):
-            field: int = Field(123, validation={'some message': lambda x: False, 'some another message': lambda: False})  # noqa: ARG005
-
-    with pytest.raises(SignatureMismatchError, match=match("Field validator with message 'some another message' is incorrect: a function that accepts only one positional argument is expected.")):
-        class SomeClass(Storage):
-            field: int = Field(123, validation={'some message': lambda x: False, 'some another message': lambda x, y: x + y})  # noqa: ARG005
+def _pure_kwargs(**kwargs):
+    return bool(kwargs)
 
 
-def test_wrong_conflict_checker():
-    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
-        class SomeClass(Storage):
-            field: int = Field(123, conflicts={'another_field': lambda: False})
-            another_field: int = Field(123)
-
-    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
-        class SomeClass(Storage):
-            field: int = Field(123, conflicts={'another_field': lambda x: False})  # noqa: ARG005
-            another_field: int = Field(123)
-
-    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
-        class SomeClass(Storage):
-            field: int = Field(123, conflicts={'another_field': lambda x, y: False})  # noqa: ARG005
-            another_field: int = Field(123)
-
-    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
-        class SomeClass(Storage):
-            field: int = Field(123, conflicts={'another_field': lambda x, y, z: False})  # noqa: ARG005
-            another_field: int = Field(123)
-
-    with pytest.raises(SignatureMismatchError, match=match("The function for checking conflicts with field 'another_field' is bad; it should take four positional arguments: the old value of this field, the new value of this field, the old value of the conflicting field, and the new value of the conflicting field (for reverse checks).")):
-        class SomeClass(Storage):
-            field: int = Field(123, conflicts={'another_field': lambda x, y, z, a, b: False})  # noqa: ARG005
-            another_field: int = Field(123)
+def _bad_partial_base(value):
+    return bool(value)
 
 
-def test_wrong_converter_function():
-    with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
-        class SomeClass(Storage):
-            field: int = Field(123, conversion=lambda: 456)
-
-    with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
-        class SomeClass(Storage):
-            field: int = Field(123, conversion=lambda x, y: 456)  # noqa: ARG005
-
-    with pytest.raises(SignatureMismatchError, match=match('The value converter must accept only one argument: the value before conversion.')):
-        class SomeClass(Storage):
-            field: int = Field(123, conversion=lambda x, y, z: 456)  # noqa: ARG005
+def _callback_signature_message(parameter_path, call_description, callback_representation):
+    return f'Callback parameter {parameter_path} is invalid: skelet calls it {call_description}, but {callback_representation} cannot be called in that form.'
 
 
-def test_wrong_change_action():
-    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
-        class SomeClass(Storage):
-            field: int = Field(123, action=lambda: None)
+DEFAULT_FACTORY_CALL_DESCRIPTION = 'with no arguments'
+VALIDATION_CALL_DESCRIPTION = 'with one positional argument: value is the field value being validated'
+CONVERSION_CALL_DESCRIPTION = 'with one positional argument: value is the raw field value before conversion'
+ACTION_CALL_DESCRIPTION = 'with three positional arguments: old_value is the previous field value, new_value is the assigned field value, and storage is the Storage instance'
+CONFLICT_CALL_DESCRIPTION = "with four positional arguments: old is this field's previous value, new is this field's candidate value, other_old is the conflicting field's previous value, and other_new is the conflicting field's candidate value"
 
-    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
-        class SomeClass(Storage):
-            field: int = Field(123, action=lambda x: None)  # noqa: ARG005
 
-    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
-        class SomeClass(Storage):
-            field: int = Field(123, action=lambda x, y: None)  # noqa: ARG005
+def _one_arg(value):
+    return bool(value)
 
-    with pytest.raises(SignatureMismatchError, match=match('The callback for each field change must take 3 arguments: the old field value, the new value, and the storage object itself.')):
-        class SomeClass(Storage):
-            field: int = Field(123, action=lambda x, y, z, another: None)  # noqa: ARG005
+
+def _zero_arg_callback():
+    return True
+
+
+def _two_arg_callback(value, extra):
+    return bool(value) or bool(extra)
+
+
+def _three_arg_callback(old_value, new_value, storage):
+    return old_value != new_value and storage is not None
+
+
+def _four_arg_callback(old_value, new_value, other_old, other_new):
+    return old_value != new_value and other_old != other_new
+
+
+def _five_arg_callback(old_value, new_value, other_old, other_new, extra):
+    return old_value != new_value and other_old != other_new and bool(extra)
+
+
+def _bad_named_validator(value, extra):
+    return bool(value) or bool(extra)
+
+
+def _bad_generator_validator(value, extra):
+    yield bool(value) or bool(extra)
+
+
+async def _bad_async_validator(value, extra):
+    return bool(value) or bool(extra)
+
+
+class BadClassValidator:
+    def __init__(self, value, extra):
+        self.value = value
+        self.extra = extra
+
+
+class BadClassNameMeta(type):
+    def __getattribute__(cls, name):
+        if name == '__name__':
+            raise RuntimeError('broken class name')
+        return super().__getattribute__(name)
+
+
+class BadClassNameValidator(metaclass=BadClassNameMeta):
+    def __init__(self, value, extra):
+        self.value = value
+        self.extra = extra
+
+
+class BadCallableRepr:
+    def __call__(self):
+        return True
+
+    def __repr__(self):
+        raise ValueError('broken callback repr')
+
+
+class BadCallableMetadata:
+    def __call__(self):
+        return True
+
+    def __repr__(self):
+        return '<bad callable metadata>'
+
+    def __getattribute__(self, name):
+        if name in {'__name__', '__qualname__'}:
+            raise RuntimeError('broken callback metadata')
+        return super().__getattribute__(name)
+
+
+class CallableNoneMetadata:
+    def __call__(self):
+        return True
+
+    def __repr__(self):
+        return '<callable none metadata>'
+
+    def __getattribute__(self, name):
+        if name in {'__name__', '__qualname__'}:
+            return None
+        return super().__getattribute__(name)
+
+
+class BadKeyRepr:
+    def __repr__(self):
+        raise ValueError('broken key repr')
+
+
+class LongBadCallableRepr:
+    def __call__(self):
+        return True
+
+    def __repr__(self):
+        return f'<{"x" * 300}>'
+
+
+def _class_with_field(**field_kwargs):
+    class SomeClass(Storage):
+        field: int = Field(123, **field_kwargs)
+        another_field: int = Field(456)
+
+    return SomeClass
+
+
+def _field_for_signature_check(**field_kwargs):
+    if 'default_factory' in field_kwargs:
+        return Field(**field_kwargs)
+    return Field(123, **field_kwargs)
+
+
+_overfilled_partial = partial(_bad_partial_base, 1)
+
+
+@pytest.mark.parametrize(
+    ('field_kwargs', 'expected_message'),
+    [
+        pytest.param({'default_factory': _one_arg}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, '_one_arg'), id='default_factory-one-required-arg'),
+        pytest.param({'default_factory': 123}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, '123'), id='default_factory-non-callable'),
+        pytest.param({'default_factory': dict}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, 'dict'), id='default_factory-uninspectable-dict'),
+        pytest.param({'default_factory': set}, _callback_signature_message('default_factory', DEFAULT_FACTORY_CALL_DESCRIPTION, 'set'), id='default_factory-uninspectable-set'),
+        pytest.param({'validation': _zero_arg_callback}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='validation-no-args'),
+        pytest.param({'validation': _two_arg_callback}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_two_arg_callback'), id='validation-two-required-args'),
+        pytest.param({'validation': 123}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '123'), id='validation-non-callable'),
+        pytest.param({'validation': _required_keyword_only}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_required_keyword_only'), id='validation-required-keyword-only'),
+        pytest.param({'validation': _pure_kwargs}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_pure_kwargs'), id='validation-pure-kwargs'),
+        pytest.param({'validation': _overfilled_partial}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, 'functools.partial(_bad_partial_base, 1)'), id='validation-overfilled-partial'),
+        pytest.param({'validation': next}, _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '<built-in function next>'), id='validation-rejected-builtin'),
+        pytest.param({'validation': {'some message': _zero_arg_callback}}, _callback_signature_message("validation['some message']", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='dict-validation-first-bad'),
+        pytest.param({'validation': {'some message': _one_arg, 'some another message': _zero_arg_callback}}, _callback_signature_message("validation['some another message']", VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback'), id='dict-validation-second-bad'),
+        pytest.param({'conflicts': {'another_field': _zero_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback'), id='conflict-no-args'),
+        pytest.param({'conflicts': {'another_field': _one_arg}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_one_arg'), id='conflict-one-required-arg'),
+        pytest.param({'conflicts': {'another_field': _two_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_two_arg_callback'), id='conflict-two-required-args'),
+        pytest.param({'conflicts': {'another_field': _three_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_three_arg_callback'), id='conflict-three-required-args'),
+        pytest.param({'conflicts': {'another_field': _five_arg_callback}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_five_arg_callback'), id='conflict-five-required-args'),
+        pytest.param({'conflicts': {'another_field': _pure_kwargs}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '_pure_kwargs'), id='conflict-pure-kwargs'),
+        pytest.param({'conflicts': {'another_field': 123}}, _callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, '123'), id='conflict-non-callable'),
+        pytest.param({'conversion': _zero_arg_callback}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_zero_arg_callback'), id='conversion-no-args'),
+        pytest.param({'conversion': _two_arg_callback}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_two_arg_callback'), id='conversion-two-required-args'),
+        pytest.param({'conversion': _three_arg_callback}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_three_arg_callback'), id='conversion-three-required-args'),
+        pytest.param({'conversion': _pure_kwargs}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '_pure_kwargs'), id='conversion-pure-kwargs'),
+        pytest.param({'conversion': 123}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, '123'), id='conversion-non-callable'),
+        pytest.param({'conversion': int}, _callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, 'int'), id='conversion-uninspectable-int'),
+        pytest.param({'action': _zero_arg_callback}, _callback_signature_message('action', ACTION_CALL_DESCRIPTION, '_zero_arg_callback'), id='action-no-args'),
+        pytest.param({'action': _one_arg}, _callback_signature_message('action', ACTION_CALL_DESCRIPTION, '_one_arg'), id='action-one-required-arg'),
+        pytest.param({'action': _two_arg_callback}, _callback_signature_message('action', ACTION_CALL_DESCRIPTION, '_two_arg_callback'), id='action-two-required-args'),
+        pytest.param({'action': _four_arg_callback}, _callback_signature_message('action', ACTION_CALL_DESCRIPTION, '_four_arg_callback'), id='action-four-required-args'),
+        pytest.param({'action': _pure_kwargs}, _callback_signature_message('action', ACTION_CALL_DESCRIPTION, '_pure_kwargs'), id='action-pure-kwargs'),
+        pytest.param({'action': 123}, _callback_signature_message('action', ACTION_CALL_DESCRIPTION, '123'), id='action-non-callable'),
+    ],
+)
+def test_wrong_callback_signatures(field_kwargs, expected_message):
+    with pytest.raises(SignatureMismatchError, match=match(expected_message)):
+        _field_for_signature_check(**field_kwargs)
+
+
+def test_callback_signature_error_preserves_sigmatch_exception_cause():
+    with pytest.raises(SignatureMismatchError) as exc_info:
+        Field(validation=_two_arg_callback)
+
+    assert isinstance(exc_info.value.__cause__, SignatureMismatchError)
+    assert str(exc_info.value.__cause__)
+
+
+def test_callback_signature_error_handles_broken_callback_repr():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, "<BadCallableRepr's object>"))):
+        Field(validation=BadCallableRepr())
+
+
+def test_callback_signature_error_handles_broken_action_callback_repr():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('action', ACTION_CALL_DESCRIPTION, "<BadCallableRepr's object>"))):
+        Field(123, action=BadCallableRepr())
+
+
+def test_callback_signature_error_handles_broken_conflict_callback_repr():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message("conflicts['another_field']", CONFLICT_CALL_DESCRIPTION, "<BadCallableRepr's object>"))):
+        Field(123, conflicts={'another_field': BadCallableRepr()})
+
+
+def test_callback_signature_error_handles_broken_conversion_callback_repr():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('conversion', CONVERSION_CALL_DESCRIPTION, "<BadCallableRepr's object>"))):
+        Field(123, conversion=BadCallableRepr())
+
+
+def test_callback_signature_error_uses_named_function_representation():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_bad_named_validator'))):
+        Field(validation=_bad_named_validator)
+
+
+def test_callback_signature_error_uses_generator_function_name():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_bad_generator_validator'))):
+        Field(validation=_bad_generator_validator)
+
+
+def test_callback_signature_error_uses_async_function_name():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_bad_async_validator'))):
+        Field(validation=_bad_async_validator)
+
+
+def test_callback_signature_error_uses_class_name():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, 'BadClassValidator'))):
+        Field(validation=BadClassValidator)
+
+
+def test_callback_signature_error_handles_broken_class_name():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, "<class 'tests.units.test_storage.BadClassNameValidator'>"))):
+        Field(validation=BadClassNameValidator)
+
+
+def test_callback_signature_error_uses_lambda_source():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, 'lambda value, extra: False'))):
+        Field(validation=lambda value, extra: False)  # noqa: ARG005
+
+
+def test_callback_signature_error_uses_lambda_symbol_when_source_is_unavailable():
+    callback = FunctionType((lambda value, extra: False).__code__.replace(co_filename='<unavailable callback source>'), {})  # noqa: ARG005
+
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, 'λ'))):
+        Field(validation=callback)
+
+
+def test_callback_signature_error_handles_broken_callable_metadata():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '<bad callable metadata>'))):
+        Field(validation=BadCallableMetadata())
+
+
+def test_callback_signature_error_handles_none_callable_metadata():
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '<callable none metadata>'))):
+        Field(validation=CallableNoneMetadata())
+
+
+@pytest.mark.parametrize(
+    ('field_kwargs', 'expected_message'),
+    [
+        ({'validation': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message('validation[<unrepresentable BadKeyRepr: ValueError>]', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')),
+        ({'conflicts': {BadKeyRepr(): _zero_arg_callback}}, _callback_signature_message('conflicts[<unrepresentable BadKeyRepr: ValueError>]', CONFLICT_CALL_DESCRIPTION, '_zero_arg_callback')),
+    ],
+)
+def test_callback_signature_error_does_not_call_dict_key_repr(field_kwargs, expected_message):
+    with pytest.raises(SignatureMismatchError, match=match(expected_message)):
+        _field_for_signature_check(**field_kwargs)
+
+
+def test_callback_signature_error_truncates_long_dict_key_repr():
+    expected_key = f'<{"x" * 196}...'
+    expected_message = _callback_signature_message(f'validation[{expected_key}]', VALIDATION_CALL_DESCRIPTION, '_zero_arg_callback')
+
+    with pytest.raises(SignatureMismatchError, match=match(expected_message)):
+        Field(123, validation={LongBadCallableRepr(): _zero_arg_callback})
+
+
+def test_callback_signature_error_keeps_long_callback_repr_from_superrepr():
+    expected_representation = f'<{"x" * 300}>'
+    with pytest.raises(SignatureMismatchError, match=match(_callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, expected_representation))):
+        Field(validation=LongBadCallableRepr())
+
+
+def test_callback_signature_error_handles_false_matcher_result(monkeypatch):
+    callback = _one_arg
+    original_match = PossibleCallMatcher.match
+
+    def fake_match(self, checked_callback, raise_exception=False):
+        if checked_callback is callback:
+            return False
+        return original_match(self, checked_callback, raise_exception=raise_exception)
+
+    monkeypatch.setattr(PossibleCallMatcher, 'match', fake_match)
+
+    with pytest.raises(SignatureMismatchError) as exc_info:
+        Field(validation=callback)
+
+    assert str(exc_info.value) == _callback_signature_message('validation', VALIDATION_CALL_DESCRIPTION, '_one_arg')
+
+
+def _one_arg_with_default(value, extra=False):
+    return bool(value) or extra
+
+
+def _one_arg_with_optional_keyword(value, *, extra=False):
+    return bool(value) or extra
+
+
+def _one_positional_only(value, /):
+    return bool(value)
+
+
+def _three_args(old_value, new_value, storage):
+    return old_value != new_value and storage is not None
+
+
+def _four_args(old_value, new_value, other_old, other_new):
+    return old_value != new_value and other_old != other_new
+
+
+def _variadic(*args):
+    return bool(args)
+
+
+def _variadic_with_kwargs(*args, **kwargs):
+    return bool(args) or bool(kwargs)
+
+
+class OneArgCallable:
+    def __call__(self, value):
+        return bool(value)
+
+
+class CallbackMethods:
+    def one(self, value):
+        return bool(value)
+
+    def three(self, old_value, new_value, storage):
+        return old_value != new_value and storage is not None
+
+    def four(self, old_value, new_value, other_old, other_new):
+        return old_value != new_value and other_old != other_new
+
+
+@pytest.mark.parametrize(
+    'field_kwargs',
+    [
+        pytest.param({'default_factory': lambda: 1}, id='default_factory-no-args'),
+        pytest.param({'default_factory': list}, id='default_factory-accepted-builtin-list'),
+        pytest.param({'validation': _one_arg}, id='validation-one-arg'),
+        pytest.param({'validation': {'some message': _one_arg}}, id='dict-validation-one-arg'),
+        pytest.param({'validation': _one_arg_with_default}, id='validation-extra-default'),
+        pytest.param({'validation': _one_arg_with_optional_keyword}, id='validation-optional-keyword-only'),
+        pytest.param({'validation': _one_positional_only}, id='validation-positional-only'),
+        pytest.param({'validation': _variadic}, id='validation-variadic'),
+        pytest.param({'validation': _variadic_with_kwargs}, id='validation-variadic-with-kwargs'),
+        pytest.param({'validation': OneArgCallable()}, id='validation-callable-instance'),
+        pytest.param({'validation': CallbackMethods().one}, id='validation-bound-method'),
+        pytest.param({'validation': partial(lambda expected, value: value == expected, 123)}, id='validation-partial-one-open-arg'),
+        pytest.param({'validation': len}, id='validation-accepted-builtin-len'),
+        pytest.param({'conversion': _one_arg}, id='conversion-one-arg'),
+        pytest.param({'conversion': list}, id='conversion-accepted-builtin-list'),
+        pytest.param({'action': _three_args}, id='action-three-args'),
+        pytest.param({'action': _variadic}, id='action-variadic'),
+        pytest.param({'action': CallbackMethods().three}, id='action-bound-method'),
+        pytest.param({'conflicts': {'another_field': _four_args}}, id='conflict-four-args'),
+        pytest.param({'conflicts': {'another_field': _variadic}}, id='conflict-variadic'),
+        pytest.param({'conflicts': {'another_field': CallbackMethods().four}}, id='conflict-bound-method'),
+    ],
+)
+def test_valid_callback_signatures_are_accepted(field_kwargs):
+    _field_for_signature_check(**field_kwargs)
+
+
+def test_standalone_field_signature_checks_do_not_call_callback_bodies():
+    def fail(*args, **kwargs):
+        raise AssertionError((args, kwargs))
+
+    Field(1, validation=fail)
+    Field(1, conversion=fail)
+    Field(1, action=fail)
+    Field(1, conflicts={'other': fail})
+
+
+def test_literal_default_validation_and_conversion_timing():
+    events = []
+
+    def validation(value):
+        events.append(('validation', value))
+        return True
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(1, conversion=conversion, validation=validation)
+
+    assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
+    assert SomeClass().field == 2
+
+
+def test_default_factory_validation_and_conversion_timing():
+    events = []
+
+    def factory():
+        events.append(('factory', None))
+        return 1
+
+    def validation(value):
+        events.append(('validation', value))
+        return True
+
+    def conversion(value):
+        events.append(('conversion', value))
+        return value + 1
+
+    class SomeClass(Storage):
+        field: int = Field(default_factory=factory, conversion=conversion, validation=validation)
+
+    assert events == []
+    assert SomeClass().field == 2
+    assert events == [('factory', None), ('validation', 1), ('conversion', 1), ('validation', 2)]
 
 
 @pytest.mark.parametrize('collection_type', [list, tuple])

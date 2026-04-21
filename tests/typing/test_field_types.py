@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import pytest
 from typing_extensions import assert_type
@@ -115,6 +115,19 @@ def test_field_with_default_factory() -> None:
     assert_type(config.items, List[Any])
 
 
+def _make_default_age() -> int:
+    return 18
+
+
+@pytest.mark.mypy_testing
+def test_field_with_typed_default_factory() -> None:
+    class Config(Storage):
+        age: int = Field(default_factory=_make_default_age)
+
+    config = Config()
+    assert_type(config.age, int)
+
+
 @pytest.mark.mypy_testing
 def test_multiple_fields() -> None:
     class Config(Storage):
@@ -141,6 +154,19 @@ def test_field_with_doc() -> None:
 def test_field_with_validation() -> None:
     class Config(Storage):
         age: int = Field(18, validation=lambda x: x >= 0)
+
+    config = Config()
+    assert_type(config.age, int)
+
+
+def _variadic_validator(*args: Any) -> bool:
+    return bool(args)
+
+
+@pytest.mark.mypy_testing
+def test_field_with_variadic_validation() -> None:
+    class Config(Storage):
+        age: int = Field(18, validation=_variadic_validator)
 
     config = Config()
     assert_type(config.age, int)
@@ -191,6 +217,19 @@ def test_field_with_conversion() -> None:
     assert_type(config.value, int)
 
 
+def _double(value: int) -> int:
+    return value * 2
+
+
+@pytest.mark.mypy_testing
+def test_field_with_typed_conversion() -> None:
+    class Config(Storage):
+        value: int = Field(0, conversion=_double)
+
+    config = Config()
+    assert_type(config.value, int)
+
+
 def _str_to_int(x: Any) -> int:
     return int(x)
 
@@ -198,7 +237,7 @@ def _str_to_int(x: Any) -> int:
 @pytest.mark.mypy_testing
 def test_field_conversion_type_widening() -> None:
     class Config(Storage):
-        value: Union[str, int] = Field('0', conversion=_str_to_int)
+        value: Union[str, int] = Field(cast(Union[str, int], '0'), conversion=_str_to_int)
 
     config = Config()
     assert_type(config.value, Union[str, int])
