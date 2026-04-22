@@ -8,7 +8,7 @@ from yaml import Loader, load
 from skelet.sources.abstract import AbstractSource, ExpectedType
 
 
-@repred(  # type: ignore[arg-type]
+@repred(
     positionals=['path'],
     filters={'allow_non_existent_files': lambda x: x != True},
 )

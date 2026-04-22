@@ -8,7 +8,7 @@ from printo import repred
 from skelet.sources.abstract import AbstractSource, ExpectedType
 
 
-@repred(positionals=['path'], filters={'allow_non_existent_files': lambda x: x != True})  # type: ignore[arg-type]
+@repred(positionals=['path'], filters={'allow_non_existent_files': lambda x: x != True})
 class JSONSource(AbstractSource[ExpectedType]):
     def __init__(self, path: Union[str, Path], allow_non_existent_files: bool = True) -> None:
         self.path = path
