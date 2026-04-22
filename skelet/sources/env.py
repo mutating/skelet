@@ -12,7 +12,7 @@ from skelet.sources.abstract import AbstractSource, ExpectedType
 
 sentinel = InnerNoneType()
 
-@repred(filters={'prefix': lambda x: x != '', 'postfix': lambda x: x != '', 'case_sensitive': lambda x: x != False})  # type: ignore[arg-type]
+@repred(filters={'prefix': lambda x: x != '', 'postfix': lambda x: x != '', 'case_sensitive': lambda x: x != False})
 class EnvSource(AbstractSource[ExpectedType]):
     def __init__(self, prefix: Optional[str] = '', postfix: Optional[str] = '', case_sensitive: bool = False) -> None:
         if platform.system() == 'Windows' and case_sensitive:
