@@ -88,7 +88,8 @@ def test_field_validation_wrong_arity() -> None:
     def zero_arg_validator() -> bool:
         return True
 
-    Field(validation=zero_arg_validator)  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, validation=zero_arg_validator)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
@@ -96,23 +97,26 @@ def test_field_dict_validation_wrong_arity() -> None:
     def zero_arg_validator() -> bool:
         return True
 
-    Field(validation={'message': zero_arg_validator})  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, validation={'message': zero_arg_validator})  # E: [dict-item]
 
 
 @pytest.mark.mypy_testing
 def test_field_validation_non_bool_return() -> None:
-    def one_arg_validator_returns_int(_value: Any) -> int:
+    def one_arg_validator_returns_int(_value: int) -> int:
         return 1
 
-    Field(validation=one_arg_validator_returns_int)  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, validation=one_arg_validator_returns_int)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
 def test_field_dict_validation_non_bool_return() -> None:
-    def one_arg_validator_returns_int(_value: Any) -> int:
+    def one_arg_validator_returns_int(_value: int) -> int:
         return 1
 
-    Field(validation={'message': one_arg_validator_returns_int})  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, validation={'message': one_arg_validator_returns_int})  # E: [dict-item]
 
 
 @pytest.mark.mypy_testing
@@ -120,7 +124,8 @@ def test_field_action_wrong_arity() -> None:
     def one_arg_action(x: Any) -> Any:
         return x
 
-    Field(action=one_arg_action)  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, action=one_arg_action)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
@@ -128,7 +133,8 @@ def test_field_action_wrong_storage_type() -> None:
     def wrong_storage_action(_old_value: Any, _new_value: Any, _storage: int) -> None:
         pass
 
-    Field(action=wrong_storage_action)  # E: [type-var]
+    class Config(Storage):
+        value: int = Field(1, action=wrong_storage_action)  # E: [type-var]
 
 
 @pytest.mark.mypy_testing
@@ -136,7 +142,8 @@ def test_field_conversion_wrong_arity() -> None:
     def zero_arg_conversion() -> int:
         return 42
 
-    Field(conversion=zero_arg_conversion)  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, conversion=zero_arg_conversion)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
@@ -162,15 +169,19 @@ def test_field_conflicts_wrong_arity() -> None:
     def two_arg_conflict(x: Any, y: Any) -> bool:
         return True
 
-    Field(conflicts={'a': two_arg_conflict})  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, conflicts={'other': two_arg_conflict})  # E: [dict-item]
+        other: int = Field(1)
 
 
 @pytest.mark.mypy_testing
 def test_field_conflicts_non_bool_return() -> None:
-    def four_arg_conflict_returns_int(_old: Any, _new: Any, _other_old: Any, _other_new: Any) -> int:
+    def four_arg_conflict_returns_int(_old: int, _new: int, _other_old: Any, _other_new: Any) -> int:
         return 1
 
-    Field(conflicts={'a': four_arg_conflict_returns_int})  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(1, conflicts={'other': four_arg_conflict_returns_int})  # E: [dict-item]
+        other: int = Field(1)
 
 
 @pytest.mark.mypy_testing
@@ -178,7 +189,8 @@ def test_field_default_factory_wrong_arity() -> None:
     def default_factory_with_arg(_value: Any) -> int:
         return 1
 
-    Field(default_factory=default_factory_with_arg)  # E: [arg-type]
+    class Config(Storage):
+        value: int = Field(default_factory=default_factory_with_arg)  # E: [arg-type]
 
 
 @pytest.mark.mypy_testing
@@ -227,4 +239,5 @@ def test_wrong_assignment_dict_to_list() -> None:
 
 @pytest.mark.mypy_testing
 def test_field_share_mutex_with_wrong_element_type() -> None:
-    Field(share_mutex_with=[42])  # E: List item 0 has incompatible type "int"; expected "str"  [list-item]
+    class Config(Storage):
+        value: int = Field(1, share_mutex_with=[42])  # E: List item 0 has incompatible type "int"; expected "str"  [list-item]
