@@ -9,6 +9,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
     get_origin,
 )
 
@@ -91,7 +92,7 @@ class Storage:
                 continue
 
             if name not in cls.__dict__:
-                field = Field()
+                field = cast(FieldDescriptor[Any, Any], Field())
                 setattr(cls, name, field)
                 field.__set_name__(cls, name)
                 continue
@@ -100,7 +101,7 @@ class Storage:
             if isinstance(value, FieldDescriptor) or not cls._can_be_shorthand_default(value):
                 continue
 
-            field = Field(value)
+            field = cast(FieldDescriptor[Any, Any], Field(value))
             setattr(cls, name, field)
             field.__set_name__(cls, name)
 
@@ -110,7 +111,7 @@ class Storage:
             if isinstance(value, FieldDescriptor) or not cls._can_be_shorthand_default(value):
                 continue
 
-            field = Field(value)
+            field = cast(FieldDescriptor[Any, Any], Field(value))
             setattr(cls, name, field)
             field.__set_name__(cls, name)
 
