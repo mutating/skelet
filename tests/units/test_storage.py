@@ -1,7 +1,7 @@
 import sys
 from functools import partial
 from types import FunctionType
-from typing import Any, List, Optional, Union
+from typing import Any, ClassVar, List, Optional, Union
 
 import pytest
 from full_match import match
@@ -19,6 +19,7 @@ from skelet import (
     Storage,
     TOMLSource,
     YAMLSource,
+    asdict,
 )
 
 
@@ -3979,3 +3980,449 @@ def test_instance_sources_change_action_not_called(collection_type):
 
     assert instance.field == 42
     assert calls == []
+
+
+def test_annotation_only_field_is_created_without_default():
+    class SomeClass(Storage):
+        field: str
+
+    assert SomeClass.__field_names__ == ['field']
+    assert isinstance(SomeClass.field, FieldDescriptor)
+
+    with pytest.raises(ValueError, match=match('The value for the "field" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass()
+
+    assert SomeClass(field='abc').field == 'abc'
+
+
+def test_annotation_only_field_is_in_repr_after_value_is_provided():
+    class SomeClass(Storage):
+        field: str
+
+    assert repr(SomeClass(field='abc')) == "SomeClass(field='abc')"
+
+
+def test_annotated_default_is_field_default():
+    class SomeClass(Storage):
+        field: str = 'abc'
+
+    instance = SomeClass()
+
+    assert isinstance(SomeClass.field, FieldDescriptor)
+    assert instance.field == 'abc'
+    assert repr(instance) == "SomeClass(field='abc')"
+
+
+def test_untyped_default_is_field_without_runtime_type_check():
+    class SomeClass(Storage):
+        field = 'abc'
+
+    instance = SomeClass()
+
+    assert isinstance(SomeClass.field, FieldDescriptor)
+    assert instance.field == 'abc'
+
+    instance.field = 123
+
+    assert instance.field == 123
+
+
+def test_optional_none_default_is_not_required():
+    class SomeClass(Storage):
+        field: Optional[str] = None
+
+    assert SomeClass().field is None
+    assert SomeClass(field='abc').field == 'abc'
+
+    with pytest.raises(TypeError, match=match('The value 123 (int) of the "field" field does not match the type Union.')):
+        SomeClass(field=123)
+
+
+def test_non_optional_none_default_fails_on_class_creation():
+    with pytest.raises(TypeError, match=match('The value None (NoneType) of the "field" field does not match the type str.')):
+        class SomeClass(Storage):
+            field: str = None
+
+
+def test_untyped_none_default_is_allowed():
+    class SomeClass(Storage):
+        field = None
+
+    instance = SomeClass()
+
+    assert instance.field is None
+
+    instance.field = 123
+
+    assert instance.field == 123
+
+
+def test_any_annotation_disables_runtime_type_check():
+    class SomeClass(Storage):
+        field: Any = 'abc'
+
+    instance = SomeClass()
+
+    instance.field = 123
+
+    assert instance.field == 123
+
+
+def test_annotated_default_wrong_type_fails_on_class_creation():
+    with pytest.raises(TypeError, match=match('The value \'abc\' (str) of the "field" field does not match the type int.')):
+        class SomeClass(Storage):
+            field: int = 'abc'
+
+
+def test_annotation_only_init_value_is_type_checked():
+    class SomeClass(Storage):
+        field: int
+
+    assert SomeClass(field=1).field == 1
+
+    with pytest.raises(TypeError, match=match('The value \'x\' (str) of the "field" field does not match the type int.')):
+        SomeClass(field='x')
+
+
+def test_annotated_default_assignment_is_type_checked():
+    class SomeClass(Storage):
+        field: int = 1
+
+    instance = SomeClass()
+    instance.field = 2
+
+    with pytest.raises(TypeError, match=match('The value \'x\' (str) of the "field" field does not match the type int.')):
+        instance.field = 'x'
+
+    assert instance.field == 2
+
+
+def test_missing_required_shorthand_fields_report_first_missing():
+    class SomeClass(Storage):
+        first: int
+        second: int
+
+    with pytest.raises(ValueError, match=match('The value for the "first" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass()
+
+    with pytest.raises(ValueError, match=match('The value for the "second" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass(first=1)
+
+    instance = SomeClass(first=1, second=2)
+
+    assert instance.first == 1
+    assert instance.second == 2
+
+
+def test_positional_args_are_not_allowed_for_shorthand_fields():
+    class SomeClass(Storage):
+        field: str
+
+    with pytest.raises(TypeError):
+        SomeClass('abc')
+
+
+def test_unknown_kwarg_is_rejected_for_shorthand_class():
+    class SomeClass(Storage):
+        field: int = 1
+
+    with pytest.raises(KeyError, match=r'The "unknown" field is not defined.'):
+        SomeClass(unknown=1)
+
+
+def test_delete_shorthand_field_is_forbidden():
+    class SomeClass(Storage):
+        field: int = 1
+
+    with pytest.raises(AttributeError, match=match('You can\'t delete the "field" field value.')):
+        del SomeClass().field
+
+
+def test_sources_fill_annotation_only_field():
+    class SomeClass(Storage, sources=[MemorySource({'field': 5})]):
+        field: int
+
+    assert SomeClass().field == 5
+
+
+def test_sources_override_shorthand_default():
+    class SomeClass(Storage, sources=[MemorySource({'field': 5})]):
+        field: int = 1
+
+    assert SomeClass().field == 5
+
+
+def test_init_kwargs_override_sources_and_default():
+    class SomeClass(Storage, sources=[MemorySource({'field': 5})]):
+        field: int = 1
+
+    assert SomeClass(field=10).field == 10
+
+
+def test_asdict_includes_all_shorthand_fields():
+    class SomeClass(Storage):
+        required: int
+        defaulted: str = 'x'
+        untyped = True
+
+    assert asdict(SomeClass(required=1)) == {'required': 1, 'defaulted': 'x', 'untyped': True}
+
+
+def test_private_annotation_only_field_raises():
+    with pytest.raises(ValueError, match=match('Field name "_field" cannot start with an underscore.')):
+        class SomeClass(Storage):
+            _field: int
+
+
+def test_private_annotated_default_field_raises():
+    with pytest.raises(ValueError, match=match('Field name "_field" cannot start with an underscore.')):
+        class SomeClass(Storage):
+            _field: int = 1
+
+
+def test_private_untyped_attribute_is_ignored():
+    class SomeClass(Storage):
+        _field = 1
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass._field == 1
+    assert repr(SomeClass()) == 'SomeClass()'
+
+
+def test_public_classvar_is_ignored():
+    class SomeClass(Storage):
+        field: ClassVar[str] = 'abc'
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass.field == 'abc'
+    assert repr(SomeClass()) == 'SomeClass()'
+
+
+def test_private_classvar_is_ignored_without_error():
+    class SomeClass(Storage):
+        _field: ClassVar[str] = 'abc'
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass._field == 'abc'
+
+
+def test_classvar_with_explicit_field_raises():
+    with pytest.raises(TypeError, match=match('ClassVar field "field" cannot be defined as a skelet field.')):
+        class SomeClass(Storage):
+            field: ClassVar[int] = Field(1)
+
+
+def test_methods_and_descriptors_are_not_fields():
+    class SomeClass(Storage):
+        def method(self):
+            return 'method'
+
+        @property
+        def prop(self):
+            return 'prop'
+
+        @staticmethod
+        def static():
+            return 'static'
+
+        @classmethod
+        def class_method(cls):
+            return cls.__name__
+
+    instance = SomeClass()
+
+    assert SomeClass.__field_names__ == ()
+    assert instance.method() == 'method'
+    assert instance.prop == 'prop'
+    assert SomeClass.static() == 'static'
+    assert instance.class_method() == 'SomeClass'
+
+
+def test_annotated_descriptor_is_not_overwritten():
+    class SomeDescriptor:
+        def __get__(self, instance, owner):
+            return 'descriptor'
+
+    class SomeClass(Storage):
+        field: int = SomeDescriptor()
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass().field == 'descriptor'
+
+
+def test_nested_class_is_not_field():
+    class SomeClass(Storage):
+        class Nested:
+            value = 1
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass.Nested.value == 1
+
+
+def test_explicit_field_still_works_unchanged():
+    class SomeClass(Storage):
+        field: int = Field(1, validation=lambda value: value > 0)
+
+    instance = SomeClass()
+
+    assert instance.field == 1
+
+    with pytest.raises(ValueError, match=match('The value -1 (int) of the "field" field does not match the validation.')):
+        instance.field = -1
+
+
+def test_mixed_explicit_and_shorthand_fields_work_together():
+    class SomeClass(Storage):
+        a: int
+        b: int = Field(2)
+        c: str = 'x'
+        d = 4
+
+    instance = SomeClass(a=1)
+
+    assert SomeClass.__field_names__ == ['a', 'b', 'c', 'd']
+    assert instance.a == 1
+    assert instance.b == 2
+    assert instance.c == 'x'
+    assert instance.d == 4
+
+    with pytest.raises(TypeError):
+        instance.a = 'bad'
+    with pytest.raises(TypeError):
+        instance.c = 5
+
+    instance.d = 'not checked'
+
+    assert instance.d == 'not checked'
+
+
+def test_stable_field_order_without_metaclass():
+    class Parent(Storage):
+        parent_default: int = 1
+        parent_untyped = 2
+
+    class Child(Parent):
+        child_required: int
+        child_default: int = 3
+        child_explicit: int = Field(4)
+        child_untyped = 5
+
+    assert Child.__field_names__ == ['parent_default', 'parent_untyped', 'child_required', 'child_default', 'child_explicit', 'child_untyped']
+
+
+def test_child_overrides_parent_shorthand_with_shorthand():
+    class Parent(Storage):
+        field: int = 1
+
+    class Child(Parent):
+        field: int = 2
+
+    assert Parent.__field_names__ == ['field']
+    assert Child.__field_names__ == ['field']
+    assert Parent().field == 1
+    assert Child().field == 2
+
+
+def test_child_overrides_parent_explicit_with_shorthand():
+    class Parent(Storage):
+        field: int = Field(1, validation=lambda value: value > 0)
+
+    class Child(Parent):
+        field: int = -1
+
+    assert Parent().field == 1
+    assert Child().field == -1
+
+
+def test_child_overrides_parent_shorthand_with_explicit():
+    class Parent(Storage):
+        field: int = 1
+
+    class Child(Parent):
+        field: int = Field(-1, validation=lambda value: value < 0)
+
+    assert Parent().field == 1
+    assert Child().field == -1
+
+    with pytest.raises(ValueError, match=match('The value 1 (int) of the "field" field does not match the validation.')):
+        Child(field=1)
+
+
+def test_multiple_inheritance_matches_existing_field_behavior():
+    class ExplicitLeft(Storage):
+        left = Field(1)
+
+    class ExplicitRight(Storage):
+        right = Field(2)
+
+    class ExplicitChild(ExplicitLeft, ExplicitRight):
+        child = Field(3)
+
+    class ShorthandLeft(Storage):
+        left = 1
+
+    class ShorthandRight(Storage):
+        right = 2
+
+    class ShorthandChild(ShorthandLeft, ShorthandRight):
+        child = 3
+
+    assert ShorthandChild.__field_names__ == ExplicitChild.__field_names__
+    assert asdict(ShorthandChild()) == asdict(ExplicitChild())
+
+
+def test_non_storage_mixin_before_storage_is_ignored_for_explicit_fields():
+    class Mixin:
+        mixin_value = 'mixin'
+
+    class SomeClass(Mixin, Storage):
+        field = Field(1)
+
+    assert SomeClass.__field_names__ == ['field']
+    assert SomeClass.mixin_value == 'mixin'
+    assert SomeClass().field == 1
+
+
+def test_non_storage_mixin_before_storage_is_ignored_for_shorthand_fields():
+    class Mixin:
+        mixin_value = 'mixin'
+
+    class SomeClass(Mixin, Storage):
+        field = 1
+
+    assert SomeClass.__field_names__ == ['field']
+    assert SomeClass.mixin_value == 'mixin'
+    assert SomeClass().field == 1
+
+
+def test_conflicts_can_reference_shorthand_field():
+    class SomeClass(Storage):
+        a: int = Field(1, conflicts={'b': lambda old, new, other_old, other_new: new == other_old})  # noqa: ARG005
+        b: int = 2
+
+    instance = SomeClass()
+
+    with pytest.raises(ValueError, match=match('The new 2 (int) value of the "a" field conflicts with the 2 (int) value of the "b" field.')):
+        instance.a = 2
+
+
+def test_share_mutex_can_reference_shorthand_field():
+    class SomeClass(Storage):
+        a: int = Field(1, share_mutex_with=['b'])
+        b: int = 2
+
+    instance = SomeClass()
+
+    assert instance.__locks__['a'] is instance.__locks__['b']
+
+
+def test_shorthand_default_matches_field_default_for_mutables():
+    class SomeClass(Storage):
+        items: list = []  # noqa: RUF012
+
+    first = SomeClass()
+    second = SomeClass()
+
+    first.items.append(1)
+
+    assert second.items == [1]
