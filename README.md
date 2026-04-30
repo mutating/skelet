@@ -53,13 +53,13 @@ pip install skelet
 
 You can also quickly try this package and others without installing them via [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define fields using `Field`:
+Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define fields as class attributes. Use `Field` only when a field needs additional settings:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
 
 class ManDescription(Storage):
-    name: str = Field()
+    name: str
     age: NonNegativeInt = Field(validation={'You must be 18 or older to feel important': lambda x: x >= 18})
 ```
 
@@ -91,7 +91,14 @@ That is already useful, but the rest of this guide covers more advanced features
 
 A default value is used when no other source provides one. It will be used until you override it.
 
-You do not have to define a default value, but in this case you need to pass the value when creating the storage object. If you do set a default value, there are two ways to do this:
+You do not have to define a default value, but in this case you need to pass the value when creating the storage object:
+
+```python
+class UnremarkableSettingsStorage(Storage):
+    required_field: str
+```
+
+If you do set a default value, there are two ways to do this:
 
 - **Ordinary**.
 - **Lazy** (deferred).
@@ -100,10 +107,17 @@ You can already see examples of ordinary default values above. Here's another on
 
 ```python
 class UnremarkableSettingsStorage(Storage):
-    ordinary_field: str = Field('I am the ordinary default value!')
+    ordinary_field: str = 'I am the ordinary default value!'
 
 print(UnremarkableSettingsStorage())
 #> UnremarkableSettingsStorage(ordinary_field='I am the ordinary default value!')
+```
+
+`None` is also an ordinary default value when you write it explicitly:
+
+```python
+class UnremarkableSettingsStorage(Storage):
+    optional_field: str | None = None
 ```
 
 You can also pass a factory function via `default_factory` — it will be called each time a new object is created:
@@ -118,6 +132,22 @@ print(UnremarkableSettingsStorage())
 
 Use this option when the default value is mutable, such as a `list` or `dict`. A new object will be created for this field every time a new storage object is created, so the same mutable object will not be shared between instances.
 
+If you write a public class attribute without a type hint, it is still a field, but runtime type checking is disabled for it:
+
+```python
+class UnremarkableSettingsStorage(Storage):
+    ordinary_field = 'I am a field without runtime type checking.'
+```
+
+Use `ClassVar` for public class-level constants that should not become fields:
+
+```python
+from typing import ClassVar
+
+class UnremarkableSettingsStorage(Storage):
+    tool_name: ClassVar[str] = 'my-tool'
+```
+
 
 ## Documenting fields
 
@@ -125,7 +155,7 @@ You might be tempted to document a field with a comment:
 
 ```python
 class TheSecretFormula(Storage):
-    the_secret_ingredient: str = Field()  # frogs' paws or something else nasty
+    the_secret_ingredient: str  # frogs' paws or something else nasty
     ...
 ```
 
@@ -177,8 +207,8 @@ Type hints are optional. When specified, all values are checked against the hint
 
 ```python
 class HumanMeasurements(Storage):
-    number_of_legs: int = Field(2)
-    number_of_hands: int = Field(2)
+    number_of_legs: int = 2
+    number_of_hands: int = 2
 
 measurements = HumanMeasurements()
 
@@ -194,6 +224,8 @@ The library supports only a runtime-checkable subset of typing constructs. Check
 - `list`, `dict`, and `tuple` can be specified with the types they contain. By default, the contents of these containers are not checked, but this is done in relation to external [sources](#sources).
 
 The library deliberately does not attempt to implement full runtime type checking. If you need more powerful verification, it's better to rely on static tools like `mypy`.
+
+Runtime type checking depends on type hints. For example, `field = 'abc'` may be treated as a `str` by static type checkers, but at runtime `skelet` will accept any value for this field because no type hint was provided.
 
 The library also supports two additional types that allow you to narrow down the behavior of the basic int type:
 
@@ -265,7 +297,7 @@ Sometimes, individual field values are [acceptable](#validation-of-values), but 
 
 ```python
 class Dossier(Storage):
-    name: str = Field()
+    name: str
     is_jew: bool | None = Field(None, doc='Jews do not eat pork')
     eats_pork: bool | None = Field(
         None,
@@ -416,7 +448,7 @@ Read more about the available types of sources below.
 from skelet import EnvSource
 
 class MyClass(Storage, sources=[EnvSource()]):
-    some_field = Field('some_value')
+    some_field: str = 'some_value'
 ```
 
 By default, environment variables are searched for by key in the form of an attribute name, but the case is ignored. If you want to make the search case-sensitive, pass `True` as the `case_sensitive` parameter:
@@ -521,9 +553,9 @@ class MyClass(Storage, sources=[
         positional_arguments=['third_field'],
     ),
 ]):
-    first_field: str = Field('default')
-    second_field: str = Field('default')
-    third_field: str = Field('default')
+    first_field: str = 'default'
+    second_field: str = 'default'
+    third_field: str = 'default'
 ```
 
 Now we can run our script, and the arguments will automatically populate the corresponding fields of our class:
@@ -662,7 +694,7 @@ You can use `asdict()` to convert a storage object to a standard Python dictiona
 from skelet import asdict
 
 class FlyingConfig(Storage):
-    some_field: int = Field(42)
+    some_field: int = 42
 
 data = asdict(FlyingConfig())
 print(data)
