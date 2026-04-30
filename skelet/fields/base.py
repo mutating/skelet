@@ -205,7 +205,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
                     continue
                 if parent is Storage:
                     break
-                for field_name in cast(Storage, parent).__field_names__:
+                for field_name in getattr(parent, '__field_names__', ()):
                     if field_name not in known_names:
                         known_names.add(field_name)
                         owner.__field_names__.append(field_name)
