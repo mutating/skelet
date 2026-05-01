@@ -21,6 +21,14 @@ from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 from skelet.types import InstanceSourceItem
 
+try:  # pragma: no cover
+    from annotationlib import get_annotations  # type: ignore[import-not-found]
+except ImportError:  # pragma: no cover
+    try:
+        from inspect import get_annotations
+    except ImportError:
+        get_annotations = lambda cls: cls.__dict__.get('__annotations__', {})  # noqa: E731
+
 sentinel = InnerNoneType()
 
 class Storage:
@@ -74,7 +82,7 @@ class Storage:
     def _prepare_shorthand_fields(cls) -> None:
         from skelet.fields.base import Field, FieldDescriptor  # noqa: PLC0415
 
-        annotations = cls.__dict__.get('__annotations__', {})
+        annotations = dict(get_annotations(cls))
         classvar_names = {name for name, annotation in annotations.items() if cls._is_classvar_annotation(annotation)}
 
         for name in classvar_names:
