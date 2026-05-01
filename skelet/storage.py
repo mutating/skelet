@@ -130,11 +130,7 @@ class Storage:
                 data_field_names.append(name)
 
         result = cls._parent_field_names()
-        known_names = set(result)
-        for name in [*annotated_field_names, *data_field_names]:
-            if name not in known_names:
-                known_names.add(name)
-                result.append(name)
+        result.extend([*annotated_field_names, *data_field_names])
 
         cls.__field_names__ = result if result else ()
 
