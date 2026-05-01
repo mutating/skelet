@@ -4395,6 +4395,10 @@ def test_non_storage_mixin_before_storage_is_ignored_for_shorthand_fields():
     assert SomeClass().field == 1
 
 
+def test_storage_parent_field_names_are_empty():
+    assert Storage._parent_field_names() == []
+
+
 def test_conflicts_can_reference_shorthand_field():
     class SomeClass(Storage):
         a: int = Field(1, conflicts={'b': lambda old, new, other_old, other_new: new == other_old})  # noqa: ARG005
