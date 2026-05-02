@@ -25,7 +25,7 @@ try:  # pragma: no cover
     from annotationlib import get_annotations  # type: ignore[import-not-found]
 except ImportError:  # pragma: no cover
     try:
-        from inspect import get_annotations
+        from inspect import get_annotations  # type: ignore[attr-defined, unused-ignore]
     except ImportError:
         get_annotations = lambda cls: cls.__dict__.get('__annotations__', {})  # noqa: E731
 
