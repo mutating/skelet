@@ -1,7 +1,9 @@
+import inspect
 from collections import defaultdict
 from threading import Lock
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Dict,
     List,
@@ -22,12 +24,18 @@ from skelet.sources.collection import SourcesCollection
 from skelet.types import InstanceSourceItem
 
 try:  # pragma: no cover
-    from annotationlib import get_annotations  # type: ignore[import-not-found]
+    import annotationlib  # type: ignore[import-not-found, unused-ignore]
 except ImportError:  # pragma: no cover
-    try:
-        from inspect import get_annotations  # type: ignore[attr-defined, unused-ignore]
-    except ImportError:
-        get_annotations = lambda cls: cls.__dict__.get('__annotations__', {})  # noqa: E731
+    annotationlib = None
+
+_GetAnnotations = Callable[..., Dict[str, Any]]
+_get_annotations = cast(Optional[_GetAnnotations], getattr(annotationlib, 'get_annotations', None) or getattr(inspect, 'get_annotations', None))
+
+
+def get_annotations(obj: Any, *, globals: Any = None, locals: Any = None, eval_str: bool = False) -> Dict[str, Any]:  # noqa: A002  # pragma: no cover
+    if _get_annotations is not None:
+        return dict(_get_annotations(obj, globals=globals, locals=locals, eval_str=eval_str))
+    return dict(getattr(obj, '__dict__', {}).get('__annotations__', {}))
 
 sentinel = InnerNoneType()
 
