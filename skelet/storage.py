@@ -24,14 +24,15 @@ from skelet.sources.collection import SourcesCollection
 from skelet.types import InstanceSourceItem
 
 _GetAnnotations = Callable[..., Dict[str, Any]]
+_get_annotations: Optional[_GetAnnotations]
 try:  # pragma: no cover
     from annotationlib import (  # type: ignore[import-not-found, unused-ignore]
-        get_annotations as _get_annotations_raw,
+        get_annotations as _annotationlib_get_annotations,
     )
 except ImportError:  # pragma: no cover
-    _get_annotations_raw = getattr(inspect, 'get_annotations', None)
-
-_get_annotations = cast(Optional[_GetAnnotations], _get_annotations_raw)
+    _get_annotations = cast(Optional[_GetAnnotations], getattr(inspect, 'get_annotations', None))
+else:  # pragma: no cover
+    _get_annotations = cast(_GetAnnotations, _annotationlib_get_annotations)
 
 
 def get_annotations(obj: Any, *, globals: Any = None, locals: Any = None, eval_str: bool = False) -> Dict[str, Any]:  # noqa: A002  # pragma: no cover
