@@ -4034,7 +4034,7 @@ def test_optional_none_default_is_not_required():
     assert SomeClass().field is None
     assert SomeClass(field='abc').field == 'abc'
 
-    with pytest.raises(TypeError, match=match('The value 123 (int) of the "field" field does not match the type Union.')):
+    with pytest.raises(TypeError, match=r'^The value 123 \(int\) of the "field" field does not match the type (typing\.)?Union\.$'):
         SomeClass(field=123)
 
 
