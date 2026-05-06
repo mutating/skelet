@@ -10,6 +10,7 @@ from sigmatch import SignatureMismatchError
 
 from skelet import (
     EnvSource,
+    F,
     Field,
     FieldDescriptor,
     JSONSource,
@@ -28,6 +29,16 @@ def test_try_to_get_descriptor_object_from_class_inherited_from_storage():
         field = Field(42)
 
     assert isinstance(SomeClass.field, FieldDescriptor)
+
+
+def test_field_short_alias():
+    class SomeClass(Storage):
+        field: str = F()
+
+    some_object = SomeClass(field='value')
+
+    assert some_object.field == 'value'
+    assert F is Field
 
 
 def test_try_to_use_field_outside_storage():
