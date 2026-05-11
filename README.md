@@ -23,6 +23,7 @@ Keep all your project's settings in one place. Ensure type safety, thread safety
 ## Table of contents
 
 - [**Quick start**](#quick-start)
+- [**Classes and their fields**](#classes-and-their-fields)
 - [**Default values**](#default-values)
 - [**Documenting fields**](#documenting-fields)
 - [**Secret fields**](#secret-fields)
@@ -53,7 +54,7 @@ pip install skelet
 
 You can also quickly try this package and others without installing them via [instld](https://github.com/pomponchik/instld).
 
-Now let's create our first storage class. To do this, we need to inherit from the base class `Storage` and define fields as class attributes. Use `Field` only when a field needs additional settings:
+Now let's create our first [storage class](#classes-and-their-fields). To do this, we need to inherit from the base class `Storage` and define fields as class attributes. Use `Field` only when a field needs additional settings:
 
 ```python
 from skelet import Storage, Field, NonNegativeInt
@@ -85,6 +86,21 @@ description.name = 3.14
 ```
 
 That is already useful, but the rest of this guide covers more advanced features.
+
+
+## Classes and their fields
+
+The main "player" in `skelet` is the `Storage` class, which you must inherit from while adding attributes. Attributes can have values or be value-less, and they can include type hints or be without them:
+
+```python
+class SoccerTeam(Storage):
+    name: str
+    number_of_players: int = 11
+```
+
+> ⚠️ An attribute name cannot begin with an underscore (_). Doing so will result in an exception being raised.
+
+
 
 
 ## Default values
