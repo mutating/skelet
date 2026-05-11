@@ -182,14 +182,14 @@ Some field values should not appear in logs or string representations. Secret fi
 
 ```python
 class TopStateSecrets(Storage):
-    who_killed_kennedy: str = Field('aliens', validation=lambda x: x != 'russians', secret=True)
-    red_buttons_password: str = Field('1234', secret=True)
+    who_killed_kennedy: str = Field('aliens', validation=lambda x: x != 'russians', hide=True)
+    red_buttons_password: str = Field('1234', hide=True)
 
 print(TopStateSecrets())
 #> TopStateSecrets(who_killed_kennedy=***, red_buttons_password=***)
 ```
 
-If you mark a field with the `secret` flag, as in this example, its contents will be hidden in string representations and exception messages:
+If you mark a field with the `hide` flag, as in this example, its contents will be hidden in string representations and exception messages:
 
 ```python
 secrets = TopStateSecrets()
@@ -198,7 +198,7 @@ secrets.who_killed_kennedy = 'russians'
 #> ValueError: The value *** (str) of the "who_killed_kennedy" field does not match the validation.
 ```
 
-In all other respects, "secret" fields behave the same as regular ones, you can read values and write new ones.
+In all other respects, hidden fields behave the same as regular ones, you can read values and write new ones.
 
 
 ## Type checking

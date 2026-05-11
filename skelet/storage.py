@@ -253,11 +253,11 @@ class Storage:
 
     def __repr__(self) -> str:
         fields_content = {}
-        secrets = {}
+        hidden_placeholders = {}
 
         for field_name in self.__field_names__:
             fields_content[field_name] = getattr(self, field_name)
-            if getattr(type(self), field_name).secret:
-                secrets[field_name] = '***'
+            if getattr(type(self), field_name).hide:
+                hidden_placeholders[field_name] = '***'
 
-        return describe_call(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
+        return describe_call(type(self).__name__, (), fields_content, placeholders=hidden_placeholders)  # type: ignore[arg-type]

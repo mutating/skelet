@@ -188,9 +188,9 @@ def test_field_with_dict_validation() -> None:
 
 
 @pytest.mark.mypy_testing
-def test_field_secret() -> None:
+def test_field_hide() -> None:
     class Config(Storage):
-        password: str = Field('secret', secret=True)
+        password: str = Field('secret', hide=True)
 
     config = Config()
     assert_type(config.password, str)
