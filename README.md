@@ -100,7 +100,21 @@ class SoccerTeam(Storage):
 
 > ⚠️ An attribute name cannot begin with an underscore (_). Doing so will result in an exception being raised.
 
+In most cases, a simple field form, as shown in the last example, will suffice. However, sometimes you need to further configure a field to give it "capabilities" such as automatic [validation of individual values](#validation-of-values) or checking adjacent fields for conflicts. To do this, instead of a "raw" value, you need to assign a value of type `Field`:
 
+```python
+...
+    number_of_players: int = Field(11, validation={'A team must have at least 7 players.': lambda x: x > 6, 'A team cannot have more than 11 players.': lambda x: x < 12})
+```
+
+`Field` also has a shortened alias, `F`:
+
+```python
+from skelet import F
+
+...
+    number_of_players: int = F(...)
+```
 
 
 ## Default values
