@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import pytest
 from typing_extensions import assert_type
 
-from skelet import Field, Storage
+from skelet import F, Field, Storage
 
 
 @pytest.mark.mypy_testing
@@ -25,6 +25,15 @@ def test_field_scalar_defaults() -> None:
 def test_field_no_default() -> None:
     class Config(Storage):
         name: str = Field()
+
+    config = Config(name='hello')
+    assert_type(config.name, str)
+
+
+@pytest.mark.mypy_testing
+def test_field_short_alias() -> None:
+    class Config(Storage):
+        name: str = F()
 
     config = Config(name='hello')
     assert_type(config.name, str)
@@ -179,9 +188,9 @@ def test_field_with_dict_validation() -> None:
 
 
 @pytest.mark.mypy_testing
-def test_field_secret() -> None:
+def test_field_hide() -> None:
     class Config(Storage):
-        password: str = Field('secret', secret=True)
+        password: str = Field('secret', hide=True)
 
     config = Config()
     assert_type(config.password, str)

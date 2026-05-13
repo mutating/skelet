@@ -12,3 +12,5 @@ from skelet.sources.toml import TOMLSource as TOMLSource
 from skelet.sources.yaml import YAMLSource as YAMLSource
 from skelet.storage import Storage as Storage
 from skelet.sources.getter_for_libraries import for_tool as for_tool
+
+F = Field

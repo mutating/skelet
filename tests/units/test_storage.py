@@ -1,7 +1,7 @@
 import sys
 from functools import partial
 from types import FunctionType
-from typing import Any, List, Optional, Union
+from typing import Any, ClassVar, List, Optional, Union
 
 import pytest
 from full_match import match
@@ -10,6 +10,7 @@ from sigmatch import SignatureMismatchError
 
 from skelet import (
     EnvSource,
+    F,
     Field,
     FieldDescriptor,
     JSONSource,
@@ -19,6 +20,7 @@ from skelet import (
     Storage,
     TOMLSource,
     YAMLSource,
+    asdict,
 )
 
 
@@ -27,6 +29,16 @@ def test_try_to_get_descriptor_object_from_class_inherited_from_storage():
         field = Field(42)
 
     assert isinstance(SomeClass.field, FieldDescriptor)
+
+
+def test_field_short_alias():
+    class SomeClass(Storage):
+        field: str = F()
+
+    some_object = SomeClass(field='value')
+
+    assert some_object.field == 'value'
+    assert F is Field
 
 
 def test_try_to_use_field_outside_storage():
@@ -412,15 +424,15 @@ def test_simple_type_check_failed_when_set_bool_if_expected_int():
 
 
 @pytest.mark.parametrize(
-    ('int_value', 'float_value', 'secret'),
+    ('int_value', 'float_value', 'hide'),
     [
         ('***', '***', True),
         ("'15'", '15.0', False),
     ],
 )
-def test_simple_type_check_failed_when_set(int_value, float_value, secret):
+def test_simple_type_check_failed_when_set(int_value, float_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, secret=secret)
+        field: int = Field(15, hide=hide)
 
     instance = SomeClass()
 
@@ -435,15 +447,15 @@ def test_simple_type_check_failed_when_set(int_value, float_value, secret):
 
 
 @pytest.mark.parametrize(
-    ('int_value', 'float_value', 'secret'),
+    ('int_value', 'float_value', 'hide'),
     [
         ('***', '***', True),
         ("'15'", "15.0", False),
     ],
 )
-def test_simple_type_check_failed_when_set_with_doc(int_value, float_value, secret):
+def test_simple_type_check_failed_when_set_with_doc(int_value, float_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, doc='some doc', secret=secret)
+        field: int = Field(15, doc='some doc', hide=hide)
 
     instance = SomeClass()
 
@@ -470,29 +482,29 @@ def test_simple_type_check_not_failed_when_set():
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ("'15'", False),
     ],
 )
-def test_type_check_when_define_default_failed(wrong_value, secret):
+def test_type_check_when_define_default_failed(wrong_value, hide):
     with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field does not match the type int.')):
         class SomeClass(Storage):
-            field: int = Field('15', secret=secret)
+            field: int = Field('15', hide=hide)
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ("'15'", False),
     ],
 )
-def test_type_check_when_define_default_failed_with_doc(wrong_value, secret):
+def test_type_check_when_define_default_failed_with_doc(wrong_value, hide):
     with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field (some doc) does not match the type int.')):
         class SomeClass(Storage):
-            field: int = Field('15', doc='some doc', secret=secret)
+            field: int = Field('15', doc='some doc', hide=hide)
 
 
 def test_type_check_when_define_default_not_failed():
@@ -504,30 +516,30 @@ def test_type_check_when_define_default_not_failed():
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ("'kek'", False),
     ],
 )
-def test_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value, secret):
+def test_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, secret=secret)
+        field: int = Field(15, hide=hide)
 
     with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field does not match the type int.')):
         SomeClass(field='kek')
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ("'kek'", False),
     ],
 )
-def test_type_check_when_redefine_defaults_initing_new_object_failed_with_doc(wrong_value, secret):
+def test_type_check_when_redefine_defaults_initing_new_object_failed_with_doc(wrong_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, doc='some doc', secret=secret)
+        field: int = Field(15, doc='some doc', hide=hide)
 
     with pytest.raises(TypeError, match=match(f'The value {wrong_value} (str) of the "field" field (some doc) does not match the type int.')):
         SomeClass(field='kek')
@@ -549,15 +561,15 @@ def test_type_check_when_redefine_defaults_initing_new_object_not_failed():
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ("'kek'", False),
     ],
 )
-def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value, secret):
+def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed(wrong_value, hide):
     class SomeClass(Storage):
-        field: Optional[int] = Field(15, secret=secret)
+        field: Optional[int] = Field(15, hide=hide)
 
     if sys.version_info < (3, 10):
         type_representation = 'typing.Union'
@@ -592,15 +604,15 @@ def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_f
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ("'kek'", False),
     ],
 )
-def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed_with_doc(wrong_value, secret):
+def test_more_examples_of_type_check_when_redefine_defaults_initing_new_object_failed_with_doc(wrong_value, hide):
     class SomeClass(Storage):
-        field: Optional[int] = Field(15, doc='some doc', secret=secret)
+        field: Optional[int] = Field(15, doc='some doc', hide=hide)
 
     if sys.version_info < (3, 10):
         type_representation = 'typing.Union'
@@ -624,15 +636,15 @@ def test_try_to_use_underscored_name_for_field_with_doc():
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ('-1', False),
     ],
 )
-def test_validation_function_failed_when_set(wrong_value, secret):
+def test_validation_function_failed_when_set(wrong_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, validation=lambda value: value > 0, secret=secret)
+        field: int = Field(15, validation=lambda value: value > 0, hide=hide)
 
     instance = SomeClass()
 
@@ -641,15 +653,15 @@ def test_validation_function_failed_when_set(wrong_value, secret):
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ('-1', False),
     ],
 )
-def test_validation_function_failed_when_set_with_doc(wrong_value, secret):
+def test_validation_function_failed_when_set_with_doc(wrong_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, validation=lambda value: value > 0, doc='some doc', secret=secret)
+        field: int = Field(15, validation=lambda value: value > 0, doc='some doc', hide=hide)
 
     instance = SomeClass()
 
@@ -697,30 +709,30 @@ def test_validation_functions_dict_not_failed_when_set():
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ('-1', False),
     ],
 )
-def test_validation_function_failed_when_init(wrong_value, secret):
+def test_validation_function_failed_when_init(wrong_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, validation=lambda value: value > 0, secret=secret)
+        field: int = Field(15, validation=lambda value: value > 0, hide=hide)
 
     with pytest.raises(ValueError, match=match(f'The value {wrong_value} (int) of the "field" field does not match the validation.')):
         SomeClass(field=-1)
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ('-1', False),
     ],
 )
-def test_validation_function_failed_when_init_with_doc(wrong_value, secret):
+def test_validation_function_failed_when_init_with_doc(wrong_value, hide):
     class SomeClass(Storage):
-        field: int = Field(15, validation=lambda value: value > 0, doc='some doc', secret=secret)
+        field: int = Field(15, validation=lambda value: value > 0, doc='some doc', hide=hide)
 
     with pytest.raises(ValueError, match=match(f'The value {wrong_value} (int) of the "field" field (some doc) does not match the validation.')):
         SomeClass(field=-1)
@@ -778,29 +790,29 @@ def test_validation_functions_dict_not_failed_when_init(addictional_parameters):
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ('-15', False),
     ],
 )
-def test_validation_function_failed_when_default(wrong_value, secret):
+def test_validation_function_failed_when_default(wrong_value, hide):
     with pytest.raises(ValueError, match=match(f'The value {wrong_value} (int) of the "field" field does not match the validation.')):
         class SomeClass(Storage):
-            field: int = Field(-15, validation=lambda value: value > 0, secret=secret)
+            field: int = Field(-15, validation=lambda value: value > 0, hide=hide)
 
 
 @pytest.mark.parametrize(
-    ('wrong_value', 'secret'),
+    ('wrong_value', 'hide'),
     [
         ('***', True),
         ('-15', False),
     ],
 )
-def test_validation_function_failed_when_default_with_doc(wrong_value, secret):
+def test_validation_function_failed_when_default_with_doc(wrong_value, hide):
     with pytest.raises(ValueError, match=match(f'The value {wrong_value} (int) of the "field" field (some doc) does not match the validation.')):
         class SomeClass(Storage):
-            field: int = Field(-15, validation=lambda value: value > 0, doc='some doc', secret=secret)
+            field: int = Field(-15, validation=lambda value: value > 0, doc='some doc', hide=hide)
 
 
 def test_validation_functions_dict_failed_when_default():
@@ -882,9 +894,9 @@ def test_type_check_when_set_is_before_validation():
     SomeClass.field.check_type_hints = old_check_type_hints
 
 
-def test_repr_for_secret_fields():
+def test_repr_for_hidden_fields():
     class SomeClass(Storage):
-        field: int = Field(10, secret=True)
+        field: int = Field(10, hide=True)
         second_field: int = Field(100)
 
     instance = SomeClass()
@@ -897,9 +909,9 @@ def test_repr_for_secret_fields():
     assert repr(instance) == 'SomeClass(field=***, second_field=200)'
 
 
-def test_change_value_of_secret_field():
+def test_change_value_of_hidden_field():
     class SomeClass(Storage):
-        field: int = Field(10, secret=True)
+        field: int = Field(10, hide=True)
 
     instance = SomeClass()
 
@@ -910,9 +922,9 @@ def test_change_value_of_secret_field():
     assert instance.field == 20
 
 
-def test_change_value_of_secret_field_in_init():
+def test_change_value_of_hidden_field_in_init():
     class SomeClass(Storage):
-        field: int = Field(10, secret=True)
+        field: int = Field(10, hide=True)
 
     instance = SomeClass(field=20)
 
@@ -923,7 +935,7 @@ def test_set_action_for_set():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
+        field: int = Field(10, hide=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -942,7 +954,7 @@ def test_action_doesnt_work_when_new_value_is_same():
     flags = []
 
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
+        field: int = Field(10, hide=True, action=lambda old, new, storage: flags.append(True))  # noqa: ARG005
 
     instance = SomeClass()
 
@@ -962,7 +974,7 @@ def test_action_doesnt_work_when_new_value_is_same():
 )
 def test_read_lock_on(addictional_arguments):
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, **addictional_arguments)
+        field: int = Field(10, hide=True, **addictional_arguments)
 
     instance = SomeClass()
 
@@ -993,7 +1005,7 @@ def test_read_lock_on(addictional_arguments):
 
 def test_read_lock_off():
     class SomeClass(Storage):
-        field: int = Field(10, secret=True, read_lock=False)
+        field: int = Field(10, hide=True, read_lock=False)
 
     instance = SomeClass()
 
@@ -1134,7 +1146,7 @@ def test_non_existing_conflicting_field_name(addictional_arguments):
 # Check: exceptions messages for both types of fields on the both sides, direct and reverse
 
 @pytest.mark.parametrize(
-    'main_field_is_secret',
+    'main_field_is_hidden',
     [
         True,
         False,
@@ -1147,11 +1159,11 @@ def test_non_existing_conflicting_field_name(addictional_arguments):
         {'doc': 'some doc'},
     ],
 )
-def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
+def test_basic_conflicting_fields(addictional_arguments, main_field_is_hidden):
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret)  # noqa: ARG005
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), hide=main_field_is_hidden)  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
-        secret_other_field: int = Field(20, secret=True, doc=addictional_arguments.get('doc'))
+        secret_other_field: int = Field(20, hide=True, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass()
 
@@ -1162,11 +1174,11 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
     assert instance.field == 15
 
     if 'doc' in addictional_arguments:
-        if main_field_is_secret:
+        if main_field_is_hidden:
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
         else:
             exception_message = 'The new 21 (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
-    elif main_field_is_secret:
+    elif main_field_is_hidden:
         exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
     else:
         exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
@@ -1177,11 +1189,11 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
     assert instance.field == 15
 
     if 'doc' in addictional_arguments:
-        if main_field_is_secret:
+        if main_field_is_hidden:
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
         else:
             exception_message = 'The new -1 (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
-    elif main_field_is_secret:
+    elif main_field_is_hidden:
         exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
     else:
         exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
@@ -1193,7 +1205,7 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
 
 
 @pytest.mark.parametrize(
-    'main_field_is_secret',
+    'main_field_is_hidden',
     [
         True,
         False,
@@ -1206,11 +1218,11 @@ def test_basic_conflicting_fields(addictional_arguments, main_field_is_secret):
         {'doc': 'some doc'},
     ],
 )
-def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_is_secret):
+def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_is_hidden):
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret)  # noqa: ARG005
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new < 0}, doc=addictional_arguments.get('doc'), hide=main_field_is_hidden)  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
-        secret_other_field: int = Field(20, secret=True, doc=addictional_arguments.get('doc'))
+        secret_other_field: int = Field(20, hide=True, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass()
 
@@ -1221,11 +1233,11 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
     assert instance.field == 15
 
     if 'doc' in addictional_arguments:
-        if main_field_is_secret:
+        if main_field_is_hidden:
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
         else:
             exception_message = 'The new 21 (int) value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
-    elif main_field_is_secret:
+    elif main_field_is_hidden:
         exception_message = 'The new *** (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
     else:
         exception_message = 'The new 21 (int) value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
@@ -1234,11 +1246,11 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
         SomeClass(field=21)
 
     if 'doc' in addictional_arguments:
-        if main_field_is_secret:
+        if main_field_is_hidden:
             exception_message = 'The new *** (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
         else:
             exception_message = 'The new -1 (int) value of the "field" field (some doc) conflicts with the *** (int) value of the "secret_other_field" field (some doc).'
-    elif main_field_is_secret:
+    elif main_field_is_hidden:
         exception_message = 'The new *** (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
     else:
         exception_message = 'The new -1 (int) value of the "field" field conflicts with the *** (int) value of the "secret_other_field" field.'
@@ -1248,7 +1260,7 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
 
 
 @pytest.mark.parametrize(
-    'are_fields_secret',
+    'are_fields_hidden',
     [
         True,
         False,
@@ -1261,25 +1273,25 @@ def test_conflicting_fields_when_set_in_init(addictional_arguments, main_field_i
         {'doc': 'some doc'},
     ],
 )
-def test_conflicting_fields_when_defaults_are_conflicting(addictional_arguments, are_fields_secret):
+def test_conflicting_fields_when_defaults_are_conflicting(addictional_arguments, are_fields_hidden):
     if 'doc' in addictional_arguments:
-        if are_fields_secret:
+        if are_fields_hidden:
             exception_message = 'The *** (int) default value of the "field" field (some doc) conflicts with the *** (int) value of the "other_field" field (some doc).'
         else:
             exception_message = 'The 21 (int) default value of the "field" field (some doc) conflicts with the 20 (int) value of the "other_field" field (some doc).'
-    elif are_fields_secret:
+    elif are_fields_hidden:
         exception_message = 'The *** (int) default value of the "field" field conflicts with the *** (int) value of the "other_field" field.'
     else:
         exception_message = 'The 21 (int) default value of the "field" field conflicts with the 20 (int) value of the "other_field" field.'
 
     with pytest.raises(ValueError, match=match(exception_message)):
         class SomeClass(Storage):
-            field: int = Field(21, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new > 30}, doc=addictional_arguments.get('doc'), secret=are_fields_secret)  # noqa: ARG005
-            other_field: int = Field(20, doc=addictional_arguments.get('doc'), secret=are_fields_secret)
+            field: int = Field(21, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_old, 'secret_other_field': lambda old, new, other_old, other_new: new > 30}, doc=addictional_arguments.get('doc'), hide=are_fields_hidden)  # noqa: ARG005
+            other_field: int = Field(20, doc=addictional_arguments.get('doc'), hide=are_fields_hidden)
 
 
 @pytest.mark.parametrize(
-    'are_fields_secret',
+    'are_fields_hidden',
     [
         True,
         False,
@@ -1294,12 +1306,12 @@ def test_conflicting_fields_when_defaults_are_conflicting(addictional_arguments,
         {'reverse_conflicts': True, 'doc': 'some doc'},
     ],
 )
-def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are_fields_secret):
+def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are_fields_hidden):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments)  # noqa: ARG005
-        other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, hide=are_fields_hidden, **addictional_arguments)  # noqa: ARG005
+        other_field: int = Field(20, doc=doc, hide=are_fields_hidden, **addictional_arguments)
 
     instance = SomeClass()
 
@@ -1311,11 +1323,11 @@ def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are
     assert instance.other_field == 30
 
     if doc is not None:
-        if are_fields_secret:
+        if are_fields_hidden:
             exception_message = 'The new *** (int) value of the "other_field" field (some doc) conflicts with the *** (int) value of the "field" field (some doc).'
         else:
             exception_message = 'The new 5 (int) value of the "other_field" field (some doc) conflicts with the 10 (int) value of the "field" field (some doc).'
-    elif are_fields_secret:
+    elif are_fields_hidden:
         exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
     else:
         exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
@@ -1328,7 +1340,7 @@ def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are
 
 
 @pytest.mark.parametrize(
-    'are_fields_secret',
+    'are_fields_hidden',
     [
         True,
         False,
@@ -1343,12 +1355,12 @@ def test_basic_conflicting_fields_reverse_when_its_on(addictional_arguments, are
         {'reverse_conflicts': True, 'doc': 'some doc'},
     ],
 )
-def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional_arguments, are_fields_secret):
+def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional_arguments, are_fields_hidden):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments)  # noqa: ARG005
-        other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, hide=are_fields_hidden, **addictional_arguments)  # noqa: ARG005
+        other_field: int = Field(20, doc=doc, hide=are_fields_hidden, **addictional_arguments)
 
     instance = SomeClass()
 
@@ -1360,11 +1372,11 @@ def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional
     assert instance.other_field == 30
 
     if doc is not None:
-        if are_fields_secret:
+        if are_fields_hidden:
             exception_message = 'The new *** (int) value of the "other_field" field (some doc) conflicts with the *** (int) value of the "field" field (some doc).'
         else:
             exception_message = 'The new 5 (int) value of the "other_field" field (some doc) conflicts with the 10 (int) value of the "field" field (some doc).'
-    elif are_fields_secret:
+    elif are_fields_hidden:
         exception_message = 'The new *** (int) value of the "other_field" field conflicts with the *** (int) value of the "field" field.'
     else:
         exception_message = 'The new 5 (int) value of the "other_field" field conflicts with the 10 (int) value of the "field" field.'
@@ -1382,7 +1394,7 @@ def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional
     ],
 )
 @pytest.mark.parametrize(
-    'are_fields_secret',
+    'are_fields_hidden',
     [
         True,
         False,
@@ -1395,12 +1407,12 @@ def test_conflicting_fields_reverse_when_its_on_and_when_set_in_init(addictional
         {'doc': 'some doc'},
     ],
 )
-def test_basic_conflicting_fields_reverse_when_its_off(addictional_arguments, are_fields_secret, reverse_check_parameters):
+def test_basic_conflicting_fields_reverse_when_its_off(addictional_arguments, are_fields_hidden, reverse_check_parameters):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
-        other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, hide=are_fields_hidden, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
+        other_field: int = Field(20, doc=doc, hide=are_fields_hidden, **addictional_arguments)
 
     instance = SomeClass()
 
@@ -1426,7 +1438,7 @@ def test_basic_conflicting_fields_reverse_when_its_off(addictional_arguments, ar
     ],
 )
 @pytest.mark.parametrize(
-    'are_fields_secret',
+    'are_fields_hidden',
     [
         True,
         False,
@@ -1439,12 +1451,12 @@ def test_basic_conflicting_fields_reverse_when_its_off(addictional_arguments, ar
         {'doc': 'some doc'},
     ],
 )
-def test_conflicting_fields_reverse_when_its_off_and_when_set_in_init(addictional_arguments, are_fields_secret, reverse_check_parameters):
+def test_conflicting_fields_reverse_when_its_off_and_when_set_in_init(addictional_arguments, are_fields_hidden, reverse_check_parameters):
     doc = addictional_arguments.pop('doc', None)
 
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, secret=are_fields_secret, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
-        other_field: int = Field(20, doc=doc, secret=are_fields_secret, **addictional_arguments)
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: new > other_new}, doc=doc, hide=are_fields_hidden, **addictional_arguments, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
+        other_field: int = Field(20, doc=doc, hide=are_fields_hidden, **addictional_arguments)
 
     instance = SomeClass()
 
@@ -1462,7 +1474,7 @@ def test_conflicting_fields_reverse_when_its_off_and_when_set_in_init(addictiona
 
 
 @pytest.mark.parametrize(
-    'main_field_is_secret',
+    'main_field_is_hidden',
     [
         True,
         False,
@@ -1483,9 +1495,9 @@ def test_conflicting_fields_reverse_when_its_off_and_when_set_in_init(addictiona
         {'class': False, 'field': False},
     ],
 )
-def test_conflicting_fields_when_reverse_check_off(addictional_arguments, main_field_is_secret, reverse_check_parameters):
+def test_conflicting_fields_when_reverse_check_off(addictional_arguments, main_field_is_hidden, reverse_check_parameters):
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), hide=main_field_is_hidden, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass()
@@ -1498,7 +1510,7 @@ def test_conflicting_fields_when_reverse_check_off(addictional_arguments, main_f
 
 
 @pytest.mark.parametrize(
-    'main_field_is_secret',
+    'main_field_is_hidden',
     [
         True,
         False,
@@ -1519,9 +1531,9 @@ def test_conflicting_fields_when_reverse_check_off(addictional_arguments, main_f
         {'class': False, 'field': False},
     ],
 )
-def test_conflicting_fields_in_init_when_reverse_check_off(addictional_arguments, main_field_is_secret, reverse_check_parameters):
+def test_conflicting_fields_in_init_when_reverse_check_off(addictional_arguments, main_field_is_hidden, reverse_check_parameters):
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), hide=main_field_is_hidden, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(20, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass(other_field=5)
@@ -1531,7 +1543,7 @@ def test_conflicting_fields_in_init_when_reverse_check_off(addictional_arguments
 
 
 @pytest.mark.parametrize(
-    'main_field_is_secret',
+    'main_field_is_hidden',
     [
         True,
         False,
@@ -1552,9 +1564,9 @@ def test_conflicting_fields_in_init_when_reverse_check_off(addictional_arguments
         {'class': False, 'field': False},
     ],
 )
-def test_conflicting_fields_in_defaults_when_reverse_check_off(addictional_arguments, main_field_is_secret, reverse_check_parameters):
+def test_conflicting_fields_in_defaults_when_reverse_check_off(addictional_arguments, main_field_is_hidden, reverse_check_parameters):
     class SomeClass(Storage, reverse_conflicts=reverse_check_parameters['class']):
-        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), secret=main_field_is_secret, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
+        field: int = Field(10, conflicts={'other_field': lambda old, new, other_old, other_new: old > other_new}, doc=addictional_arguments.get('doc'), hide=main_field_is_hidden, reverse_conflicts=reverse_check_parameters['field'])  # noqa: ARG005
         other_field: int = Field(5, doc=addictional_arguments.get('doc'))
 
     instance = SomeClass()
@@ -2629,27 +2641,27 @@ def test_init_kwargs_validate_before_and_after_conversion_when_validate_default_
     assert events == [('validation', 1), ('conversion', 1), ('validation', 2)]
 
 
-def test_secret_value_is_masked_for_all_conversion_failure_phases():
+def test_hidden_value_is_masked_for_all_conversion_failure_phases():
     class RawTypeFailure(Storage):
-        field: int = Field(1, conversion=lambda value: value, validation=lambda _value: True, secret=True)
+        field: int = Field(1, conversion=lambda value: value, validation=lambda _value: True, hide=True)
 
     with pytest.raises(TypeError, match=match('The value *** (str) of the "field" field does not match the type int.')):
         RawTypeFailure().field = 'bad'
 
     class RawValidationFailure(Storage):
-        field: int = Field(1, conversion=abs, validation=lambda value: value >= 0, secret=True)
+        field: int = Field(1, conversion=abs, validation=lambda value: value >= 0, hide=True)
 
     with pytest.raises(ValueError, match=match('The value *** (int) of the "field" field does not match the validation.')):
         RawValidationFailure().field = -1
 
     class ConvertedTypeFailure(Storage):
-        field: int = Field(0, conversion=lambda value: 'bad' if value == 1 else value, validation=lambda _value: True, secret=True)
+        field: int = Field(0, conversion=lambda value: 'bad' if value == 1 else value, validation=lambda _value: True, hide=True)
 
     with pytest.raises(TypeError, match=match('The value *** (str) of the "field" field does not match the type int.')):
         ConvertedTypeFailure().field = 1
 
     class ConvertedValidationFailure(Storage):
-        field: int = Field(0, conversion=lambda value: -value, validation=lambda value: value >= 0, secret=True)
+        field: int = Field(0, conversion=lambda value: -value, validation=lambda value: value >= 0, hide=True)
 
     with pytest.raises(ValueError, match=match('The value *** (int) of the "field" field does not match the validation.')):
         ConvertedValidationFailure().field = 1
@@ -3855,7 +3867,7 @@ def test_instance_sources_no_default_but_key_present(collection_type):
 def test_instance_sources_repr(collection_type):
     class SomeClass(Storage):
         field: int = Field(100)
-        secret_field: int = Field(200, secret=True)
+        secret_field: int = Field(200, hide=True)
 
     instance = SomeClass(_sources=collection_type([MemorySource({'field': 42, 'secret_field': 99})]))
 
@@ -3979,3 +3991,453 @@ def test_instance_sources_change_action_not_called(collection_type):
 
     assert instance.field == 42
     assert calls == []
+
+
+def test_annotation_only_field_is_created_without_default():
+    class SomeClass(Storage):
+        field: str
+
+    assert SomeClass.__field_names__ == ['field']
+    assert isinstance(SomeClass.field, FieldDescriptor)
+
+    with pytest.raises(ValueError, match=match('The value for the "field" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass()
+
+    assert SomeClass(field='abc').field == 'abc'
+
+
+def test_annotation_only_field_is_in_repr_after_value_is_provided():
+    class SomeClass(Storage):
+        field: str
+
+    assert repr(SomeClass(field='abc')) == "SomeClass(field='abc')"
+
+
+def test_annotated_default_is_field_default():
+    class SomeClass(Storage):
+        field: str = 'abc'
+
+    instance = SomeClass()
+
+    assert isinstance(SomeClass.field, FieldDescriptor)
+    assert instance.field == 'abc'
+    assert repr(instance) == "SomeClass(field='abc')"
+
+
+def test_untyped_default_is_field_without_runtime_type_check():
+    class SomeClass(Storage):
+        field = 'abc'
+
+    instance = SomeClass()
+
+    assert isinstance(SomeClass.field, FieldDescriptor)
+    assert instance.field == 'abc'
+
+    instance.field = 123
+
+    assert instance.field == 123
+
+
+def test_optional_none_default_is_not_required():
+    class SomeClass(Storage):
+        field: Optional[str] = None
+
+    assert SomeClass().field is None
+    assert SomeClass(field='abc').field == 'abc'
+
+    with pytest.raises(TypeError, match=r'^The value 123 \(int\) of the "field" field does not match the type (typing\.)?Union\.$'):
+        SomeClass(field=123)
+
+
+def test_non_optional_none_default_fails_on_class_creation():
+    with pytest.raises(TypeError, match=match('The value None (NoneType) of the "field" field does not match the type str.')):
+        class SomeClass(Storage):
+            field: str = None
+
+
+def test_untyped_none_default_is_allowed():
+    class SomeClass(Storage):
+        field = None
+
+    instance = SomeClass()
+
+    assert instance.field is None
+
+    instance.field = 123
+
+    assert instance.field == 123
+
+
+def test_any_annotation_disables_runtime_type_check():
+    class SomeClass(Storage):
+        field: Any = 'abc'
+
+    instance = SomeClass()
+
+    instance.field = 123
+
+    assert instance.field == 123
+
+
+def test_annotated_default_wrong_type_fails_on_class_creation():
+    with pytest.raises(TypeError, match=match('The value \'abc\' (str) of the "field" field does not match the type int.')):
+        class SomeClass(Storage):
+            field: int = 'abc'
+
+
+def test_annotation_only_init_value_is_type_checked():
+    class SomeClass(Storage):
+        field: int
+
+    assert SomeClass(field=1).field == 1
+
+    with pytest.raises(TypeError, match=match('The value \'x\' (str) of the "field" field does not match the type int.')):
+        SomeClass(field='x')
+
+
+def test_annotated_default_assignment_is_type_checked():
+    class SomeClass(Storage):
+        field: int = 1
+
+    instance = SomeClass()
+    instance.field = 2
+
+    with pytest.raises(TypeError, match=match('The value \'x\' (str) of the "field" field does not match the type int.')):
+        instance.field = 'x'
+
+    assert instance.field == 2
+
+
+def test_missing_required_shorthand_fields_report_first_missing():
+    class SomeClass(Storage):
+        first: int
+        second: int
+
+    with pytest.raises(ValueError, match=match('The value for the "first" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass()
+
+    with pytest.raises(ValueError, match=match('The value for the "second" field is undefined. Set the default value, or specify the value when creating the instance.')):
+        SomeClass(first=1)
+
+    instance = SomeClass(first=1, second=2)
+
+    assert instance.first == 1
+    assert instance.second == 2
+
+
+def test_positional_args_are_not_allowed_for_shorthand_fields():
+    class SomeClass(Storage):
+        field: str
+
+    with pytest.raises(TypeError):
+        SomeClass('abc')
+
+
+def test_unknown_kwarg_is_rejected_for_shorthand_class():
+    class SomeClass(Storage):
+        field: int = 1
+
+    with pytest.raises(KeyError, match=r'The "unknown" field is not defined.'):
+        SomeClass(unknown=1)
+
+
+def test_delete_shorthand_field_is_forbidden():
+    class SomeClass(Storage):
+        field: int = 1
+
+    with pytest.raises(AttributeError, match=match('You can\'t delete the "field" field value.')):
+        del SomeClass().field
+
+
+def test_sources_fill_annotation_only_field():
+    class SomeClass(Storage, sources=[MemorySource({'field': 5})]):
+        field: int
+
+    assert SomeClass().field == 5
+
+
+def test_sources_override_shorthand_default():
+    class SomeClass(Storage, sources=[MemorySource({'field': 5})]):
+        field: int = 1
+
+    assert SomeClass().field == 5
+
+
+def test_init_kwargs_override_sources_and_default():
+    class SomeClass(Storage, sources=[MemorySource({'field': 5})]):
+        field: int = 1
+
+    assert SomeClass(field=10).field == 10
+
+
+def test_asdict_includes_all_shorthand_fields():
+    class SomeClass(Storage):
+        required: int
+        defaulted: str = 'x'
+        untyped = True
+
+    assert asdict(SomeClass(required=1)) == {'required': 1, 'defaulted': 'x', 'untyped': True}
+
+
+def test_private_annotation_only_field_raises():
+    with pytest.raises(ValueError, match=match('Field name "_field" cannot start with an underscore.')):
+        class SomeClass(Storage):
+            _field: int
+
+
+def test_private_annotated_default_field_raises():
+    with pytest.raises(ValueError, match=match('Field name "_field" cannot start with an underscore.')):
+        class SomeClass(Storage):
+            _field: int = 1
+
+
+def test_private_untyped_attribute_is_ignored():
+    class SomeClass(Storage):
+        _field = 1
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass._field == 1
+    assert repr(SomeClass()) == 'SomeClass()'
+
+
+def test_public_classvar_is_ignored():
+    class SomeClass(Storage):
+        field: ClassVar[str] = 'abc'
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass.field == 'abc'
+    assert repr(SomeClass()) == 'SomeClass()'
+
+
+def test_private_classvar_is_ignored_without_error():
+    class SomeClass(Storage):
+        _field: ClassVar[str] = 'abc'
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass._field == 'abc'
+
+
+def test_classvar_with_explicit_field_raises():
+    with pytest.raises(TypeError, match=match('ClassVar field "field" cannot be defined as a skelet field.')):
+        class SomeClass(Storage):
+            field: ClassVar[int] = Field(1)
+
+
+def test_methods_and_descriptors_are_not_fields():
+    class SomeClass(Storage):
+        def method(self):
+            return 'method'
+
+        @property
+        def prop(self):
+            return 'prop'
+
+        @staticmethod
+        def static():
+            return 'static'
+
+        @classmethod
+        def class_method(cls):
+            return cls.__name__
+
+    instance = SomeClass()
+
+    assert SomeClass.__field_names__ == ()
+    assert instance.method() == 'method'
+    assert instance.prop == 'prop'
+    assert SomeClass.static() == 'static'
+    assert instance.class_method() == 'SomeClass'
+
+
+def test_annotated_descriptor_is_not_overwritten():
+    class SomeDescriptor:
+        def __get__(self, instance, owner):
+            return 'descriptor'
+
+    class SomeClass(Storage):
+        field: int = SomeDescriptor()
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass().field == 'descriptor'
+
+
+def test_nested_class_is_not_field():
+    class SomeClass(Storage):
+        class Nested:
+            value = 1
+
+    assert SomeClass.__field_names__ == ()
+    assert SomeClass.Nested.value == 1
+
+
+def test_explicit_field_still_works_unchanged():
+    class SomeClass(Storage):
+        field: int = Field(1, validation=lambda value: value > 0)
+
+    instance = SomeClass()
+
+    assert instance.field == 1
+
+    with pytest.raises(ValueError, match=match('The value -1 (int) of the "field" field does not match the validation.')):
+        instance.field = -1
+
+
+def test_mixed_explicit_and_shorthand_fields_work_together():
+    class SomeClass(Storage):
+        a: int
+        b: int = Field(2)
+        c: str = 'x'
+        d = 4
+
+    instance = SomeClass(a=1)
+
+    assert SomeClass.__field_names__ == ['a', 'b', 'c', 'd']
+    assert instance.a == 1
+    assert instance.b == 2
+    assert instance.c == 'x'
+    assert instance.d == 4
+
+    with pytest.raises(TypeError):
+        instance.a = 'bad'
+    with pytest.raises(TypeError):
+        instance.c = 5
+
+    instance.d = 'not checked'
+
+    assert instance.d == 'not checked'
+
+
+def test_stable_field_order_without_metaclass():
+    class Parent(Storage):
+        parent_default: int = 1
+        parent_untyped = 2
+
+    class Child(Parent):
+        child_required: int
+        child_default: int = 3
+        child_explicit: int = Field(4)
+        child_untyped = 5
+
+    assert Child.__field_names__ == ['parent_default', 'parent_untyped', 'child_required', 'child_default', 'child_explicit', 'child_untyped']
+
+
+def test_child_overrides_parent_shorthand_with_shorthand():
+    class Parent(Storage):
+        field: int = 1
+
+    class Child(Parent):
+        field: int = 2
+
+    assert Parent.__field_names__ == ['field']
+    assert Child.__field_names__ == ['field']
+    assert Parent().field == 1
+    assert Child().field == 2
+
+
+def test_child_overrides_parent_explicit_with_shorthand():
+    class Parent(Storage):
+        field: int = Field(1, validation=lambda value: value > 0)
+
+    class Child(Parent):
+        field: int = -1
+
+    assert Parent().field == 1
+    assert Child().field == -1
+
+
+def test_child_overrides_parent_shorthand_with_explicit():
+    class Parent(Storage):
+        field: int = 1
+
+    class Child(Parent):
+        field: int = Field(-1, validation=lambda value: value < 0)
+
+    assert Parent().field == 1
+    assert Child().field == -1
+
+    with pytest.raises(ValueError, match=match('The value 1 (int) of the "field" field does not match the validation.')):
+        Child(field=1)
+
+
+def test_multiple_inheritance_matches_existing_field_behavior():
+    class ExplicitLeft(Storage):
+        left = Field(1)
+
+    class ExplicitRight(Storage):
+        right = Field(2)
+
+    class ExplicitChild(ExplicitLeft, ExplicitRight):
+        child = Field(3)
+
+    class ShorthandLeft(Storage):
+        left = 1
+
+    class ShorthandRight(Storage):
+        right = 2
+
+    class ShorthandChild(ShorthandLeft, ShorthandRight):
+        child = 3
+
+    assert ShorthandChild.__field_names__ == ExplicitChild.__field_names__
+    assert asdict(ShorthandChild()) == asdict(ExplicitChild())
+
+
+def test_non_storage_mixin_before_storage_is_ignored_for_explicit_fields():
+    class Mixin:
+        mixin_value = 'mixin'
+
+    class SomeClass(Mixin, Storage):
+        field = Field(1)
+
+    assert SomeClass.__field_names__ == ['field']
+    assert SomeClass.mixin_value == 'mixin'
+    assert SomeClass().field == 1
+
+
+def test_non_storage_mixin_before_storage_is_ignored_for_shorthand_fields():
+    class Mixin:
+        mixin_value = 'mixin'
+
+    class SomeClass(Mixin, Storage):
+        field = 1
+
+    assert SomeClass.__field_names__ == ['field']
+    assert SomeClass.mixin_value == 'mixin'
+    assert SomeClass().field == 1
+
+
+def test_storage_parent_field_names_are_empty():
+    assert Storage._parent_field_names() == []
+
+
+def test_conflicts_can_reference_shorthand_field():
+    class SomeClass(Storage):
+        a: int = Field(1, conflicts={'b': lambda old, new, other_old, other_new: new == other_old})  # noqa: ARG005
+        b: int = 2
+
+    instance = SomeClass()
+
+    with pytest.raises(ValueError, match=match('The new 2 (int) value of the "a" field conflicts with the 2 (int) value of the "b" field.')):
+        instance.a = 2
+
+
+def test_share_mutex_can_reference_shorthand_field():
+    class SomeClass(Storage):
+        a: int = Field(1, share_mutex_with=['b'])
+        b: int = 2
+
+    instance = SomeClass()
+
+    assert instance.__locks__['a'] is instance.__locks__['b']
+
+
+def test_shorthand_default_matches_field_default_for_mutables():
+    class SomeClass(Storage):
+        items: list = []  # noqa: RUF012
+
+    first = SomeClass()
+    second = SomeClass()
+
+    first.items.append(1)
+
+    assert second.items == [1]

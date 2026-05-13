@@ -47,7 +47,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         read_only: bool = False,
         validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
         validate_default: bool = True,
-        secret: bool = False,
+        hide: bool = False,
         action: Optional[ChangeAction[ValueType, StorageType]] = None,
         read_lock: bool = False,
         conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
@@ -95,7 +95,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         self.sources = sources
         self.validation = validation
         self.validate_default = validate_default
-        self.secret = secret
+        self.hide = hide
         self.change_action: Optional[ChangeAction[ValueType, StorageType]] = action
         self.conflicts = conflicts
         self.reverse_conflicts_on = reverse_conflicts
@@ -205,7 +205,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
                     continue
                 if parent is Storage:
                     break
-                for field_name in cast(Storage, parent).__field_names__:
+                for field_name in getattr(parent, '__field_names__', ()):
                     if field_name not in known_names:
                         known_names.add(field_name)
                         owner.__field_names__.append(field_name)
@@ -273,7 +273,7 @@ class FieldDescriptor(Generic[ValueType, StorageType]):
         return instance.__locks__[cast(str, self.name)]
 
     def get_value_representation(self, value: ValueType) -> str:
-        base = '***' if self.secret else f'{value!r}'
+        base = '***' if self.hide else f'{value!r}'
         return f'{base} ({type(value).__name__})'
 
     def raise_exception_in_storage(self, exception: BaseException, raising_on: bool) -> None:
@@ -338,7 +338,7 @@ def Field(
     read_only: bool = False,
     validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
     validate_default: bool = True,
-    secret: bool = False,
+    hide: bool = False,
     action: Optional[ChangeAction[ValueType, StorageType]] = None,
     read_lock: bool = False,
     conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
@@ -360,7 +360,7 @@ def Field(
     read_only: bool = False,
     validation: Optional[Union[Dict[str, Callable[[ValueType], bool]], Callable[[ValueType], bool]]] = None,
     validate_default: bool = True,
-    secret: bool = False,
+    hide: bool = False,
     action: Optional[ChangeAction[ValueType, StorageType]] = None,
     read_lock: bool = False,
     conflicts: Optional[Dict[str, Callable[[ValueType, ValueType, Any, Any], bool]]] = None,
@@ -382,7 +382,7 @@ def Field(  # noqa: PLR0913, N802
     read_only: bool = False,
     validation: Optional[Union[Dict[str, Callable[[Any], bool]], Callable[[Any], bool]]] = None,
     validate_default: bool = True,
-    secret: bool = False,
+    hide: bool = False,
     action: Optional[ChangeAction[Any, StorageType]] = None,
     read_lock: bool = False,
     conflicts: Optional[Dict[str, Callable[[Any, Any, Any, Any], bool]]] = None,
@@ -399,7 +399,7 @@ def Field(  # noqa: PLR0913, N802
         read_only=read_only,
         validation=validation,
         validate_default=validate_default,
-        secret=secret,
+        hide=hide,
         action=action,
         read_lock=read_lock,
         conflicts=conflicts,

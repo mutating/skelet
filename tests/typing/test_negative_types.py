@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, ClassVar, List, Optional, Union
 
 import pytest
 
@@ -241,3 +241,99 @@ def test_wrong_assignment_dict_to_list() -> None:
 def test_field_share_mutex_with_wrong_element_type() -> None:
     class Config(Storage):
         value: int = Field(1, share_mutex_with=[42])  # E: List item 0 has incompatible type "int"; expected "str"  [list-item]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_to_required_shorthand_field():
+    class Config(Storage):
+        age: int
+
+    config = Config(age=1)
+    config.age = 'x'  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_to_annotated_default_shorthand():
+    class Config(Storage):
+        age: int = 1
+
+    config = Config()
+    config.age = 'x'  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_default_for_annotated_shorthand():
+    class Config(Storage):
+        age: int = 'x'  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_to_optional_shorthand():
+    class Config(Storage):
+        host: Optional[str] = None
+
+    config = Config()
+    config.host = 1  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_usage_of_optional_without_narrowing():
+    def takes_str(value: str) -> None:
+        pass
+
+    class Config(Storage):
+        host: Optional[str] = None
+
+    config = Config()
+    takes_str(config.host)  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_to_union_shorthand():
+    class Config(Storage):
+        value: Union[int, str] = 1
+
+    config = Config()
+    config.value = None  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_to_container_shorthand():
+    class Config(Storage):
+        items: List[int] = []  # noqa: RUF012
+
+    config = Config()
+    config.items = {'x': 1}  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_list_item_for_shorthand_container():
+    class Config(Storage):
+        items: List[int] = ['x']  # E: [list-item]  # noqa: RUF012
+
+
+@pytest.mark.mypy_testing
+def test_wrong_append_to_shorthand_container():
+    class Config(Storage):
+        items: List[int] = []  # noqa: RUF012
+
+    config = Config()
+    config.items.append('x')  # E: [arg-type]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_assignment_to_untyped_default_inferred_field():
+    class Config(Storage):
+        name = 'Ann'
+
+    config = Config()
+    config.name = 1  # E: [assignment]
+
+
+@pytest.mark.mypy_testing
+def test_wrong_classvar_instance_usage():
+    class Config(Storage):
+        kind: ClassVar[str] = 'config'
+
+    config = Config()
+    config.kind = 'other'  # E: [misc]

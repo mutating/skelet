@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skelet"
-version = "0.0.20"
+version = "0.0.21"
 authors = [{ name = "Evgeniy Blinov", email = "zheni-b@yandex.ru" }]
 description = 'Collect all the settings in one place'
 readme = "README.md"
@@ -15,6 +15,7 @@ dependencies = [
     'simtypes>=0.0.13',
     'denial>=0.0.13',
     'sigmatch>=0.0.10',
+    'pristan>=0.0.15',
     'tomli==2.3.0 ; python_version <= "3.12"',
     'pyyaml==6.0.3',
     'types-pyyaml==6.0.12.20241230',
@@ -39,6 +40,7 @@ classifiers = [
     'License :: OSI Approved :: MIT License',
     'Intended Audience :: Developers',
     'Topic :: Software Development :: Libraries',
+    'Typing :: Typed',
 ]
 keywords = ['settings', 'configs']
 

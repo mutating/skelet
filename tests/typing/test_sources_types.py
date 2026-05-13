@@ -30,6 +30,12 @@ def test_class_level_sources_for_tool() -> None:
 
 
 @pytest.mark.mypy_testing
+def test_for_tool_return_type() -> None:
+    sources: List[AbstractSource[Any]] = for_tool('my_tool')
+    assert_type(sources, List[AbstractSource[Any]])
+
+
+@pytest.mark.mypy_testing
 def test_field_level_sources_memory() -> None:
     sources: FieldSources = [MemorySource({'name': 'val'})]
 

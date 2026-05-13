@@ -1,6 +1,19 @@
+import inspect
 from collections import defaultdict
 from threading import Lock
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    get_origin,
+)
 
 from denial import InnerNoneType
 from locklib import ContextLockProtocol
@@ -9,6 +22,23 @@ from printo import describe_call
 from skelet.sources.abstract import AbstractSource, ExpectedType
 from skelet.sources.collection import SourcesCollection
 from skelet.types import InstanceSourceItem
+
+_GetAnnotations = Callable[..., Dict[str, Any]]
+_get_annotations: Optional[_GetAnnotations]
+try:  # pragma: no cover
+    from annotationlib import (  # type: ignore[import-not-found, unused-ignore]
+        get_annotations as _annotationlib_get_annotations,
+    )
+except ImportError:  # pragma: no cover
+    _get_annotations = cast(Optional[_GetAnnotations], getattr(inspect, 'get_annotations', None))
+else:  # pragma: no cover
+    _get_annotations = cast(_GetAnnotations, _annotationlib_get_annotations)
+
+
+def get_annotations(obj: Any, *, globals: Any = None, locals: Any = None, eval_str: bool = False) -> Dict[str, Any]:  # noqa: A002  # pragma: no cover
+    if _get_annotations is not None:
+        return dict(_get_annotations(obj, globals=globals, locals=locals, eval_str=eval_str))
+    return dict(getattr(obj, '__dict__', {}).get('__annotations__', {}))
 
 sentinel = InnerNoneType()
 
@@ -30,6 +60,98 @@ class Storage:
             if item is not Ellipsis and not isinstance(item, AbstractSource):
                 raise TypeError(f'Each element of _sources must be a source or Ellipsis, got {type(item).__name__}.')
         return raw
+
+    @staticmethod
+    def _is_classvar_annotation(type_hint: Any) -> bool:
+        return type_hint is ClassVar or get_origin(type_hint) is ClassVar
+
+    @staticmethod
+    def _can_be_shorthand_default(value: Any) -> bool:
+        if isinstance(value, (staticmethod, classmethod, property, type)):
+            return False
+        return not (hasattr(value, '__get__') or hasattr(value, '__set__') or hasattr(value, '__delete__'))
+
+    @classmethod
+    def _parent_field_names(cls) -> List[str]:
+        result: List[str] = []
+        known_names = set()
+        local_names = set(cls.__dict__)
+
+        for parent in cls.__mro__:
+            if parent is cls:
+                continue
+            if parent is Storage:
+                break
+            for field_name in getattr(parent, '__field_names__', ()):
+                if field_name not in known_names and field_name not in local_names:
+                    known_names.add(field_name)
+                    result.append(field_name)
+
+        return result
+
+    @classmethod
+    def _prepare_shorthand_fields(cls) -> None:
+        from skelet.fields.base import Field, FieldDescriptor  # noqa: PLC0415
+
+        annotations = dict(get_annotations(cls))
+        classvar_names = {name for name, annotation in annotations.items() if cls._is_classvar_annotation(annotation)}
+
+        for name in classvar_names:
+            if isinstance(cls.__dict__.get(name), FieldDescriptor):
+                raise TypeError(f'ClassVar field "{name}" cannot be defined as a skelet field.')
+
+        for name in annotations:
+            if name in classvar_names:
+                continue
+            if name.startswith('_'):
+                raise ValueError(f'Field name "{name}" cannot start with an underscore.')
+
+        for name in annotations:
+            if name in classvar_names:
+                continue
+
+            if name not in cls.__dict__:
+                field = cast(FieldDescriptor[Any, Any], Field())
+                setattr(cls, name, field)
+                field.__set_name__(cls, name)
+                continue
+
+            value = cls.__dict__[name]
+            if isinstance(value, FieldDescriptor) or not cls._can_be_shorthand_default(value):
+                continue
+
+            field = cast(FieldDescriptor[Any, Any], Field(value))
+            setattr(cls, name, field)
+            field.__set_name__(cls, name)
+
+        for name, value in tuple(cls.__dict__.items()):
+            if name.startswith('_') or name in annotations:
+                continue
+            if isinstance(value, FieldDescriptor) or not cls._can_be_shorthand_default(value):
+                continue
+
+            field = cast(FieldDescriptor[Any, Any], Field(value))
+            setattr(cls, name, field)
+            field.__set_name__(cls, name)
+
+        annotated_field_names = []
+        data_field_names = []
+        for name in annotations:
+            if name in classvar_names:
+                continue
+            if isinstance(cls.__dict__.get(name), FieldDescriptor):
+                annotated_field_names.append(name)
+
+        for name, value in cls.__dict__.items():
+            if name in annotations or name.startswith('_'):
+                continue
+            if isinstance(value, FieldDescriptor):
+                data_field_names.append(name)
+
+        result = cls._parent_field_names()
+        result.extend([*annotated_field_names, *data_field_names])
+
+        cls.__field_names__ = result if result else ()
 
     def __init__(self, *, _sources: Optional[Sequence['InstanceSourceItem']] = None, **kwargs: Any) -> None:
         self.__instance_sources__ = self._validate_instance_sources(_sources)
@@ -93,6 +215,8 @@ class Storage:
     def __init_subclass__(cls, reverse_conflicts: bool = True, sources: Optional[List[AbstractSource[ExpectedType]]] = None, **kwargs: Any):
             super().__init_subclass__(**kwargs)
 
+            cls._prepare_shorthand_fields()
+
             for field_name in cls.__field_names__:
                 field = getattr(cls, field_name)
                 if field.exception is not None:
@@ -129,11 +253,11 @@ class Storage:
 
     def __repr__(self) -> str:
         fields_content = {}
-        secrets = {}
+        hidden_placeholders = {}
 
         for field_name in self.__field_names__:
             fields_content[field_name] = getattr(self, field_name)
-            if getattr(type(self), field_name).secret:
-                secrets[field_name] = '***'
+            if getattr(type(self), field_name).hide:
+                hidden_placeholders[field_name] = '***'
 
-        return describe_call(type(self).__name__, (), fields_content, placeholders=secrets)  # type: ignore[arg-type]
+        return describe_call(type(self).__name__, (), fields_content, placeholders=hidden_placeholders)  # type: ignore[arg-type]
