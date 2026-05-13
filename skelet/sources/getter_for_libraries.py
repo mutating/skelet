@@ -11,7 +11,7 @@ from skelet.sources.yaml import YAMLSource
 
 @slot(entrypoint_group='skelet')
 def for_tool(tool_name: str) -> List[AbstractSource[ExpectedType]]:  # noqa: ARG001
-    return []
+    return []  # pragma: no cover
 
 
 def validate_tool_name(tool_name: str) -> str:
