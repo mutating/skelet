@@ -644,7 +644,7 @@ class Digits(Storage):
             'nine': 9,
         }.get(x, x),
         validation=lambda x: x is not None and x >= 0 and x < 10,
-        doc='my favorite number from 0 to 9',
+        doc='my favorite digit from 0 to 9',
     )
 
 digits = Digits()
